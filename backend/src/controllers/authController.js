@@ -1,0 +1,370 @@
+const crypto = require('crypto');
+const User = require('../models/User');
+const generateToken = require('../utils/generateToken');
+const logger = require('../utils/logger');
+const sendEmail = require('../utils/sendEmail');
+
+// ---- Config ----
+const OTP_TTL_MS = 10 * 60 * 1000;        // OTP valid for 10 minutes
+const OTP_RESEND_COOLDOWN_MS = 60 * 1000; // 60s between OTP resends
+const OTP_MAX_ATTEMPTS = 5;               // lock after 5 wrong tries
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^[0-9]{10,15}$/;
+
+// Generates a 6-digit numeric OTP, valid for OTP_TTL_MS.
+const createOtp = () => ({
+  code: String(Math.floor(100000 + Math.random() * 900000)),
+  expiresAt: new Date(Date.now() + OTP_TTL_MS),
+  attempts: 0,
+  lastSentAt: new Date(),
+});
+
+/**
+ * POST /api/auth/register
+ * Body: { name, email, phone, password, role, shipperMode? }
+ */
+const register = async (req, res, next) => {
+  try {
+    const { name, email, phone, password, role, shipperMode } = req.body;
+
+    if (!name || !email || !phone || !password || !role) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ success: false, message: 'Invalid email format' });
+    }
+
+    if (!PHONE_REGEX.test(phone)) {
+      return res.status(400).json({ success: false, message: 'Invalid phone number format' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    }
+
+    const allowedRoles = ['shipper', 'driver', 'admin'];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ success: false, message: `Role must be one of: ${allowedRoles.join(', ')}` });
+    }
+
+    if (role === 'shipper' && !shipperMode) {
+      return res.status(400).json({
+        success: false,
+        message: 'shipperMode is required for shipper accounts (catalog, raw_shipment, or both)',
+      });
+    }
+
+    const existing = await User.findOne({ $or: [{ email }, { phone }] });
+    if (existing) {
+      return res.status(409).json({ success: false, message: 'Email or phone already registered' });
+    }
+
+    const otp = createOtp();
+
+    const user = await User.create({
+      name,
+      email,
+      phone,
+      password,
+      role,
+      shipperMode: role === 'shipper' ? shipperMode : undefined,
+      otp,
+      isVerified: false,
+      isSuspended: false,
+    });
+
+    logger.info(`OTP for ${phone}: ${otp.code}`); // keep for dev visibility
+    await sendEmail({
+      to: email,
+      subject: 'Your CargoZent OTP',
+      text: `Your CargoZent OTP for account verification is ${otp.code}. It expires in 10 minutes.`,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Registered successfully. OTP sent for verification.',
+      userId: user._id,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/auth/verify-otp
+ * Body: { userId, otp }
+ */
+const verifyOtp = async (req, res, next) => {
+  try {
+    const { userId, otp } = req.body;
+
+    if (!userId || !otp) {
+      return res.status(400).json({ success: false, message: 'userId and otp are required' });
+    }
+
+    const user = await User.findById(userId).select('+otp.code +otp.expiresAt +otp.attempts');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (user.isVerified) {
+      return res.status(400).json({ success: false, message: 'User already verified' });
+    }
+    if (!user.otp) {
+      return res.status(400).json({ success: false, message: 'No OTP requested. Please register or resend OTP.' });
+    }
+    if (user.otp.attempts >= OTP_MAX_ATTEMPTS) {
+      return res.status(429).json({ success: false, message: 'Too many failed attempts. Please request a new OTP.' });
+    }
+    if (user.otp.expiresAt < new Date()) {
+      return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+    }
+    if (user.otp.code !== otp) {
+      user.otp.attempts = (user.otp.attempts || 0) + 1;
+      await user.save();
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    user.isVerified = true;
+    user.otp = undefined;
+    await user.save();
+
+    const token = generateToken(user._id, user.role);
+    res.status(200).json({ success: true, message: 'Account verified', token });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/auth/resend-otp
+ * Body: { userId }
+ * Re-issues a fresh OTP, throttled by OTP_RESEND_COOLDOWN_MS.
+ */
+const resendOtp = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'userId is required' });
+    }
+
+    const user = await User.findById(userId).select('+otp.lastSentAt');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (user.isVerified) {
+      return res.status(400).json({ success: false, message: 'User already verified' });
+    }
+
+    if (user.otp?.lastSentAt) {
+      const elapsed = Date.now() - new Date(user.otp.lastSentAt).getTime();
+      if (elapsed < OTP_RESEND_COOLDOWN_MS) {
+        const waitSeconds = Math.ceil((OTP_RESEND_COOLDOWN_MS - elapsed) / 1000);
+        return res.status(429).json({
+          success: false,
+          message: `Please wait ${waitSeconds}s before requesting another OTP`,
+        });
+      }
+    }
+
+    const otp = createOtp();
+    user.otp = otp;
+    await user.save();
+
+    logger.info(`Resent OTP for ${user.phone}: ${otp.code}`);
+    await sendEmail({
+      to: user.email,
+      subject: 'Your CargoZent OTP',
+      text: `Your CargoZent OTP for account verification is ${otp.code}. It expires in 10 minutes.`,
+    });
+    res.status(200).json({ success: true, message: 'OTP resent successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/auth/login
+ * Body: { email, password }
+ */
+const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    const user = await User.findOne({ email }).select('+password');
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+    if (!user.isVerified) {
+      return res.status(403).json({ success: false, message: 'Account not verified. Please verify OTP first.' });
+    }
+    if (user.isSuspended) {
+      return res.status(403).json({ success: false, message: 'Account suspended. Contact support.' });
+    }
+
+    user.lastLoginAt = new Date();
+    await user.save({ validateBeforeSave: false });
+
+    const token = generateToken(user._id, user.role);
+    res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        shipperMode: user.shipperMode,
+        lastLoginAt: user.lastLoginAt,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/auth/forgot-password
+ * Body: { email }
+ */
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email }).select('+otp.lastSentAt');
+    if (!user) {
+      // Don't leak whether the email exists
+      return res.status(200).json({ success: true, message: 'If that email exists, an OTP has been sent.' });
+    }
+
+    if (user.otp?.lastSentAt) {
+      const elapsed = Date.now() - new Date(user.otp.lastSentAt).getTime();
+      if (elapsed < OTP_RESEND_COOLDOWN_MS) {
+        // Still respond generically to avoid leaking account state
+        return res.status(200).json({ success: true, message: 'If that email exists, an OTP has been sent.' });
+      }
+    }
+
+    const otp = createOtp();
+    user.otp = otp;
+    await user.save();
+
+    logger.info(`Password reset OTP for ${email}: ${otp.code}`);
+    await sendEmail({
+      to: email,
+      subject: 'Your CargoZent Password Reset OTP',
+      text: `Your CargoZent OTP for password reset is ${otp.code}. It expires in 10 minutes.`,
+    });
+    res.status(200).json({ success: true, message: 'If that email exists, an OTP has been sent.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/auth/reset-password
+ * Body: { email, otp, newPassword }
+ */
+const resetPassword = async (req, res, next) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: 'email, otp and newPassword are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    }
+
+    const user = await User.findOne({ email }).select('+otp.code +otp.expiresAt +otp.attempts +password');
+
+    if (!user || !user.otp) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+    if (user.otp.attempts >= OTP_MAX_ATTEMPTS) {
+      return res.status(429).json({ success: false, message: 'Too many failed attempts. Please request a new OTP.' });
+    }
+    if (user.otp.expiresAt < new Date()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+    if (user.otp.code !== otp) {
+      user.otp.attempts = (user.otp.attempts || 0) + 1;
+      await user.save();
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
+    user.password = newPassword; // pre-save hook rehashes
+    user.otp = undefined;
+    user.passwordChangedAt = new Date();
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password reset successful. Please log in.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** GET /api/auth/me */
+const getMe = async (req, res, next) => {
+  try {
+    res.status(200).json({ success: true, user: req.user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/auth/me
+ * Updates the logged-in user's own editable profile fields. Role, verification,
+ * and approval flags are intentionally never editable through this endpoint.
+ */
+const updateMe = async (req, res, next) => {
+  try {
+    // Explicit whitelist to avoid mass-assignment of protected fields
+    // (role, isVerified, isSuspended, password, otp, etc.)
+    const { name, profileImage, shipperMode, shipperProfile } = req.body;
+
+    if (name !== undefined) req.user.name = name;
+    if (profileImage !== undefined) req.user.profileImage = profileImage;
+
+    if (req.user.role === 'shipper') {
+      if (shipperMode !== undefined) req.user.shipperMode = shipperMode;
+      if (shipperProfile?.pickupAddress) {
+        const current = req.user.shipperProfile?.pickupAddress || {};
+        req.user.shipperProfile.pickupAddress = {
+          address: shipperProfile.pickupAddress.address ?? current.address ?? '',
+          city: shipperProfile.pickupAddress.city ?? current.city ?? '',
+          state: shipperProfile.pickupAddress.state ?? current.state ?? '',
+          pincode: shipperProfile.pickupAddress.pincode ?? current.pincode ?? '',
+          location: shipperProfile.pickupAddress.location ?? current.location ?? { type: 'Point', coordinates: [0, 0] },
+        };
+      }
+      req.user.markModified('shipperProfile');
+    }
+
+    await req.user.save();
+    res.status(200).json({ success: true, user: req.user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = {
+  register,
+  verifyOtp,
+  resendOtp,
+  login,
+  forgotPassword,
+  resetPassword,
+  getMe,
+  updateMe,
+};

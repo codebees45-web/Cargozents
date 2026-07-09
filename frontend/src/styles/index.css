@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #FFFFFF;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Sora', system-ui, sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #EEF4F1;
+}
+::-webkit-scrollbar-thumb {
+  background: #1B4D3E;
+  border-radius: 999px;
+}
+
+.font-mono-ls {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+@keyframes draw-route {
+  0%, 100% { stroke-dashoffset: 240; }
+  50%, 90% { stroke-dashoffset: 0; }
+}
+@keyframes fade-leg-color {
+  0%, 45% { stroke: #C7D6CE; }
+  55%, 100% { stroke: #00E676; }
+}
+.route-return-leg {
+  stroke-dasharray: 240;
+  animation: draw-route 6s ease-in-out infinite, fade-leg-color 6s ease-in-out infinite;
+}
+
+@keyframes drive-return-leg {
+  0%, 100% { transform: translateX(0); opacity: 0; }
+  8% { opacity: 1; }
+  50%, 90% { transform: translateX(-320px); opacity: 1; }
+  96% { opacity: 0; }
+}
+.route-return-truck {
+  animation: drive-return-leg 6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-return-truck {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-return-leg {
+    animation: none;
+    stroke: #00E676;
+    stroke-dashoffset: 0;
+  }
+}
