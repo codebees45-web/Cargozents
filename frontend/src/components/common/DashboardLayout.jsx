@@ -13,6 +13,7 @@ const navByRole = {
     { label: 'Products', href: '/shipper/products' },
     { label: 'Shipments', href: '/shipper/shipments' },
     { label: 'Orders received', href: '/shipper/orders' },
+    { label: 'Subscription', href: '/shipper/subscription' },
     { label: 'Profile', href: '/profile' },
   ],
   driver: [

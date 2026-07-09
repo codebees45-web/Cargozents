@@ -3,6 +3,7 @@ const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const logger = require('../utils/logger');
 const sendEmail = require('../utils/sendEmail');
+const { sendWhatsApp } = require('../utils/whatsappClient');
 
 // ---- Config ----
 const OTP_TTL_MS = 10 * 60 * 1000;        // OTP valid for 10 minutes
@@ -95,6 +96,14 @@ const register = async (req, res, next) => {
       subject: 'Your CargoZent OTP',
       text: `Your CargoZent OTP for account verification is ${otp.code}. It expires in 10 minutes.`,
     });
+
+    // WhatsApp expects international format without '+' or leading zeros.
+    // Assumes 10-digit Indian numbers; prefixes 91 if no country code present.
+    const whatsappPhone = phone.length === 10 ? `91${phone}` : phone;
+    sendWhatsApp(
+      whatsappPhone,
+      `Your CargoZent OTP for account verification is *${otp.code}*. It expires in 10 minutes.`
+    ); // not awaited on purpose — don't block registration response if WhatsApp is slow/not ready
 
     res.status(201).json({
       success: true,

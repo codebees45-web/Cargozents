@@ -4,11 +4,13 @@ import AuthLayout from '../components/common/AuthLayout';
 import FormInput from '../components/common/FormInput';
 import { useAuth } from '../context/AuthContext';
 
+// NEW: Added the agency route so the app knows where to send them
 const roleRedirect = {
   buyer: '/buyer/dashboard',
   shipper: '/shipper/dashboard',
   driver: '/driver/dashboard',
   admin: '/admin/dashboard',
+  agency: '/agency', 
 };
 
 const Login = () => {
@@ -38,7 +40,7 @@ const Login = () => {
     <AuthLayout
       eyebrow="WELCOME BACK"
       title="Log in to Cargozents"
-      subtitle="Access your dashboard as a buyer, shipper, driver, or admin."
+      subtitle="Access your dashboard as a buyer, shipper, driver, agency, or admin."
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <FormInput
