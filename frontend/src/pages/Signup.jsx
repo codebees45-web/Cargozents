@@ -8,6 +8,7 @@ const roles = [
   { value: 'buyer', label: 'BUYER' },
   { value: 'shipper', label: 'SHIPPER' },
   { value: 'driver', label: 'DRIVER' },
+  { value: 'agency', label: 'AGENCY' },
 ];
 
 const shipperModes = [
@@ -27,19 +28,51 @@ const Signup = () => {
     password: '',
     role: searchParams.get('role') || 'buyer',
     shipperMode: 'both',
+    agencyProfile: {
+      companyName: '',
+      gstNumber: '',
+      address: { line1: '', city: '', state: '', pincode: '' },
+    },
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const isAgency = form.role === 'agency';
+
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleAgencyChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      agencyProfile: { ...prev.agencyProfile, [name]: value },
+    }));
+  };
+
+  const handleAgencyAddressChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      agencyProfile: {
+        ...prev.agencyProfile,
+        address: { ...prev.agencyProfile.address, [name]: value },
+      },
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const { data } = await registerUser(form);
-      navigate('/verify-otp', { state: { userId: data.userId, email: form.email, phone: form.phone } });
+      const payload = { ...form };
+      if (isAgency) {
+        payload.name = form.agencyProfile.companyName;
+      } else {
+        delete payload.agencyProfile;
+      }
+      const { data } = await registerUser(payload);
+      navigate('/verify-otp', { state: { userId: data.userId, phone: form.phone } });
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
@@ -56,7 +89,7 @@ const Signup = () => {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <span className="font-mono-ls text-[11px] tracking-wide text-[#5B7A70]">ROLE</span>
-          <div className="mt-1.5 grid grid-cols-3 gap-2">
+          <div className="mt-1.5 grid grid-cols-4 gap-2">
             {roles.map((r) => (
               <button
                 key={r.value}
@@ -94,7 +127,64 @@ const Signup = () => {
           </div>
         )}
 
-        <FormInput label="FULL NAME" name="name" value={form.name} onChange={handleChange} placeholder="Your name" />
+        {isAgency && (
+          <div className="space-y-4 rounded-xl border border-primary/10 bg-secondary/20 p-4">
+            <p className="font-mono-ls text-[11px] tracking-wide text-[#5B7A70]">AGENCY DETAILS</p>
+            <FormInput
+              label="COMPANY NAME"
+              name="companyName"
+              value={form.agencyProfile.companyName}
+              onChange={handleAgencyChange}
+              placeholder="e.g. Bharat Fleet Logistics"
+            />
+            <FormInput
+              label="GST / REGISTRATION NUMBER"
+              name="gstNumber"
+              value={form.agencyProfile.gstNumber}
+              onChange={handleAgencyChange}
+              placeholder="22AAAAA0000A1Z5"
+              required={false}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <FormInput
+                label="ADDRESS LINE"
+                name="line1"
+                value={form.agencyProfile.address.line1}
+                onChange={handleAgencyAddressChange}
+                placeholder="Warehouse / office address"
+                required={false}
+              />
+              <FormInput
+                label="CITY"
+                name="city"
+                value={form.agencyProfile.address.city}
+                onChange={handleAgencyAddressChange}
+                placeholder="City"
+                required={false}
+              />
+              <FormInput
+                label="STATE"
+                name="state"
+                value={form.agencyProfile.address.state}
+                onChange={handleAgencyAddressChange}
+                placeholder="State"
+                required={false}
+              />
+              <FormInput
+                label="PINCODE"
+                name="pincode"
+                value={form.agencyProfile.address.pincode}
+                onChange={handleAgencyAddressChange}
+                placeholder="600001"
+                required={false}
+              />
+            </div>
+          </div>
+        )}
+
+        {!isAgency && (
+          <FormInput label="FULL NAME" name="name" value={form.name} onChange={handleChange} placeholder="Your name" />
+        )}
         <FormInput
           label="EMAIL"
           type="email"

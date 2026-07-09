@@ -20,6 +20,7 @@ const driverRoutes = require("./routes/driverRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
+const agencyRoutes = require('./routes/agencyRoutes');
 
 const logger = require("./utils/logger");
 
@@ -59,6 +60,7 @@ app.use("/api/drivers", driverRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/complaints", complaintRoutes);
+app.use('/api/agency', agencyRoutes);
 
 // 404 handler
 app.use((req, res) => {

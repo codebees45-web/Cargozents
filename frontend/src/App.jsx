@@ -29,6 +29,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
   import AdminComplaints from './pages/AdminComplaints';
   import AdminReports from './pages/AdminReports';
   import ComplaintsPage from './pages/ComplaintsPage';
+  import ShipperProfile from './pages/ShipperProfile';
+  import ShipperProducts from './pages/ShipperProducts';
+  import ShipperOrders from './pages/ShipperOrders';
 
   function App() {
     return (
@@ -81,10 +84,34 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
               }
             />
             <Route
-  path="/complaints"
-  element={
-    <ProtectedRoute allowedRoles={['buyer', 'shipper']}>
-      <ComplaintsPage />
+              path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={['shipper']}>
+                  <ShipperProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/shipper/products"
+              element={
+                <ProtectedRoute allowedRoles={['shipper']}>
+                  <ShipperProducts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/shipper/orders"
+              element={
+                <ProtectedRoute allowedRoles={['shipper']}>
+                  <ShipperOrders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/complaints"
+              element={
+                <ProtectedRoute allowedRoles={['buyer', 'shipper']}>
+                  <ComplaintsPage />
     </ProtectedRoute>
   }
 />

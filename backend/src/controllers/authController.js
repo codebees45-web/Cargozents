@@ -26,7 +26,7 @@ const createOtp = () => ({
  */
 const register = async (req, res, next) => {
   try {
-    const { name, email, phone, password, role, shipperMode } = req.body;
+    const { name, email, phone, password, role, shipperMode, agencyProfile } = req.body;
 
     if (!name || !email || !phone || !password || !role) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
@@ -44,7 +44,7 @@ const register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
     }
 
-    const allowedRoles = ['shipper', 'driver', 'admin'];
+    const allowedRoles = ['shipper', 'driver', 'agency', 'admin'];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ success: false, message: `Role must be one of: ${allowedRoles.join(', ')}` });
     }
@@ -53,6 +53,12 @@ const register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'shipperMode is required for shipper accounts (catalog, raw_shipment, or both)',
+      });
+    }
+    if (role === 'agency' && !agencyProfile?.companyName) {
+      return res.status(400).json({
+        success: false,
+        message: 'agencyProfile.companyName is required for agency accounts',
       });
     }
 
@@ -64,16 +70,24 @@ const register = async (req, res, next) => {
     const otp = createOtp();
 
     const user = await User.create({
-      name,
-      email,
-      phone,
-      password,
-      role,
-      shipperMode: role === 'shipper' ? shipperMode : undefined,
-      otp,
-      isVerified: false,
-      isSuspended: false,
-    });
+  name,
+  email,
+  phone,
+  password,
+  role,
+  shipperMode: role === 'shipper' ? shipperMode : undefined,
+  agencyProfile:
+    role === 'agency'
+      ? {
+          companyName: agencyProfile.companyName,
+          gstNumber: agencyProfile.gstNumber || '',
+          address: agencyProfile.address || {},
+        }
+      : undefined,
+  otp,
+  isVerified: false,
+  isSuspended: false,
+});
 
     logger.info(`OTP for ${phone}: ${otp.code}`); // keep for dev visibility
     await sendEmail({
@@ -331,7 +345,7 @@ const updateMe = async (req, res, next) => {
   try {
     // Explicit whitelist to avoid mass-assignment of protected fields
     // (role, isVerified, isSuspended, password, otp, etc.)
-    const { name, profileImage, shipperMode, shipperProfile } = req.body;
+    const { name, profileImage, shipperMode, shipperProfile, agencyProfile } = req.body;
 
     if (name !== undefined) req.user.name = name;
     if (profileImage !== undefined) req.user.profileImage = profileImage;
@@ -350,6 +364,23 @@ const updateMe = async (req, res, next) => {
       }
       req.user.markModified('shipperProfile');
     }
+    if (req.user.role === 'agency' && agencyProfile) {
+  const current = req.user.agencyProfile || {};
+  req.user.agencyProfile = {
+    companyName: agencyProfile.companyName ?? current.companyName ?? '',
+    gstNumber: agencyProfile.gstNumber ?? current.gstNumber ?? '',
+    address: {
+      line1: agencyProfile.address?.line1 ?? current.address?.line1 ?? '',
+      city: agencyProfile.address?.city ?? current.address?.city ?? '',
+      state: agencyProfile.address?.state ?? current.address?.state ?? '',
+      pincode: agencyProfile.address?.pincode ?? current.address?.pincode ?? '',
+    },
+    fleetSize: current.fleetSize ?? 0,
+    rating: current.rating ?? 0,
+    reviewsCount: current.reviewsCount ?? 0,
+  };
+  req.user.markModified('agencyProfile');
+}
 
     await req.user.save();
     res.status(200).json({ success: true, user: req.user });

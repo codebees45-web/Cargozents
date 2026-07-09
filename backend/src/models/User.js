@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['buyer', 'shipper', 'driver', 'admin'],
+      enum: ['buyer', 'shipper', 'driver', 'agency', 'admin'],
       required: true,
       default: 'buyer',
     },
@@ -56,6 +56,24 @@ const userSchema = new mongoose.Schema(
           coordinates: { type: [Number], default: [0, 0] },
         },
       },
+      rating: { type: Number, default: 0, min: 0, max: 5 },
+      reviewsCount: { type: Number, default: 0 },
+    },
+
+    // Agency-specific: a business entity that owns/manages a fleet of
+    // drivers. Drivers can optionally belong to an agency (see
+    // driverProfile.agency below), in which case loads matched to those
+    // drivers also roll up into the agency's dashboard.
+    agencyProfile: {
+      companyName: { type: String, default: '' },
+      gstNumber: { type: String, default: '' },
+      address: {
+        line1: { type: String, default: '' },
+        city: { type: String, default: '' },
+        state: { type: String, default: '' },
+        pincode: { type: String, default: '' },
+      },
+      fleetSize: { type: Number, default: 0 },
       rating: { type: Number, default: 0, min: 0, max: 5 },
       reviewsCount: { type: Number, default: 0 },
     },
@@ -91,6 +109,8 @@ const userSchema = new mongoose.Schema(
       isAvailable: { type: Boolean, default: false },
       rating: { type: Number, default: 0, min: 0, max: 5 },
       reviewsCount: { type: Number, default: 0 },
+      // If set, this driver operates under an agency's fleet.
+      agency: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     },
 
     profileImage: {
