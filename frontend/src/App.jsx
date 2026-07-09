@@ -29,6 +29,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
   import AdminComplaints from './pages/AdminComplaints';
   import AdminReports from './pages/AdminReports';
   import ComplaintsPage from './pages/ComplaintsPage';
+  import ShipperSubscription from './pages/ShipperSubscription';
 
   function App() {
     return (
@@ -161,6 +162,14 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
                 </ProtectedRoute>
               }
             />
+            <Route
+                path="/shipper/subscription"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <ShipperSubscription />
+                  </ProtectedRoute>
+                }
+              />
             <Route
               path="/admin/dashboard"
               element={

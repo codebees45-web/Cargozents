@@ -11,6 +11,7 @@ const morgan = require("morgan");
 
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
+const { initWhatsApp } = require("./utils/whatsappClient");
 
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -20,11 +21,15 @@ const driverRoutes = require("./routes/driverRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
 
 const logger = require("./utils/logger");
 
 // Connect database
 connectDB();
+
+// Init WhatsApp client (scan the QR code printed in this terminal on first run)
+initWhatsApp();
 
 const app = express();
 
@@ -59,6 +64,7 @@ app.use("/api/drivers", driverRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/complaints", complaintRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 
 // 404 handler
 app.use((req, res) => {
