@@ -24,6 +24,7 @@ const complaintRoutes = require("./routes/complaintRoutes");
 // NEW: Import subscription routes
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const agencyRoutes = require('./routes/agencyRoutes');
+const truckRoutes = require('./routes/truckRoutes');
 
 const logger = require("./utils/logger");
 
@@ -66,10 +67,9 @@ app.use("/api/drivers", driverRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/complaints", complaintRoutes);
-// NEW: Mount subscription routes
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use('/api/agency', agencyRoutes);
-
+app.use('/api/trucks', truckRoutes);
 
 // 404 handler
 app.use((req, res) => {
