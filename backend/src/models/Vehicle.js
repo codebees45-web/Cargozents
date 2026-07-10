@@ -2,10 +2,20 @@ const mongoose = require('mongoose');
 
 const vehicleSchema = new mongoose.Schema(
   {
+    // A vehicle is owned by either a driver (self-employed) or an agency
+    // (fleet operator) — never both. Kept as two separate optional refs
+    // rather than a single polymorphic "owner" so existing driver-side
+    // queries (Vehicle.find({ driver: ... })) don't need to change.
     driver: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      default: null,
+      index: true,
+    },
+    agency: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
       index: true,
     },
     registrationNumber: {
@@ -17,13 +27,28 @@ const vehicleSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['mini_truck', 'tempo', 'container', 'trailer', 'open_body'],
+      enum: ['mini_truck', 'tempo', 'container', 'trailer', 'open_body', 'refrigerated'],
       required: true,
     },
-    capacityWeight: { type: Number, required: true }, // kg
+    capacityWeight: { type: Number, required: true }, // tons
     capacityVolume: { type: Number }, // cubic meters
 
-    photos: { type: [String], default: [] }, // Cloudinary URLs
+    // Human-readable location label for fleets that don't have live GPS
+    // wired up yet (e.g. "Chennai Hub"). currentLocation below stays for
+    // the geo-matching engine once live tracking is added.
+    locationLabel: { type: String, default: '' },
+
+    photos: { type: [String], default: [] }, // base64 data URLs or hosted URLs
+
+    // Verification documents, stored the same way as product photos in
+    // this project (base64 data URLs) since no file-storage provider is
+    // wired up yet. Swap these for real upload URLs if Cloudinary/S3 is
+    // added later — nothing else needs to change shape-wise.
+    documents: {
+      rcBook: { type: String, default: '' },
+      insurance: { type: String, default: '' },
+      permit: { type: String, default: '' },
+    },
 
     // A vehicle only becomes bookable once every required document on it
     // (RC, permit, insurance) is admin-approved.
@@ -37,22 +62,6 @@ const vehicleSchema = new mongoose.Schema(
       type: { type: String, enum: ['Point'], default: 'Point' },
       coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
     },
-    // When currentLocation was last written. Lets the frontend tell a
-    // fresh GPS ping apart from a stale one (e.g. driver's app was
-    // closed/killed, phone lost signal) instead of showing a dot that
-    // silently stops moving with no explanation.
-    locationUpdatedAt: { type: Date, default: null },
-    // True only while the driver has live sharing switched on for an
-    // active trip. Lets shippers/admin distinguish "no GPS yet" from
-    // "driver turned sharing off" on the tracking map.
-    isSharingLocation: { type: Boolean, default: false },
-    // Where currentLocation came from. 'gps' = the driver's own device via
-    // PATCH /drivers/location (see driverController.updateLocation).
-    // 'manual' = an agency staff member typed/clicked it in for a driver
-    // who has no smartphone and therefore can't run that flow themselves
-    // (see agencyController.setVehicleLocation). The tracking UI shows
-    // these very differently — manual pins never claim to be "live".
-    locationSource: { type: String, enum: ['gps', 'manual'], default: 'gps' },
 
     // True from the moment a driver marks a delivery as "delivered" until
     // they either accept a new load or manually clear it. This is the flag

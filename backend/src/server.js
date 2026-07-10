@@ -23,6 +23,7 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
 // NEW: Import subscription routes
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
+const agencyRoutes = require('./routes/agencyRoutes');
 
 const logger = require("./utils/logger");
 
@@ -44,7 +45,7 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
 
 app.use(morgan("dev"));
 
@@ -67,6 +68,8 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/complaints", complaintRoutes);
 // NEW: Mount subscription routes
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use('/api/agency', agencyRoutes);
+
 
 // 404 handler
 app.use((req, res) => {

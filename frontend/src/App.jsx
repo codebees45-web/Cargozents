@@ -41,7 +41,7 @@ import AgencyOrders from './pages/AgencyOrders';
 import AvailableTrucks from './pages/AvailableTrucks';
 import TruckTracking from './pages/TruckTracking';
 import AgencyProfile from './pages/AgencyProfile';
-import AgencyFleetTracking from './pages/AgencyFleetTracking';
+import Onboarding from './pages/Onboarding';
 
 import BuyerOrderTracking from './pages/BuyerOrderTracking';
 
@@ -222,6 +222,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <Onboarding />
               </ProtectedRoute>
             }
           />

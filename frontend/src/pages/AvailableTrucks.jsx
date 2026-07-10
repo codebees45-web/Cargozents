@@ -1,37 +1,145 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import DashboardLayout from '../components/common/DashboardLayout';
+import EmptyState from '../components/common/EmptyState';
+import AddTruckModal from '../components/common/AddTruckModal';
+import { getAgencyTrucks, addAgencyTruck, updateAgencyTruck, deleteAgencyTruck } from '../services/agencyService';
+
+const TYPE_LABELS = {
+  mini_truck: 'Mini Truck',
+  tempo: 'Tempo',
+  container: 'Container (20ft)',
+  trailer: 'Trailer',
+  open_body: 'Open Half Body',
+  refrigerated: 'Refrigerated',
+};
 
 const AvailableTrucks = () => {
-  const [trucks] = useState([
-    { id: 'TN-01-AB-1234', type: 'Container (20ft)', capacity: '10 Tons', location: 'Chennai Hub', available: true },
-    { id: 'MH-12-XY-9876', type: 'Open Half Body', capacity: '15 Tons', location: 'Mumbai Depot', available: false },
-    { id: 'KA-05-PQ-5566', type: 'Refrigerated', capacity: '5 Tons', location: 'Bangalore Hub', available: true },
-  ]);
+  const [trucks, setTrucks] = useState(null);
+  const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+
+  const load = () => {
+    getAgencyTrucks()
+      .then(({ data }) => setTrucks(data.trucks || []))
+      .catch(() => setError('Could not load your fleet right now.'));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const handleAdd = async (payload) => {
+    const { data } = await addAgencyTruck(payload);
+    setTrucks((prev) => [data.truck, ...(prev || [])]);
+  };
+
+  const handleToggleActive = async (truck) => {
+    setBusyId(truck._id);
+    try {
+      const { data } = await updateAgencyTruck(truck._id, { isActive: !truck.isActive });
+      setTrucks((prev) => prev.map((t) => (t._id === truck._id ? data.truck : t)));
+    } catch {
+      setError('Could not update that truck right now.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDelete = async (truckId) => {
+    setBusyId(truckId);
+    try {
+      await deleteAgencyTruck(truckId);
+      setTrucks((prev) => prev.filter((t) => t._id !== truckId));
+    } catch {
+      setError('Could not remove that truck right now.');
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   return (
-    <div className="p-6 w-full">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Available Trucks</h1>
-        <button className="bg-green-700 text-white px-4 py-2 rounded shadow hover:bg-green-800 transition">
+    <DashboardLayout title="Available Trucks" subtitle="Your fleet — vehicles registered under your agency.">
+      <div className="flex items-center justify-between">
+        <div />
+        <button
+          onClick={() => setShowModal(true)}
+          className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-primary transition hover:shadow-glow"
+        >
           + Add New Truck
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {trucks.map((truck) => (
-          <div key={truck.id} className="bg-white p-6 rounded-lg shadow border border-gray-100">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-gray-800">{truck.id}</h3>
-              <span className={`w-3 h-3 rounded-full ${truck.available ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            </div>
-            <p className="text-sm text-gray-600 mb-1"><strong>Type:</strong> {truck.type}</p>
-            <p className="text-sm text-gray-600 mb-1"><strong>Capacity:</strong> {truck.capacity}</p>
-            <p className="text-sm text-gray-600 mt-4 pt-4 border-t border-gray-100">
-              📍 Current Location: <span className="font-medium">{truck.location}</span>
-            </p>
+      <div className="mt-6">
+        {trucks === null ? (
+          <p className="text-sm text-[#5B7A70]">Loading…</p>
+        ) : error && !trucks.length ? (
+          <p className="text-sm text-danger">{error}</p>
+        ) : trucks.length === 0 ? (
+          <EmptyState
+            title="No trucks yet"
+            body="Register a vehicle to your fleet so it can be matched to shipments."
+            actionLabel="Add a truck"
+            onAction={() => setShowModal(true)}
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {trucks.map((truck) => (
+              <div key={truck._id} className="rounded-xl border border-primary/10 bg-secondary/20 p-5">
+                {truck.photos?.[0] && (
+                  <img
+                    src={truck.photos[0]}
+                    alt={truck.registrationNumber}
+                    className="mb-4 h-32 w-full rounded-lg border border-primary/10 object-cover"
+                  />
+                )}
+                <div className="flex items-start justify-between">
+                  <h3 className="font-display text-lg font-bold text-primary">{truck.registrationNumber}</h3>
+                  <span
+                    title={truck.isActive ? 'Available' : 'Unavailable'}
+                    className={`mt-1.5 h-2.5 w-2.5 rounded-full ${truck.isActive ? 'bg-success' : 'bg-danger'}`}
+                  />
+                </div>
+                <p className="mt-3 text-sm text-[#5B7A70]">
+                  <span className="font-semibold text-primary">Type:</span> {TYPE_LABELS[truck.type] || truck.type}
+                </p>
+                <p className="mt-1 text-sm text-[#5B7A70]">
+                  <span className="font-semibold text-primary">Capacity:</span> {truck.capacityWeight} Tons
+                </p>
+                <p className="mt-4 border-t border-primary/10 pt-3 text-sm text-[#5B7A70]">
+                  📍 Current Location:{' '}
+                  <span className="font-medium text-primary">{truck.locationLabel || 'Not set'}</span>
+                </p>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => handleToggleActive(truck)}
+                    disabled={busyId === truck._id}
+                    className={`flex-1 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-60 ${
+                      truck.isActive
+                        ? 'border-danger/30 text-danger hover:border-danger/60'
+                        : 'border-primary/15 text-primary hover:border-primary/40'
+                    }`}
+                  >
+                    {busyId === truck._id ? '…' : truck.isActive ? 'Mark unavailable' : 'Mark available'}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(truck._id)}
+                    disabled={busyId === truck._id}
+                    className="rounded-full border border-primary/15 px-3 py-1.5 text-[11px] font-semibold text-primary/70 transition hover:border-danger/40 hover:text-danger disabled:opacity-60"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
-    </div>
+
+      {error && trucks?.length > 0 && <p className="mt-4 text-xs text-warning">{error}</p>}
+
+      {showModal && <AddTruckModal onSubmit={handleAdd} onClose={() => setShowModal(false)} />}
+    </DashboardLayout>
   );
 };
 

@@ -2,16 +2,14 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from '../components/common/AuthLayout';
 import FormInput from '../components/common/FormInput';
-import TruckLoader from '../components/common/TruckLoader';
 import { useAuth } from '../context/AuthContext';
 
-// NEW: Added the agency route so the app knows where to send them
 const roleRedirect = {
   buyer: '/buyer/dashboard',
   shipper: '/shipper/dashboard',
   driver: '/driver/dashboard',
+  agency: '/agency',
   admin: '/admin/dashboard',
-  agency: '/agency', 
 };
 
 const Login = () => {
@@ -24,27 +22,25 @@ const Login = () => {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const user = await login(form.email, form.password);
-      navigate(roleRedirect[user.role] || '/');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Check your details and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+  try {
+    const user = await login(form.email, form.password);
+    navigate(roleRedirect[user.role] || '/');
+  } catch (err) {
+    setError(err.response?.data?.message || 'Login failed. Check your details and try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
-    <>
-      {loading && <TruckLoader label="Logging you in…" />}
-      <AuthLayout
-        eyebrow="WELCOME BACK"
-        title="Log in to Cargozents"
-        subtitle="Access your dashboard as a buyer, shipper, driver, agency, or admin."
-      >
+    <AuthLayout
+      eyebrow="WELCOME BACK"
+      title="Log in to Cargozents"
+      subtitle="Access your dashboard as a buyer, shipper, driver, or admin."
+    >
       <form onSubmit={handleSubmit} className="space-y-5">
         <FormInput
           label="EMAIL"
@@ -90,8 +86,8 @@ const Login = () => {
           </Link>
         </p>
       </form>
-      </AuthLayout>
-    </>
+    </AuthLayout>
   );
 };
+
 export default Login;

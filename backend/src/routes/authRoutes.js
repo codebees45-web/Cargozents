@@ -8,6 +8,7 @@ const {
   resetPassword,
   getMe,
   updateMe,
+  completeProfile,
 } = require('../controllers/authController');
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.post('/reset-password', resetPassword);
 
 router.get('/me', protect, getMe);
 router.patch('/me', protect, updateMe);
+router.patch('/complete-profile', protect, completeProfile);
 
 module.exports = router;

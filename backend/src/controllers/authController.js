@@ -155,7 +155,19 @@ const verifyOtp = async (req, res, next) => {
     await user.save();
 
     const token = generateToken(user._id, user.role);
-    res.status(200).json({ success: true, message: 'Account verified', token });
+    res.status(200).json({
+      success: true,
+      message: 'Account verified',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        shipperMode: user.shipperMode,
+        isProfileComplete: user.isProfileComplete,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -397,7 +409,72 @@ const updateMe = async (req, res, next) => {
     next(err);
   }
 };
+const completeProfile = async (req, res, next) => {
+  try {
+    const { profileImage, buyerProfile, shipperProfile, driverProfile, agencyProfile } = req.body;
 
+    if (profileImage !== undefined) req.user.profileImage = profileImage;
+
+    if (req.user.role === 'buyer' && buyerProfile) {
+      req.user.buyerProfile = {
+        deliveryAddress: {
+          address: buyerProfile.deliveryAddress?.address || '',
+          city: buyerProfile.deliveryAddress?.city || '',
+          state: buyerProfile.deliveryAddress?.state || '',
+          pincode: buyerProfile.deliveryAddress?.pincode || '',
+        },
+        alternatePhone: buyerProfile.alternatePhone || '',
+      };
+      req.user.markModified('buyerProfile');
+    }
+
+    if (req.user.role === 'shipper' && shipperProfile) {
+      const current = req.user.shipperProfile || {};
+      req.user.shipperMode = shipperProfile.shipperMode || req.user.shipperMode;
+      req.user.shipperProfile.pickupAddress = {
+        address: shipperProfile.pickupAddress?.address || current.pickupAddress?.address || '',
+        city: shipperProfile.pickupAddress?.city || current.pickupAddress?.city || '',
+        state: shipperProfile.pickupAddress?.state || current.pickupAddress?.state || '',
+        pincode: shipperProfile.pickupAddress?.pincode || current.pickupAddress?.pincode || '',
+        location: current.pickupAddress?.location || { type: 'Point', coordinates: [0, 0] },
+      };
+      req.user.markModified('shipperProfile');
+    }
+
+    if (req.user.role === 'driver' && driverProfile) {
+      const current = req.user.driverProfile || {};
+      req.user.driverProfile.licenseNumber = driverProfile.licenseNumber || current.licenseNumber || '';
+      req.user.driverProfile.licensePhoto = driverProfile.licensePhoto || current.licensePhoto || '';
+      req.user.driverProfile.idProofPhoto = driverProfile.idProofPhoto || current.idProofPhoto || '';
+      req.user.markModified('driverProfile');
+    }
+
+    if (req.user.role === 'agency' && agencyProfile) {
+      const current = req.user.agencyProfile || {};
+      req.user.agencyProfile = {
+        companyName: agencyProfile.companyName || current.companyName || '',
+        gstNumber: agencyProfile.gstNumber || current.gstNumber || '',
+        address: {
+          line1: agencyProfile.address?.line1 || current.address?.line1 || '',
+          city: agencyProfile.address?.city || current.address?.city || '',
+          state: agencyProfile.address?.state || current.address?.state || '',
+          pincode: agencyProfile.address?.pincode || current.address?.pincode || '',
+        },
+        fleetSize: current.fleetSize || 0,
+        rating: current.rating || 0,
+        reviewsCount: current.reviewsCount || 0,
+      };
+      req.user.markModified('agencyProfile');
+    }
+
+    req.user.isProfileComplete = true;
+    await req.user.save();
+
+    res.status(200).json({ success: true, user: req.user });
+  } catch (err) {
+    next(err);
+  }
+};
 module.exports = {
   register,
   verifyOtp,
@@ -407,4 +484,5 @@ module.exports = {
   resetPassword,
   getMe,
   updateMe,
+  completeProfile,
 };

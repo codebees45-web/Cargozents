@@ -2,10 +2,20 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import AuthLayout from '../components/common/AuthLayout';
 import { verifyOtp } from '../services/authService';
+import { useAuth } from '../context/AuthContext';
+
+const roleRedirect = {
+  buyer: '/buyer/dashboard',
+  shipper: '/shipper/dashboard',
+  driver: '/driver/dashboard',
+  agency: '/agency',
+  admin: '/admin/dashboard',
+};
 
 const VerifyOtp = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { updateUser } = useAuth();
   const { userId, email, phone } = location.state || {};
 
   const [otp, setOtp] = useState('');
@@ -29,7 +39,13 @@ const VerifyOtp = () => {
     try {
       const { data } = await verifyOtp({ userId, otp });
       localStorage.setItem('loadshare_token', data.token);
-      navigate('/login');
+      updateUser(data.user);
+      
+      if (!data.user.isProfileComplete && data.user.role !== 'admin') {
+        navigate('/onboarding');
+      } else {
+        navigate(roleRedirect[data.user.role] || '/');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid or expired code.');
     } finally {
