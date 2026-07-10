@@ -333,7 +333,7 @@ const getShipmentTracking = async (req, res, next) => {
   try {
     const shipment = await Shipment.findById(req.params.id)
       .populate('assignedDriver', 'name phone')
-      .populate('assignedVehicle', 'registrationNumber type currentLocation');
+      .populate('assignedVehicle', 'registrationNumber type currentLocation locationUpdatedAt isSharingLocation');
 
     if (!shipment) return res.status(404).json({ success: false, message: 'Shipment not found' });
 
@@ -363,6 +363,8 @@ const getShipmentTracking = async (req, res, next) => {
               registrationNumber: shipment.assignedVehicle.registrationNumber,
               type: shipment.assignedVehicle.type,
               currentLocation: shipment.assignedVehicle.currentLocation,
+              locationUpdatedAt: shipment.assignedVehicle.locationUpdatedAt,
+              isSharingLocation: shipment.assignedVehicle.isSharingLocation,
             }
           : null,
         trackingHistory: shipment.trackingHistory,

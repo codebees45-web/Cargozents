@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '../components/common/DashboardLayout';
 import EmptyState from '../components/common/EmptyState';
 import ReviewModal from '../components/common/ReviewModal';
@@ -88,6 +89,14 @@ const BuyerDashboard = () => {
                 <li key={o._id} className="flex items-center justify-between px-4 py-3">
                   <span className="font-mono-ls text-xs text-[#5B7A70]">₹{o.productTotal}</span>
                   <span className="font-mono-ls text-xs text-primary">{o.status?.toUpperCase()}</span>
+                  {!['delivered', 'cancelled', 'placed', 'confirmed_by_shipper'].includes(o.status) && (
+                    <Link
+                      to={`/buyer/orders/${o._id}/track`}
+                      className="rounded-full border border-primary/15 px-3 py-1 text-[11px] font-semibold text-primary transition hover:border-primary/40"
+                    >
+                      Track
+                    </Link>
+                  )}
                   {o.status === 'delivered' && (
                     o.hasReview ? (
                       <span className="font-mono-ls text-[11px] text-success">RATED</span>

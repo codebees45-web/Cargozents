@@ -114,28 +114,53 @@ const setAvailability = async (req, res, next) => {
 
 /**
  * PATCH /api/drivers/location
- * Body: { coordinates: [lng, lat], vehicleId?, shipmentId? }
+ * Body: { coordinates: [lng, lat], vehicleId?, shipmentId?, accuracy? }
  * Mirrors the driver's live position onto both User (for general lookup)
  * and, if given, their active Vehicle (what the matching engine queries).
  * If shipmentId is given too, also drops a breadcrumb into that
  * shipment's trackingHistory — this is what feeds the live tracking map
  * with a continuous trail between status changes, rather than only a
  * point per lifecycle transition.
+ *
+ * This is fed by the driver's own device (browser Geolocation API /
+ * mobile GPS) while they have live sharing switched on for a trip — see
+ * frontend hooks/useLiveLocationSharing.js. It intentionally does NOT
+ * pull location from telecom/IMEI-based positioning: that requires
+ * carrier or law-enforcement access this app doesn't have, is far less
+ * accurate than device GPS, and raises consent/privacy issues we'd
+ * rather not touch. Fleet-mounted hardware GPS (common with agencies)
+ * can report into this exact same endpoint later — it's just another
+ * caller with a valid driver/vehicle token — so no rework is needed if
+ * an agency onboards real hardware trackers.
  */
 const updateLocation = async (req, res, next) => {
   try {
-    const { coordinates, vehicleId, shipmentId } = req.body;
+    const { coordinates, vehicleId, shipmentId, accuracy } = req.body;
     if (!Array.isArray(coordinates) || coordinates.length !== 2) {
       return res.status(400).json({ success: false, message: 'coordinates must be [lng, lat]' });
     }
+    const [lng, lat] = coordinates;
+    if (typeof lng !== 'number' || typeof lat !== 'number' || Number.isNaN(lng) || Number.isNaN(lat)) {
+      return res.status(400).json({ success: false, message: 'coordinates must be numeric [lng, lat]' });
+    }
+
+    // A very low-accuracy fix (e.g. cell-tower fallback indoors) is worse
+    // than no update at all — it can make the marker jump miles away and
+    // back. Skip writing it rather than corrupting the trail.
+    if (typeof accuracy === 'number' && accuracy > 500) {
+      return res.status(200).json({ success: true, skipped: true, reason: 'accuracy too low' });
+    }
+
+    const now = new Date();
 
     req.user.driverProfile.currentLocation = { type: 'Point', coordinates };
+    req.user.driverProfile.locationUpdatedAt = now;
     await req.user.save();
 
     if (vehicleId) {
       await Vehicle.findOneAndUpdate(
         { _id: vehicleId, driver: req.user._id },
-        { currentLocation: { type: 'Point', coordinates } }
+        { currentLocation: { type: 'Point', coordinates }, locationUpdatedAt: now, isSharingLocation: true }
       );
     }
 
@@ -145,12 +170,35 @@ const updateLocation = async (req, res, next) => {
         shipment.trackingHistory.push({
           status: shipment.status,
           location: { type: 'Point', coordinates },
-          timestamp: new Date(),
+          timestamp: now,
         });
         await shipment.save();
       }
     }
 
+    res.status(200).json({ success: true, locationUpdatedAt: now });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/drivers/location/stop
+ * Body: { vehicleId? }
+ * Called when the driver explicitly toggles live sharing off. Flips
+ * isSharingLocation so the tracking map can immediately show "driver
+ * turned off sharing" instead of waiting for the staleness timeout to
+ * guess that something's wrong.
+ */
+const stopSharingLocation = async (req, res, next) => {
+  try {
+    const { vehicleId } = req.body;
+    if (vehicleId) {
+      await Vehicle.findOneAndUpdate(
+        { _id: vehicleId, driver: req.user._id },
+        { isSharingLocation: false }
+      );
+    }
     res.status(200).json({ success: true });
   } catch (err) {
     next(err);
@@ -218,5 +266,6 @@ module.exports = {
   getMyDocuments,
   setAvailability,
   updateLocation,
+  stopSharingLocation,
   getWallet,
 };

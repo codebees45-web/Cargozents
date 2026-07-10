@@ -7,6 +7,7 @@ const {
   getMyDocuments,
   setAvailability,
   updateLocation,
+  stopSharingLocation,
   getWallet,
 } = require('../controllers/driverController');
 
@@ -20,6 +21,7 @@ router.post('/documents', uploadDocument);
 router.get('/documents/mine', getMyDocuments);
 router.patch('/availability', setAvailability);
 router.patch('/location', updateLocation);
+router.patch('/location/stop', stopSharingLocation);
 router.get('/wallet', getWallet);
 
 module.exports = router;

@@ -106,6 +106,7 @@ const userSchema = new mongoose.Schema(
         type: { type: String, enum: ['Point'], default: 'Point' },
         coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
       },
+      locationUpdatedAt: { type: Date, default: null },
       isAvailable: { type: Boolean, default: false },
       rating: { type: Number, default: 0, min: 0, max: 5 },
       reviewsCount: { type: Number, default: 0 },

@@ -41,6 +41,9 @@ import AgencyOrders from './pages/AgencyOrders';
 import AvailableTrucks from './pages/AvailableTrucks';
 import TruckTracking from './pages/TruckTracking';
 import AgencyProfile from './pages/AgencyProfile';
+import AgencyFleetTracking from './pages/AgencyFleetTracking';
+
+import BuyerOrderTracking from './pages/BuyerOrderTracking';
 
 function App() {
   return (
@@ -73,6 +76,15 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['shipper']}>
                 <ShipperDashboard />
+              </ProtectedRoute>
+            }
+          />
+          {/* new route, added right before the existing "/shipper/dashboard" route */}
+          <Route
+            path="/buyer/orders/:orderId/track"
+            element={
+              <ProtectedRoute allowedRoles={['buyer']}>
+                <BuyerOrderTracking />
               </ProtectedRoute>
             }
           />
@@ -124,7 +136,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-            
+
           <Route
             path="/driver/dashboard"
             element={

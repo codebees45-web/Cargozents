@@ -37,6 +37,22 @@ const vehicleSchema = new mongoose.Schema(
       type: { type: String, enum: ['Point'], default: 'Point' },
       coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
     },
+    // When currentLocation was last written. Lets the frontend tell a
+    // fresh GPS ping apart from a stale one (e.g. driver's app was
+    // closed/killed, phone lost signal) instead of showing a dot that
+    // silently stops moving with no explanation.
+    locationUpdatedAt: { type: Date, default: null },
+    // True only while the driver has live sharing switched on for an
+    // active trip. Lets shippers/admin distinguish "no GPS yet" from
+    // "driver turned sharing off" on the tracking map.
+    isSharingLocation: { type: Boolean, default: false },
+    // Where currentLocation came from. 'gps' = the driver's own device via
+    // PATCH /drivers/location (see driverController.updateLocation).
+    // 'manual' = an agency staff member typed/clicked it in for a driver
+    // who has no smartphone and therefore can't run that flow themselves
+    // (see agencyController.setVehicleLocation). The tracking UI shows
+    // these very differently — manual pins never claim to be "live".
+    locationSource: { type: String, enum: ['gps', 'manual'], default: 'gps' },
 
     // True from the moment a driver marks a delivery as "delivered" until
     // they either accept a new load or manually clear it. This is the flag

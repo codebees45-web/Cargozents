@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Vehicle = require('../models/Vehicle');
 
 /** GET /api/agency/dashboard — fleet size, availability, rating summary */
 const getDashboard = async (req, res, next) => {
@@ -81,4 +82,74 @@ const removeDriver = async (req, res, next) => {
   }
 };
 
-module.exports = { getDashboard, getDrivers, addDriver, removeDriver };
+/**
+ * GET /api/agency/vehicles — every vehicle belonging to a driver in this
+ * agency's fleet, with enough location state for a tracking list/map.
+ * This is the read side of the manual-location fallback: an agency staff
+ * member needs to see which vehicles have gone stale/never shared before
+ * deciding which ones to update by hand.
+ */
+const getFleetVehicles = async (req, res, next) => {
+  try {
+    const driverIds = (await User.find({ 'driverProfile.agency': req.user._id, role: 'driver' }, '_id')).map(
+      (d) => d._id
+    );
+    const vehicles = await Vehicle.find({ driver: { $in: driverIds } })
+      .populate('driver', 'name phone')
+      .sort({ updatedAt: -1 });
+    res.status(200).json({ success: true, vehicles });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/agency/vehicles/:id/location
+ * Body: { coordinates: [lng, lat] }
+ *
+ * Manual GPS fallback for drivers who have no smartphone and therefore
+ * can never run the browser-geolocation flow in
+ * frontend/hooks/useLiveLocationSharing.js themselves. Restricted to
+ * agency staff updating a vehicle that belongs to a driver in *their own*
+ * fleet — an agency can't move another agency's trucks around on the map.
+ *
+ * Written with locationSource: 'manual' so the tracking UI never claims
+ * this is a live GPS feed (formatLocationFreshness renders it distinctly
+ * from an actual device ping). If that same vehicle's driver later gets a
+ * smartphone and starts using live sharing, updateLocation in
+ * driverController overwrites locationSource back to 'gps' automatically
+ * — no need to "turn off" manual mode here.
+ */
+const setVehicleLocation = async (req, res, next) => {
+  try {
+    const { coordinates } = req.body;
+    if (!Array.isArray(coordinates) || coordinates.length !== 2) {
+      return res.status(400).json({ success: false, message: 'coordinates must be [lng, lat]' });
+    }
+    const [lng, lat] = coordinates;
+    if (typeof lng !== 'number' || typeof lat !== 'number' || Number.isNaN(lng) || Number.isNaN(lat)) {
+      return res.status(400).json({ success: false, message: 'coordinates must be numeric [lng, lat]' });
+    }
+
+    const driverIds = (await User.find({ 'driverProfile.agency': req.user._id, role: 'driver' }, '_id')).map(
+      (d) => d._id.toString()
+    );
+    const vehicle = await Vehicle.findById(req.params.id);
+    if (!vehicle || !driverIds.includes(vehicle.driver.toString())) {
+      return res.status(404).json({ success: false, message: 'Vehicle not found in your fleet' });
+    }
+
+    const now = new Date();
+    vehicle.currentLocation = { type: 'Point', coordinates };
+    vehicle.locationUpdatedAt = now;
+    vehicle.isSharingLocation = true;
+    vehicle.locationSource = 'manual';
+    await vehicle.save();
+
+    res.status(200).json({ success: true, vehicle });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getDashboard, getDrivers, addDriver, removeDriver, getFleetVehicles, setVehicleLocation };
