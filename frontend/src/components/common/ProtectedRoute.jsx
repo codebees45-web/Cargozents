@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import TruckLoader from './TruckLoader';
 
 /**
  * Wrap any route that requires login. Optionally restrict to specific
@@ -8,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
 
-  if (loading) return null; // could swap for a splash/loading screen
+  if (loading) return <TruckLoader label="Getting things ready…" />;
 
   if (!user) return <Navigate to="/login" replace />;
 

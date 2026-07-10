@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import MatchesPanel from '../components/common/MatchesPanel';
 import api from '../services/api';
@@ -69,7 +70,7 @@ const AdminShipments = () => {
 
       <div className="mt-6">
         {shipments === null ? (
-          <p className="text-sm text-[#5B7A70]">Loading…</p>
+          <TruckLoader fullScreen={false} />
         ) : error ? (
           <p className="text-sm text-danger">{error}</p>
         ) : filtered.length === 0 ? (

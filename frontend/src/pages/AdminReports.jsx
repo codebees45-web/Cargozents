@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import api from '../services/api';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -90,7 +91,7 @@ const AdminReports = () => {
           <h2 className="font-display text-lg font-semibold text-primary">Shipment status breakdown</h2>
           <div className="mt-4 rounded-xl border border-primary/10 bg-secondary/10 p-6">
             {analytics === null ? (
-              <p className="text-sm text-[#5B7A70]">Loading…</p>
+              <TruckLoader fullScreen={false} />
             ) : statusEntries.length === 0 ? (
               <p className="text-sm text-[#5B7A70]">No shipments yet.</p>
             ) : (
@@ -112,7 +113,7 @@ const AdminReports = () => {
           <h2 className="font-display text-lg font-semibold text-primary">Backhaul matching</h2>
           <div className="mt-4 rounded-xl border border-primary/10 bg-secondary/10 p-6">
             {analytics === null ? (
-              <p className="text-sm text-[#5B7A70]">Loading…</p>
+              <TruckLoader fullScreen={false} />
             ) : (
               <>
                 <p className="text-sm text-primary">

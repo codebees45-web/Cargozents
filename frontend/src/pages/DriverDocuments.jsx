@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import FormInput from '../components/common/FormInput';
 import FormSelect from '../components/common/FormSelect';
@@ -141,7 +142,7 @@ const DriverDocuments = () => {
 
           <div className="mt-6">
             {vehicles === null ? (
-              <p className="text-sm text-[#5B7A70]">Loading…</p>
+              <TruckLoader fullScreen={false} />
             ) : vehicles.length === 0 ? (
               <EmptyState title="No vehicles yet" body="Register your first vehicle above to start uploading its documents." />
             ) : (
@@ -212,7 +213,7 @@ const DriverDocuments = () => {
 
           <div className="mt-6">
             {documents === null ? (
-              <p className="text-sm text-[#5B7A70]">Loading…</p>
+              <TruckLoader fullScreen={false} />
             ) : documents.length === 0 ? (
               <EmptyState title="No documents submitted yet" body="Submitted documents will appear here with their review status." />
             ) : (

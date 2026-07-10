@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from '../components/common/AuthLayout';
 import FormInput from '../components/common/FormInput';
+import TruckLoader from '../components/common/TruckLoader';
 import { useAuth } from '../context/AuthContext';
 
 // NEW: Added the agency route so the app knows where to send them
@@ -37,11 +38,13 @@ const Login = () => {
   };
 
   return (
-    <AuthLayout
-      eyebrow="WELCOME BACK"
-      title="Log in to Cargozents"
-      subtitle="Access your dashboard as a buyer, shipper, driver, agency, or admin."
-    >
+    <>
+      {loading && <TruckLoader label="Logging you in…" />}
+      <AuthLayout
+        eyebrow="WELCOME BACK"
+        title="Log in to Cargozents"
+        subtitle="Access your dashboard as a buyer, shipper, driver, agency, or admin."
+      >
       <form onSubmit={handleSubmit} className="space-y-5">
         <FormInput
           label="EMAIL"
@@ -87,8 +90,8 @@ const Login = () => {
           </Link>
         </p>
       </form>
-    </AuthLayout>
+      </AuthLayout>
+    </>
   );
 };
-
 export default Login;
