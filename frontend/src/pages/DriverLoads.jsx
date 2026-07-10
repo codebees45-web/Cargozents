@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import LoadCard from '../components/common/LoadCard';
 import api from '../services/api';
@@ -76,7 +77,7 @@ const DriverLoads = () => {
         <h2 className="font-display text-lg font-semibold text-primary">Awaiting your response</h2>
         <div className="mt-4">
           {loads === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : awaitingResponse.length === 0 ? (
             <EmptyState
               title="Nothing waiting on you"
@@ -96,7 +97,7 @@ const DriverLoads = () => {
         <h2 className="font-display text-lg font-semibold text-primary">In progress</h2>
         <div className="mt-4">
           {loads === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : inProgress.length === 0 ? (
             <EmptyState title="No active loads" body="Loads you've accepted will show up here until they're delivered." />
           ) : (

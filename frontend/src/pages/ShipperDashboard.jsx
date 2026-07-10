@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -69,7 +70,7 @@ const ShipperDashboard = () => {
           </div>
           <div className="mt-4">
             {shipments === null ? (
-              <p className="text-sm text-[#5B7A70]">Loading…</p>
+              <TruckLoader fullScreen={false} />
             ) : shipments.length === 0 ? (
               <EmptyState
                 title="No shipments yet"
@@ -101,7 +102,7 @@ const ShipperDashboard = () => {
           </div>
           <div className="mt-4">
             {orders === null ? (
-              <p className="text-sm text-[#5B7A70]">Loading…</p>
+              <TruckLoader fullScreen={false} />
             ) : orders.length === 0 ? (
               <EmptyState
                 title="No orders yet"

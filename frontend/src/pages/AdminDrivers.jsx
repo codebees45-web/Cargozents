@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import StarRating from '../components/common/StarRating';
 import api from '../services/api';
@@ -151,7 +152,7 @@ const AdminDrivers = () => {
       <div className="mt-6">
         {tab === 'documents' &&
           (documents === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : documents.length === 0 ? (
             <EmptyState title="Nothing pending" body="New driver/vehicle document submissions will show up here for review." />
           ) : (
@@ -164,7 +165,7 @@ const AdminDrivers = () => {
 
         {tab === 'vehicles' &&
           (vehicles === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : vehicles.length === 0 ? (
             <EmptyState title="No vehicles registered yet" body="Vehicles registered by drivers will appear here." />
           ) : (
@@ -189,7 +190,7 @@ const AdminDrivers = () => {
 
         {tab === 'drivers' &&
           (drivers === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : drivers.length === 0 ? (
             <EmptyState title="No drivers yet" body="Registered drivers will appear here." />
           ) : (

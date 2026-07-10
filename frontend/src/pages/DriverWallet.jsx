@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
 
@@ -42,7 +43,7 @@ const DriverWallet = () => {
         <h2 className="font-display text-lg font-semibold text-primary">Transactions</h2>
         <div className="mt-4">
           {wallet === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : wallet.transactions.length === 0 ? (
             <EmptyState
               title="No earnings yet"

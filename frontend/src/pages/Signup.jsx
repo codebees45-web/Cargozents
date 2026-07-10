@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import AuthLayout from '../components/common/AuthLayout';
 import FormInput from '../components/common/FormInput';
+import TruckLoader from '../components/common/TruckLoader';
 import { registerUser } from '../services/authService';
 
 const roles = [
@@ -81,11 +82,13 @@ const Signup = () => {
   };
 
   return (
-    <AuthLayout
-      eyebrow="JOIN THE NETWORK"
-      title="Create your account"
-      subtitle="Pick the role that fits how you'll use LoadShare."
-    >
+    <>
+      {loading && <TruckLoader label="Creating your account…" />}
+      <AuthLayout
+        eyebrow="JOIN THE NETWORK"
+        title="Create your account"
+        subtitle="Pick the role that fits how you'll use LoadShare."
+      >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <span className="font-mono-ls text-[11px] tracking-wide text-[#5B7A70]">ROLE</span>
@@ -231,8 +234,8 @@ const Signup = () => {
           </Link>
         </p>
       </form>
-    </AuthLayout>
+      </AuthLayout>
+    </>
   );
 };
-
 export default Signup;

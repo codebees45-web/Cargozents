@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import LoadCard from '../components/common/LoadCard';
 import StarRating from '../components/common/StarRating';
@@ -83,7 +84,7 @@ const DriverDashboard = () => {
         <h2 className="font-display text-lg font-semibold text-primary">Assigned loads</h2>
         <div className="mt-4">
           {assignedLoads === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : assignedLoads.length === 0 ? (
             <EmptyState
               title="No loads assigned yet"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import ReviewModal from '../components/common/ReviewModal';
 import api from '../services/api';
@@ -54,7 +55,7 @@ const BuyerDashboard = () => {
         <h2 className="font-display text-lg font-semibold text-primary">Products near you</h2>
         <div className="mt-4">
           {products === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : products.length === 0 ? (
             <EmptyState
               title="No products listed yet"
@@ -79,7 +80,7 @@ const BuyerDashboard = () => {
         <h2 className="font-display text-lg font-semibold text-primary">Order history</h2>
         <div className="mt-4">
           {orders === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : orders.length === 0 ? (
             <EmptyState title="No orders yet" body="Your past and current orders will show up here once you place one." />
           ) : (

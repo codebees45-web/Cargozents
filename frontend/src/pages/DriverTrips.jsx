@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import StarRating from '../components/common/StarRating';
 import api from '../services/api';
@@ -50,7 +51,7 @@ const DriverTrips = () => {
       {error && <p className="mb-6 text-sm text-danger">{error}</p>}
 
       {trips === null ? (
-        <p className="text-sm text-[#5B7A70]">Loading…</p>
+        <TruckLoader fullScreen={false} />
       ) : trips.length === 0 ? (
         <EmptyState title="No trips yet" body="Once you complete a delivery, it'll show up here." />
       ) : (

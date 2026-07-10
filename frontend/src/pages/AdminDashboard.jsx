@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
+import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
 
@@ -59,7 +60,7 @@ const AdminDashboard = () => {
         </div>
         <div className="mt-4">
           {pendingShipments === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : pendingShipments.length === 0 ? (
             <EmptyState title="Nothing waiting" body="Shipment requests needing a driver assignment will queue up here." />
           ) : (
@@ -86,7 +87,7 @@ const AdminDashboard = () => {
         </div>
         <div className="mt-4">
           {pendingDrivers === null ? (
-            <p className="text-sm text-[#5B7A70]">Loading…</p>
+            <TruckLoader fullScreen={false} />
           ) : pendingDrivers.length === 0 ? (
             <EmptyState title="No drivers waiting" body="New driver document submissions will show up here for approval." />
           ) : (
