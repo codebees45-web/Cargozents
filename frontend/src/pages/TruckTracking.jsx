@@ -1,34 +1,181 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { getMyShipments, getAssignedShipments, getShipmentTracking } from '../services/shipmentService';
+import TrackingMap from '../components/common/TrackingMap';
+
+const POLL_INTERVAL_MS = 15000;
+
+const STATUS_STYLES = {
+  requested: 'border-gray-200 bg-gray-50 text-gray-700',
+  assigned: 'border-amber-200 bg-amber-50 text-amber-700',
+  accepted: 'border-blue-200 bg-blue-50 text-blue-700',
+  rejected: 'border-red-200 bg-red-50 text-red-700',
+  picked_up: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+  in_transit: 'border-green-200 bg-green-50 text-green-700',
+  delivered: 'border-emerald-300 bg-emerald-100 text-emerald-800',
+  cancelled: 'border-red-200 bg-red-50 text-red-700',
+};
+
+const ACTIVE_STATUSES = ['assigned', 'accepted', 'picked_up', 'in_transit'];
+
+const formatStatus = (status) => (status || '').replace(/_/g, ' ');
 
 const TruckTracking = () => {
+  const { user } = useAuth();
+
+  const [shipments, setShipments] = useState(null);
+  const [error, setError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+  const [tracking, setTracking] = useState(null);
+  const [trackingError, setTrackingError] = useState('');
+  const [loadingTracking, setLoadingTracking] = useState(false);
+  const pollRef = useRef(null);
+
+  // Load the list of shipments this user is allowed to see. Drivers see
+  // what's assigned to them; shippers/agencies see what they've posted.
+  useEffect(() => {
+    let cancelled = false;
+    const fetchShipments = user?.role === 'driver' ? getAssignedShipments : getMyShipments;
+
+    fetchShipments()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const list = data.shipments || [];
+        setShipments(list);
+        const firstActive = list.find((s) => ACTIVE_STATUSES.includes(s.status)) || list[0];
+        if (firstActive) setSelectedId(firstActive._id);
+      })
+      .catch(() => {
+        if (!cancelled) setError('Could not load shipments right now.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.role]);
+
+  const fetchTracking = useCallback((id) => {
+    if (!id) return;
+    getShipmentTracking(id)
+      .then(({ data }) => {
+        setTracking(data.tracking);
+        setTrackingError('');
+      })
+      .catch(() => {
+        setTrackingError('Could not load live tracking for this shipment.');
+      })
+      .finally(() => setLoadingTracking(false));
+  }, []);
+
+  // Poll the selected shipment's tracking feed so the vehicle marker moves
+  // as the driver's device reports new coordinates.
+  useEffect(() => {
+    if (!selectedId) {
+      setTracking(null);
+      return undefined;
+    }
+
+    setLoadingTracking(true);
+    fetchTracking(selectedId);
+
+    clearInterval(pollRef.current);
+    pollRef.current = setInterval(() => fetchTracking(selectedId), POLL_INTERVAL_MS);
+
+    return () => clearInterval(pollRef.current);
+  }, [selectedId, fetchTracking]);
+
   return (
     <div className="p-6 w-full">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Live Truck Tracking</h1>
-      
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Tracking Sidebar */}
-        <div className="w-full md:w-1/3 bg-white p-6 rounded-lg shadow border border-gray-100">
-          <h2 className="font-semibold text-gray-700 mb-4">Active Shipments</h2>
-          
-          <div className="border border-green-200 bg-green-50 rounded p-4 mb-3">
-            <h4 className="font-bold text-green-800 text-sm">Truck: TN-01-AB-1234</h4>
-            <p className="text-xs text-gray-600 mt-1">Status: In Transit</p>
-            <p className="text-xs text-gray-600">ETA: 4 Hours</p>
-          </div>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-800">Live Truck Tracking</h1>
+        {tracking && (
+          <span className="text-xs text-gray-400">Auto-refreshes every {POLL_INTERVAL_MS / 1000}s</span>
+        )}
+      </div>
 
-          <div className="border border-gray-200 rounded p-4">
-            <h4 className="font-bold text-gray-800 text-sm">Truck: MH-12-XY-9876</h4>
-            <p className="text-xs text-gray-600 mt-1">Status: Loading</p>
-            <p className="text-xs text-gray-600">ETA: N/A</p>
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Shipment Sidebar */}
+        <div className="w-full md:w-1/3 bg-white p-6 rounded-lg shadow border border-gray-100">
+          <h2 className="font-semibold text-gray-700 mb-4">
+            {user?.role === 'driver' ? 'Your Trips' : 'Your Shipments'}
+          </h2>
+
+          {error && <p className="text-sm text-danger">{error}</p>}
+
+          {shipments === null && !error && (
+            <p className="text-sm text-gray-400">Loading shipments…</p>
+          )}
+
+          {shipments?.length === 0 && (
+            <p className="text-sm text-gray-400">No shipments to track yet.</p>
+          )}
+
+          <div className="space-y-3">
+            {shipments?.map((s) => {
+              const isSelected = s._id === selectedId;
+              const statusStyle = STATUS_STYLES[s.status] || STATUS_STYLES.requested;
+              return (
+                <button
+                  key={s._id}
+                  type="button"
+                  onClick={() => setSelectedId(s._id)}
+                  className={`w-full text-left border rounded p-4 transition ${statusStyle} ${
+                    isSelected ? 'ring-2 ring-primary' : ''
+                  }`}
+                >
+                  <h4 className="font-bold text-sm">
+                    {s.assignedVehicle?.registrationNumber || `Shipment #${s._id.slice(-6).toUpperCase()}`}
+                  </h4>
+                  <p className="text-xs mt-1 capitalize">Status: {formatStatus(s.status)}</p>
+                  <p className="text-xs">
+                    {s.pickup?.city} → {s.drop?.city}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Map Area Placeholder */}
-        <div className="w-full md:w-2/3 bg-gray-200 rounded-lg shadow border border-gray-300 flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <p className="text-gray-500 font-medium">Map Integration Placeholder</p>
-            <p className="text-sm text-gray-400">(Google Maps or Leaflet API goes here)</p>
-          </div>
+        {/* Map Area */}
+        <div className="w-full md:w-2/3">
+          {trackingError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-danger">{trackingError}</div>
+          )}
+
+          {loadingTracking && !tracking && (
+            <div className="flex min-h-[400px] items-center justify-center rounded-lg border border-gray-300 bg-gray-100">
+              <p className="text-gray-500">Loading map…</p>
+            </div>
+          )}
+
+          {!selectedId && !loadingTracking && (
+            <div className="flex min-h-[400px] items-center justify-center rounded-lg border border-gray-300 bg-gray-100">
+              <p className="text-gray-500">Select a shipment to view its live location.</p>
+            </div>
+          )}
+
+          {tracking && (
+            <>
+              <TrackingMap tracking={tracking} className="shadow border border-gray-300" />
+
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-lg border border-gray-200 bg-white p-3">
+                  <p className="text-[11px] uppercase text-gray-400">Status</p>
+                  <p className="text-sm font-semibold capitalize text-gray-800">{formatStatus(tracking.status)}</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-3">
+                  <p className="text-[11px] uppercase text-gray-400">Driver</p>
+                  <p className="text-sm font-semibold text-gray-800">{tracking.driver?.name || 'Not yet assigned'}</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-3">
+                  <p className="text-[11px] uppercase text-gray-400">Vehicle</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {tracking.vehicle ? `${tracking.vehicle.registrationNumber} (${tracking.vehicle.type})` : 'Not yet assigned'}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
