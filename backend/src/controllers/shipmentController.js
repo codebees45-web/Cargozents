@@ -5,10 +5,6 @@ const Review = require('../models/Review');
 const { calculatePrice } = require('../utils/pricingEngine');
 const { findMatches } = require('../utils/matchingEngine');
 
-/**
- * POST /api/shipments
- * Shipper posts a new shipment (manual posting or from a fulfilled Order).
- */
 const createShipment = async (req, res, next) => {
   try {
     const {
@@ -82,7 +78,6 @@ const createShipment = async (req, res, next) => {
   }
 };
 
-/** GET /api/shipments/mine — shipper's own shipments */
 const getMyShipments = async (req, res, next) => {
   try {
     const shipments = await Shipment.find({ shipper: req.user._id })
@@ -90,8 +85,6 @@ const getMyShipments = async (req, res, next) => {
       .populate('assignedDriver', 'name phone driverProfile.rating')
       .populate('assignedVehicle', 'registrationNumber type');
 
-    // Mark which delivered shipments this shipper has already reviewed so
-    // the UI can show "Rate driver" only where it's still actionable.
     const reviewedIds = new Set(
       (await Review.find({ reviewer: req.user._id, shipment: { $ne: null } }, 'shipment')).map((r) =>
         r.shipment.toString()
@@ -108,7 +101,6 @@ const getMyShipments = async (req, res, next) => {
   }
 };
 
-/** GET /api/shipments/assigned-to-me — driver's assigned/active loads */
 const getAssignedShipments = async (req, res, next) => {
   try {
     const shipments = await Shipment.find({ assignedDriver: req.user._id })
@@ -120,7 +112,23 @@ const getAssignedShipments = async (req, res, next) => {
   }
 };
 
-/** GET /api/shipments/:id — detail, visible to shipper, assigned driver, or admin */
+/** GET /api/shipments/agency-fleet — agency's fleet shipments (any vehicle they own) */
+const getAgencyShipments = async (req, res, next) => {
+  try {
+    const agencyVehicleIds = await Vehicle.find({ agency: req.user._id }).distinct('_id');
+
+    const shipments = await Shipment.find({ assignedVehicle: { $in: agencyVehicleIds } })
+      .sort({ createdAt: -1 })
+      .populate('shipper', 'name phone')
+      .populate('assignedDriver', 'name phone')
+      .populate('assignedVehicle', 'registrationNumber type');
+
+    res.status(200).json({ success: true, shipments });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getShipmentById = async (req, res, next) => {
   try {
     const shipment = await Shipment.findById(req.params.id)
@@ -144,11 +152,6 @@ const getShipmentById = async (req, res, next) => {
   }
 };
 
-/**
- * PATCH /api/shipments/:id/respond
- * Driver accepts or rejects an assigned load.
- * Body: { accept: boolean }
- */
 const respondToAssignment = async (req, res, next) => {
   try {
     const { accept } = req.body;
@@ -166,8 +169,6 @@ const respondToAssignment = async (req, res, next) => {
       shipment.status = 'accepted';
       shipment.trackingHistory.push({ status: 'accepted', timestamp: new Date() });
 
-      // Vehicle is now committed to this load, so it's no longer "on empty
-      // return" — that state resumes only after this delivery completes.
       await Vehicle.findByIdAndUpdate(shipment.assignedVehicle, {
         isOnEmptyReturn: false,
         emptyReturnSince: null,
@@ -178,7 +179,6 @@ const respondToAssignment = async (req, res, next) => {
       shipment.assignedDriver = null;
       shipment.assignedVehicle = null;
       shipment.assignedAt = null;
-      // Falls back to 'requested' so it re-enters the admin assignment queue.
       shipment.status = 'requested';
     }
 
@@ -195,6 +195,7 @@ const NEXT_STATUS = {
   in_transit: 'delivered',
 };
 
+<<<<<<< HEAD
 // Mirrors a shipment's lifecycle onto its linked Order (if any), so an
 // order created from checkout can actually reach 'delivered' and become
 // reviewable — see reviewController.reviewOrderShipper.
@@ -208,6 +209,8 @@ const SHIPMENT_TO_ORDER_STATUS = {
  * Driver advances shipment through its delivery lifecycle.
  * Body: { coordinates?: [lng, lat] }
  */
+=======
+>>>>>>> fb0e1b7 (Updated frontend changes)
 const advanceShipmentStatus = async (req, res, next) => {
   try {
     const { coordinates } = req.body;
@@ -231,9 +234,6 @@ const advanceShipmentStatus = async (req, res, next) => {
     });
 
     if (next_ === 'delivered') {
-      // Delivery complete — the vehicle is now empty. Flip it back to
-      // "on empty return" so the matching engine can offer it a backhaul
-      // load on its way home, closing the loop this whole product exists for.
       await Vehicle.findByIdAndUpdate(shipment.assignedVehicle, {
         isOnEmptyReturn: true,
         emptyReturnSince: new Date(),
@@ -261,7 +261,6 @@ const advanceShipmentStatus = async (req, res, next) => {
   }
 };
 
-/** GET /api/shipments/:id/matches — admin: ranked candidate drivers for this shipment */
 const getMatchesForShipment = async (req, res, next) => {
   try {
     const shipment = await Shipment.findById(req.params.id);
@@ -289,10 +288,6 @@ const getMatchesForShipment = async (req, res, next) => {
   }
 };
 
-/**
- * PATCH /api/shipments/:id/assign — admin assigns a driver+vehicle.
- * Body: { vehicleId }
- */
 const assignShipment = async (req, res, next) => {
   try {
     const { vehicleId } = req.body;
@@ -314,9 +309,6 @@ const assignShipment = async (req, res, next) => {
     shipment.status = 'assigned';
     shipment.isBackhaulMatch = vehicle.isOnEmptyReturn;
 
-    // Recompute the final price now that we know if it's a backhaul match
-    // (which carries a discount) — the shipper's original quote was an
-    // estimate; this is the authoritative price.
     const { estimatedPrice } = calculatePrice({
       pickupCoordinates: shipment.pickup.location.coordinates,
       dropCoordinates: shipment.drop.location.coordinates,
@@ -338,14 +330,6 @@ const assignShipment = async (req, res, next) => {
   }
 };
 
-/**
- * GET /api/shipments/:id/track
- * Live tracking feed for a shipment: pickup/drop points, the assigned
- * vehicle's last-known position, and the full breadcrumb trail. Visible
- * to the shipper who posted it, the assigned driver, an admin, or — since
- * a shipment can originate from a fulfilled Order — the buyer who placed
- * that order.
- */
 const getShipmentTracking = async (req, res, next) => {
   try {
     const shipment = await Shipment.findById(req.params.id)
@@ -396,6 +380,7 @@ module.exports = {
   createShipment,
   getMyShipments,
   getAssignedShipments,
+  getAgencyShipments,
   getShipmentById,
   respondToAssignment,
   advanceShipmentStatus,

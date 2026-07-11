@@ -28,13 +28,36 @@ const truckRoutes = require('./routes/truckRoutes');
 
 const logger = require("./utils/logger");
 
-// Connect database
-connectDB();
-
-// Init WhatsApp client (scan the QR code printed in this terminal on first run)
-initWhatsApp();
-
 const app = express();
+let server = null;
+
+const startServer = async () => {
+  try {
+    await connectDB();
+    initWhatsApp();
+
+    const PORT = process.env.PORT || 5000;
+    server = app.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
+    });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.error(`Port ${PORT} is already in use. Please stop the existing process or use a different PORT.`);
+        console.error(`Port ${PORT} is already in use. Please stop the existing process or use a different PORT.`);
+      } else {
+        logger.error(`Server error: ${err.message}`);
+        console.error(`Server error: ${err.message}`);
+      }
+      process.exit(1);
+    });
+  } catch (err) {
+    logger.error(`Startup failed: ${err.message}`);
+    console.error(`Startup failed: ${err.message}`);
+    process.exit(1);
+  }
+};
 
 // Middleware
 app.use(helmet());
@@ -82,12 +105,18 @@ app.use((req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// Start server
-const PORT = process.env.PORT || 5000;
+startServer();
 
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  console.log(`Server running on port ${PORT}`);
+process.on('unhandledRejection', (reason) => {
+  logger.error(`Unhandled promise rejection: ${reason}`);
+  console.error('Unhandled promise rejection:', reason);
+  if (server && server.close) server.close(() => process.exit(1));
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error(`Uncaught exception: ${err.message}`);
+  console.error('Uncaught exception:', err);
+  if (server && server.close) server.close(() => process.exit(1));
 });
 
 module.exports = app;

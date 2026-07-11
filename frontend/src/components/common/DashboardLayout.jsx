@@ -1,6 +1,6 @@
 import Logo from './Logo';
 import { useAuth } from '../../context/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 const navByRole = {
   buyer: [
@@ -45,22 +45,24 @@ const DashboardLayout = ({ title, subtitle, children }) => {
           <Logo />
         </a>
         <nav className="mt-10 space-y-1">
-  {nav.map((item) => {
-    const isActive = location.pathname === item.href;
-    return (
-      <a
-        key={item.href}
-        href={item.href}
-        className={`flex items-center gap-2 rounded-lg px-3 py-2 font-mono-ls text-[12px] tracking-wide transition ${
-          isActive ? 'bg-primary text-white shadow-sm' : 'text-muted hover:bg-primary/5 hover:text-primary'
-        }`}
-      >
-        {isActive && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
-        {item.label.toUpperCase()}
-      </a>
-    );
-  })}
-</nav>
+          {nav.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                className={({ isActive: active }) =>
+                  `flex items-center gap-2 rounded-lg px-3 py-2 font-mono-ls text-[12px] tracking-wide transition ${
+                    active ? 'bg-primary text-white shadow-sm' : 'text-muted hover:bg-primary/5 hover:text-primary'
+                  }`
+                }
+              >
+                {active && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                {item.label.toUpperCase()}
+              </NavLink>
+            );
+          })}
+        </nav>
       </aside>
 
       {/* Main */}

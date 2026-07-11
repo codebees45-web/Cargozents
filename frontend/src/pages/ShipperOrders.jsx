@@ -1,6 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
-import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import { getReceivedOrders, confirmOrder } from '../services/orderService';
 

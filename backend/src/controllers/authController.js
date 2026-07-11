@@ -45,7 +45,11 @@ const register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
     }
 
+<<<<<<< HEAD
     const allowedRoles = ['buyer', 'shipper', 'driver', 'agency'];
+=======
+    const allowedRoles = ['buyer', 'shipper', 'driver', 'agency', 'admin'];
+>>>>>>> fb0e1b7 (Updated frontend changes)
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ success: false, message: `Role must be one of: ${allowedRoles.join(', ')}` });
     }

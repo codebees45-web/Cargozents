@@ -16,7 +16,7 @@ const AgencyOverview = () => {
     
     try {
       // Retrieve the token from storage
-      let token = localStorage.getItem('token'); 
+      let token = localStorage.getItem('loadshare_token');
       
       if (!token) {
         throw new Error('No authentication token found. Please try logging in again.');
@@ -49,7 +49,7 @@ const AgencyOverview = () => {
       }
       
       const data = await response.json();
-      setRecentOrders(data);
+      setRecentOrders(data.orders || []);
       
     } catch (err) {
       console.error("Error fetching overview orders:", err);
@@ -59,19 +59,18 @@ const AgencyOverview = () => {
     }
   };
 
-  // Helper function to dynamically style the status badges
   const getStatusStyle = (status) => {
     const normalizedStatus = (status || 'pending').toLowerCase();
     
     switch (normalizedStatus) {
       case 'pending':
-        return 'bg-amber-100 text-amber-700 border-amber-200'; // Waiting for confirmation
+        return 'bg-amber-100 text-amber-700 border-amber-200';
       case 'confirmed':
       case 'on going':
       case 'ongoing':
-        return 'bg-blue-100 text-blue-700 border-blue-200'; // Truck onboard / In transit
+        return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'completed':
-        return 'bg-[#249B74]/10 text-[#1C4E3A] border-[#249B74]/20'; // Trip finished
+        return 'bg-[#249B74]/10 text-[#1C4E3A] border-[#249B74]/20';
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
@@ -80,12 +79,10 @@ const AgencyOverview = () => {
   return (
     <div className="space-y-8">
       
-      {/* PAGE HEADER */}
       <div>
         <h2 className="text-2xl font-bold text-[#133C2C] tracking-tight">Agency Overview</h2>
       </div>
 
-      {/* TOP STAT CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-xs">
           <p className="text-sm font-semibold text-gray-500 mb-1">Total Orders</p>
@@ -105,7 +102,6 @@ const AgencyOverview = () => {
         </div>
       </div>
 
-      {/* RECENT ORDERS STATUS TABLE */}
       <div className="bg-white border border-gray-100 rounded-xl shadow-xs overflow-hidden">
         
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">

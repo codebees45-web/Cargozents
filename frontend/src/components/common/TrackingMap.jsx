@@ -4,6 +4,7 @@ import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { fakeTracking } from '../../data/fakeMapData';
 
 // Vite bundles the default Leaflet marker PNGs under a hashed path that the
 // library's own CSS doesn't know about, so the default icon shows up broken
@@ -67,9 +68,12 @@ const FitBounds = ({ points }) => {
  * GET /api/shipments/:id/track.
  */
 const TrackingMap = ({ tracking, className = '' }) => {
-  const pickup = tracking?.pickup?.location?.coordinates;
-  const drop = tracking?.drop?.location?.coordinates;
-  const vehicleCoords = tracking?.vehicle?.currentLocation?.coordinates;
+  const trackingData = tracking || fakeTracking;
+  const isDemo = !tracking;
+
+  const pickup = trackingData?.pickup?.location?.coordinates;
+  const drop = trackingData?.drop?.location?.coordinates;
+  const vehicleCoords = trackingData?.vehicle?.currentLocation?.coordinates;
 
   const pickupLatLng = isRealPoint(pickup) ? toLatLng(pickup) : null;
   const dropLatLng = isRealPoint(drop) ? toLatLng(drop) : null;
@@ -92,49 +96,56 @@ const TrackingMap = ({ tracking, className = '' }) => {
   }
 
   return (
-    <MapContainer center={points[0] || fallbackCenter} zoom={12} scrollWheelZoom className={`min-h-[400px] w-full rounded-lg ${className}`}>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <FitBounds points={points} />
-
-      {pickupLatLng && (
-        <Marker position={pickupLatLng} icon={pickupIcon}>
-          <Popup>
-            <strong>Pickup</strong>
-            <br />
-            {tracking.pickup.address}, {tracking.pickup.city}
-          </Popup>
-        </Marker>
+    <div className={`relative min-h-[400px] w-full rounded-lg overflow-hidden ${className}`}>
+      {isDemo && (
+        <div className="absolute right-4 top-4 z-10 rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-yellow-700 shadow-sm">
+          Demo tracking data
+        </div>
       )}
+      <MapContainer center={points[0] || fallbackCenter} zoom={12} scrollWheelZoom className="h-full w-full">
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <FitBounds points={points} />
 
-      {dropLatLng && (
-        <Marker position={dropLatLng} icon={dropIcon}>
-          <Popup>
-            <strong>Drop</strong>
-            <br />
-            {tracking.drop.address}, {tracking.drop.city}
-          </Popup>
-        </Marker>
-      )}
+        {pickupLatLng && (
+          <Marker position={pickupLatLng} icon={pickupIcon}>
+            <Popup>
+              <strong>Pickup</strong>
+              <br />
+              {trackingData.pickup.address}, {trackingData.pickup.city}
+            </Popup>
+          </Marker>
+        )}
+
+        {dropLatLng && (
+          <Marker position={dropLatLng} icon={dropIcon}>
+            <Popup>
+              <strong>Drop</strong>
+              <br />
+              {trackingData.drop.address}, {trackingData.drop.city}
+            </Popup>
+          </Marker>
+        )}
 
       {pickupLatLng && dropLatLng && (
         <Polyline positions={[pickupLatLng, dropLatLng]} pathOptions={{ color: '#1B4D3E', weight: 3, dashArray: '6 8' }} />
       )}
 
-      {vehicleLatLng && (
-        <Marker position={vehicleLatLng} icon={truckIcon}>
-          <Popup>
-            <strong>{tracking.vehicle?.registrationNumber || 'Vehicle'}</strong>
-            <br />
-            {tracking.vehicle?.type}
-            <br />
-            Status: {tracking.status}
-          </Popup>
-        </Marker>
-      )}
-    </MapContainer>
+        {vehicleLatLng && (
+          <Marker position={vehicleLatLng} icon={truckIcon}>
+            <Popup>
+              <strong>{trackingData.vehicle?.registrationNumber || 'Vehicle'}</strong>
+              <br />
+              {trackingData.vehicle?.type}
+              <br />
+              Status: {trackingData.status}
+            </Popup>
+          </Marker>
+        )}
+      </MapContainer>
+    </div>
   );
 };
 

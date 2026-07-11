@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import 'leaflet/dist/leaflet.css';
 
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -29,6 +30,7 @@ import Privacy from './pages/Privacy';
 import AdminComplaints from './pages/AdminComplaints';
 import AdminReports from './pages/AdminReports';
 import ComplaintsPage from './pages/ComplaintsPage';
+import Profile from './pages/Profile';
 import ShipperProfile from './pages/ShipperProfile';
 import ShipperProducts from './pages/ShipperProducts';
 import ShipperOrders from './pages/ShipperOrders';
@@ -72,6 +74,14 @@ function App() {
             }
           />
           <Route
+            path="/buyer/orders"
+            element={
+              <ProtectedRoute allowedRoles={['buyer']}>
+                <BuyerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/shipper/dashboard"
             element={
               <ProtectedRoute allowedRoles={['shipper']}>
@@ -79,7 +89,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* new route, added right before the existing "/shipper/dashboard" route */}
           <Route
             path="/buyer/orders/:orderId/track"
             element={
@@ -107,8 +116,8 @@ function App() {
           <Route
             path="/profile"
             element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <ShipperProfile />
+              <ProtectedRoute allowedRoles={['buyer', 'shipper', 'driver', 'agency', 'admin']}>
+                <Profile />
               </ProtectedRoute>
             }
           />

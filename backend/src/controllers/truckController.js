@@ -1,11 +1,12 @@
-const Truck = require('../models/Truck'); // Assuming you have a Truck model
+const Truck = require('../models/Vehicle');
 
 exports.getAvailableTrucks = async (req, res) => {
   try {
     // Find trucks belonging to this specific logged-in agency that are available
+    // "Available" matches the agency's manual isActive toggle (see AvailableTrucks.jsx)
     const availableTrucks = await Truck.find({ 
       agency: req.user._id, 
-      status: 'available' 
+      isActive: true 
     });
     
     res.status(200).json(availableTrucks);

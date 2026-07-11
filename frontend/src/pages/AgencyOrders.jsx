@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
 const AgencyOrders = () => {
-  // --- 1. STATE MANAGEMENT ---
   const [orders, setOrders] = useState([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [error, setError] = useState(null);
 
-  // Modal and DB Fetching State for Trucks
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [availableTrucks, setAvailableTrucks] = useState([]);
   const [isLoadingTrucks, setIsLoadingTrucks] = useState(false);
 
-  // --- 2. FETCH REAL ORDERS FROM DATABASE ---
   useEffect(() => {
     fetchRealOrders();
   }, []);
@@ -21,13 +18,12 @@ const AgencyOrders = () => {
     setIsLoadingOrders(true);
     setError(null);
     try {
-      let token = localStorage.getItem('token'); 
+      let token = localStorage.getItem('loadshare_token');
       
       if (!token) {
         throw new Error('No authentication token found. Please try logging in again.');
       }
 
-      // FIX: Clean up accidental surrounding quotes embedded by the storage wrapper
       token = token.replace(/^"|"$/g, '');
 
       const response = await fetch('http://localhost:5000/api/orders/received', {
@@ -51,9 +47,7 @@ const AgencyOrders = () => {
       }
       
       const data = await response.json();
-      
-      // FIX REMOVED: Deleted the old mock lines that were forcing an empty array override here!
-      setOrders(data); 
+      setOrders(data.orders || []);
       
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -63,19 +57,8 @@ const AgencyOrders = () => {
     }
   };
 
-  // --- 3. ACTION HANDLERS ---
   const handleDecline = async (orderId) => {
-    // Optimistically remove from UI
     setOrders(orders.filter((order) => (order._id || order.id) !== orderId));
-    
-    // Optional Backend Integration:
-    // try {
-    //   let token = localStorage.getItem('token')?.replace(/^"|"$/g, '');
-    //   await fetch(`http://localhost:5000/api/orders/${orderId}/decline`, { 
-    //      method: 'PATCH',
-    //      headers: { 'Authorization': `Bearer ${token}` }
-    //   });
-    // } catch(err) { console.error(err); }
   };
 
   const handleAccept = (order) => {
@@ -90,11 +73,9 @@ const AgencyOrders = () => {
     setAvailableTrucks([]);
   };
 
-  // --- 4. FETCH AVAILABLE TRUCKS ---
   const fetchAvailableTrucks = async () => {
     setIsLoadingTrucks(true);
     try {
-      // Temporary fallback mock until your truck endpoint is ready
       await new Promise(resolve => setTimeout(resolve, 600));
       
       setAvailableTrucks([
@@ -125,7 +106,6 @@ const AgencyOrders = () => {
         )}
       </div>
 
-      {/* ORDERS TABLE */}
       <div className="bg-white border border-gray-100 rounded-xl shadow-xs overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -200,7 +180,6 @@ const AgencyOrders = () => {
         </table>
       </div>
 
-      {/* POPUP MODAL (Available Trucks) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">

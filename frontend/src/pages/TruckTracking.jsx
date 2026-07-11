@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getMyShipments, getAssignedShipments, getShipmentTracking } from '../services/shipmentService';
 import TrackingMap from '../components/common/TrackingMap';
+import { fakeTracking } from '../data/fakeMapData';
+import { getMyShipments, getAssignedShipments, getAgencyShipments, getShipmentTracking } from '../services/shipmentService';
 
 const POLL_INTERVAL_MS = 15000;
 
@@ -31,11 +32,12 @@ const TruckTracking = () => {
   const [loadingTracking, setLoadingTracking] = useState(false);
   const pollRef = useRef(null);
 
-  // Load the list of shipments this user is allowed to see. Drivers see
-  // what's assigned to them; shippers/agencies see what they've posted.
   useEffect(() => {
     let cancelled = false;
-    const fetchShipments = user?.role === 'driver' ? getAssignedShipments : getMyShipments;
+    const fetchShipments =
+      user?.role === 'driver' ? getAssignedShipments :
+      user?.role === 'agency' ? getAgencyShipments :
+      getMyShipments;
 
     fetchShipments()
       .then(({ data }) => {
@@ -67,8 +69,6 @@ const TruckTracking = () => {
       .finally(() => setLoadingTracking(false));
   }, []);
 
-  // Poll the selected shipment's tracking feed so the vehicle marker moves
-  // as the driver's device reports new coordinates.
   useEffect(() => {
     if (!selectedId) {
       setTracking(null);
@@ -94,7 +94,6 @@ const TruckTracking = () => {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Shipment Sidebar */}
         <div className="w-full md:w-1/3 bg-white p-6 rounded-lg shadow border border-gray-100">
           <h2 className="font-semibold text-gray-700 mb-4">
             {user?.role === 'driver' ? 'Your Trips' : 'Your Shipments'}
@@ -136,7 +135,6 @@ const TruckTracking = () => {
           </div>
         </div>
 
-        {/* Map Area */}
         <div className="w-full md:w-2/3">
           {trackingError && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-danger">{trackingError}</div>
@@ -154,23 +152,33 @@ const TruckTracking = () => {
             </div>
           )}
 
-          {tracking && (
+          {selectedId && (
             <>
-              <TrackingMap tracking={tracking} className="shadow border border-gray-300" />
+              {!tracking && (
+                <div className="mb-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
+                  Demo tracking data is displayed until live shipment location is available.
+                </div>
+              )}
+
+              <TrackingMap tracking={tracking || fakeTracking} className="shadow border border-gray-300" />
 
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="rounded-lg border border-gray-200 bg-white p-3">
                   <p className="text-[11px] uppercase text-gray-400">Status</p>
-                  <p className="text-sm font-semibold capitalize text-gray-800">{formatStatus(tracking.status)}</p>
+                  <p className="text-sm font-semibold capitalize text-gray-800">
+                    {tracking ? formatStatus(tracking.status) : formatStatus(fakeTracking.status)}
+                  </p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-white p-3">
                   <p className="text-[11px] uppercase text-gray-400">Driver</p>
-                  <p className="text-sm font-semibold text-gray-800">{tracking.driver?.name || 'Not yet assigned'}</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {tracking?.driver?.name || fakeTracking.driver.name || 'Not yet assigned'}
+                  </p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-white p-3">
                   <p className="text-[11px] uppercase text-gray-400">Vehicle</p>
                   <p className="text-sm font-semibold text-gray-800">
-                    {tracking.vehicle ? `${tracking.vehicle.registrationNumber} (${tracking.vehicle.type})` : 'Not yet assigned'}
+                    {tracking?.vehicle ? `${tracking.vehicle.registrationNumber} (${tracking.vehicle.type})` : `${fakeTracking.vehicle.registrationNumber} (${fakeTracking.vehicle.type})`}
                   </p>
                 </div>
               </div>

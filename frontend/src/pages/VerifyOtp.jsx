@@ -16,7 +16,7 @@ const VerifyOtp = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { updateUser } = useAuth();
-  const { userId, email, phone } = location.state || {};
+  const { userId, email } = location.state || {};
 
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
