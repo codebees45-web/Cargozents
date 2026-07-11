@@ -103,6 +103,10 @@ const verifyPayment = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing payment verification fields' });
     }
 
+    if (!['basic', 'premium'].includes(plan)) {
+      return res.status(400).json({ success: false, message: 'plan must be "basic" or "premium"' });
+    }
+
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)

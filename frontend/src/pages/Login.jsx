@@ -29,7 +29,17 @@ const Login = () => {
     const user = await login(form.email, form.password);
     navigate(roleRedirect[user.role] || '/');
   } catch (err) {
-    setError(err.response?.data?.message || 'Login failed. Check your details and try again.');
+    const data = err.response?.data;
+    if (err.response?.status === 403 && data?.userId) {
+      // Account exists but was never verified — send them back to the OTP
+      // screen instead of a dead end, so an interrupted signup is always
+      // recoverable from the login page.
+      navigate('/verify-otp', {
+        state: { userId: data.userId, email: data.email, phone: data.phone },
+      });
+      return;
+    }
+    setError(data?.message || 'Login failed. Check your details and try again.');
   } finally {
     setLoading(false);
   }

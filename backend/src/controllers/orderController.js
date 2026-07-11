@@ -30,12 +30,35 @@ const createOrder = async (req, res, next) => {
     let productTotal = 0;
     const orderItems = items.map((item) => {
       const product = products.find((p) => p._id.toString() === item.product);
-      if (item.quantity > product.stock) {
-        throw Object.assign(new Error(`Insufficient stock for ${product.name}`), { statusCode: 400 });
-      }
       productTotal += product.price * item.quantity;
       return { product: product._id, quantity: item.quantity, priceAtPurchase: product.price };
     });
+
+    // Atomically claim stock: each update only succeeds if enough stock is
+    // still available at the moment it runs, closing the check-then-write
+    // race where two concurrent orders could both pass a separate check.
+    const stockUpdates = await Promise.all(
+      orderItems.map((item) =>
+        Product.findOneAndUpdate(
+          { _id: item.product, stock: { $gte: item.quantity } },
+          { $inc: { stock: -item.quantity } },
+          { new: true }
+        )
+      )
+    );
+
+    const failedIndex = stockUpdates.findIndex((updated) => !updated);
+    if (failedIndex !== -1) {
+      // Roll back any stock we did manage to claim before hitting the one
+      // that failed, then report which product ran out.
+      await Promise.all(
+        stockUpdates
+          .map((updated, i) => (updated ? Product.findByIdAndUpdate(orderItems[i].product, { $inc: { stock: orderItems[i].quantity } }) : null))
+          .filter(Boolean)
+      );
+      const failedProduct = products.find((p) => p._id.toString() === orderItems[failedIndex].product.toString());
+      return res.status(400).json({ success: false, message: `Insufficient stock for ${failedProduct?.name || 'a product in your order'}` });
+    }
 
     const order = await Order.create({
       buyer: req.user._id,
@@ -44,13 +67,10 @@ const createOrder = async (req, res, next) => {
       productTotal,
       deliveryAddress,
       productPaymentMethod: productPaymentMethod || 'cod',
-      productPaymentStatus: productPaymentMethod === 'cod' ? 'pending' : 'pending',
+      // Both COD and prepaid orders start 'pending' until a payment-capture
+      // flow (e.g. a Razorpay webhook) actually marks this 'paid'/'failed'.
+      productPaymentStatus: 'pending',
     });
-
-    // Decrement stock now the order is placed.
-    await Promise.all(
-      orderItems.map((item) => Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } }))
-    );
 
     res.status(201).json({ success: true, order });
   } catch (err) {

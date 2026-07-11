@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import AuthLayout from '../components/common/AuthLayout';
-import { verifyOtp } from '../services/authService';
+import { verifyOtp, resendOtp } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 
 const roleRedirect = {
@@ -21,6 +21,22 @@ const VerifyOtp = () => {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+
+  const handleResend = async () => {
+    setResendMessage('');
+    setError('');
+    setResending(true);
+    try {
+      await resendOtp({ userId });
+      setResendMessage('A new code has been sent.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not resend code. Try again shortly.');
+    } finally {
+      setResending(false);
+    }
+  };
 
   if (!userId) {
     return (
@@ -82,6 +98,19 @@ const VerifyOtp = () => {
           className="w-full rounded-lg bg-accent py-3 font-semibold text-primary transition hover:shadow-glow disabled:opacity-60"
         >
           {loading ? 'Verifying…' : 'Verify account'}
+        </button>
+
+        {resendMessage && (
+          <p className="text-center text-xs text-emerald-600">{resendMessage}</p>
+        )}
+
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={resending}
+          className="w-full text-center text-xs font-semibold text-primary hover:underline disabled:opacity-60"
+        >
+          {resending ? 'Resending…' : "Didn't get a code? Resend"}
         </button>
       </form>
     </AuthLayout>

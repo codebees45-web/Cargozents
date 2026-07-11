@@ -45,7 +45,7 @@ const register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
     }
 
-    const allowedRoles = ['shipper', 'driver', 'agency', 'admin'];
+    const allowedRoles = ['buyer', 'shipper', 'driver', 'agency'];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ success: false, message: `Role must be one of: ${allowedRoles.join(', ')}` });
     }
@@ -90,7 +90,9 @@ const register = async (req, res, next) => {
   isSuspended: false,
 });
 
-    logger.info(`OTP for ${phone}: ${otp.code}`); // keep for dev visibility
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info(`OTP for ${phone}: ${otp.code}`); // keep for dev visibility
+    }
     await sendEmail({
       to: email,
       subject: 'Your CargoZent OTP',
@@ -208,7 +210,9 @@ const resendOtp = async (req, res, next) => {
     user.otp = otp;
     await user.save();
 
-    logger.info(`Resent OTP for ${user.phone}: ${otp.code}`);
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info(`Resent OTP for ${user.phone}: ${otp.code}`);
+    }
     await sendEmail({
       to: user.email,
       subject: 'Your CargoZent OTP',
@@ -236,7 +240,13 @@ const login = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
     if (!user.isVerified) {
-      return res.status(403).json({ success: false, message: 'Account not verified. Please verify OTP first.' });
+      return res.status(403).json({
+        success: false,
+        message: 'Account not verified. Please verify OTP first.',
+        userId: user._id,
+        email: user.email,
+        phone: user.phone,
+      });
     }
     if (user.isSuspended) {
       return res.status(403).json({ success: false, message: 'Account suspended. Contact support.' });
@@ -292,7 +302,9 @@ const forgotPassword = async (req, res, next) => {
     user.otp = otp;
     await user.save();
 
-    logger.info(`Password reset OTP for ${email}: ${otp.code}`);
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info(`Password reset OTP for ${email}: ${otp.code}`);
+    }
     await sendEmail({
       to: email,
       subject: 'Your CargoZent Password Reset OTP',
@@ -374,7 +386,11 @@ const updateMe = async (req, res, next) => {
     if (req.user.role === 'shipper') {
       if (shipperMode !== undefined) req.user.shipperMode = shipperMode;
       if (shipperProfile?.pickupAddress) {
-        const current = req.user.shipperProfile?.pickupAddress || {};
+        // Same fix as completeProfile(): snapshot the pickupAddress as a
+        // plain object first so the fallback location default reliably
+        // applies instead of resolving to undefined.
+        const currentSnapshot = req.user.shipperProfile?.toObject ? req.user.shipperProfile.toObject() : (req.user.shipperProfile || {});
+        const current = currentSnapshot.pickupAddress || {};
         req.user.shipperProfile.pickupAddress = {
           address: shipperProfile.pickupAddress.address ?? current.address ?? '',
           city: shipperProfile.pickupAddress.city ?? current.city ?? '',
@@ -429,7 +445,11 @@ const completeProfile = async (req, res, next) => {
     }
 
     if (req.user.role === 'shipper' && shipperProfile) {
-      const current = req.user.shipperProfile || {};
+      // Snapshot as a plain object (.toObject()) rather than reading the
+      // live Mongoose subdocument directly — reading nested optional-chain
+      // paths off the un-materialized subdocument can resolve to undefined
+      // even when a schema default exists, causing a cast error on save.
+      const current = req.user.shipperProfile?.toObject ? req.user.shipperProfile.toObject() : (req.user.shipperProfile || {});
       req.user.shipperMode = shipperProfile.shipperMode || req.user.shipperMode;
       req.user.shipperProfile.pickupAddress = {
         address: shipperProfile.pickupAddress?.address || current.pickupAddress?.address || '',

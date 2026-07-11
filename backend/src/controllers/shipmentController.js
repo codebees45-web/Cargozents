@@ -195,6 +195,14 @@ const NEXT_STATUS = {
   in_transit: 'delivered',
 };
 
+// Mirrors a shipment's lifecycle onto its linked Order (if any), so an
+// order created from checkout can actually reach 'delivered' and become
+// reviewable — see reviewController.reviewOrderShipper.
+const SHIPMENT_TO_ORDER_STATUS = {
+  picked_up: 'out_for_delivery',
+  in_transit: 'out_for_delivery',
+  delivered: 'delivered',
+};
 /**
  * PATCH /api/shipments/:id/status
  * Driver advances shipment through its delivery lifecycle.
@@ -238,6 +246,15 @@ const advanceShipmentStatus = async (req, res, next) => {
     }
 
     await shipment.save();
+
+    // Keep the parent Order (if this shipment came from one) in sync so
+    // it can eventually reach 'delivered' and become reviewable.
+    if (shipment.order && SHIPMENT_TO_ORDER_STATUS[next_]) {
+      await Order.findByIdAndUpdate(shipment.order, {
+        status: SHIPMENT_TO_ORDER_STATUS[next_],
+      });
+    }
+
     res.status(200).json({ success: true, shipment });
   } catch (err) {
     next(err);

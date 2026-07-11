@@ -3,7 +3,7 @@ const Complaint = require('../models/Complaint');
 // @desc    Create a new complaint
 // @route   POST /api/complaints
 // @access  Private (user)
-exports.createComplaint = async (req, res) => {
+exports.createComplaint = async (req, res, next) => {
   try {
     const { subject, description, order, shipment } = req.body;
 
@@ -24,14 +24,14 @@ exports.createComplaint = async (req, res) => {
 
     res.status(201).json({ success: true, data: complaint });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
 // @desc    Get all complaints (admin)
 // @route   GET /api/complaints  (or /api/admin/complaints)
 // @access  Private (admin)
-exports.getAllComplaints = async (req, res) => {
+exports.getAllComplaints = async (req, res, next) => {
   try {
     const complaints = await Complaint.find()
       .populate('user', 'name email')
@@ -41,26 +41,26 @@ exports.getAllComplaints = async (req, res) => {
 
     res.status(200).json({ success: true, count: complaints.length, data: complaints });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
 // @desc    Get complaints for the logged-in user
 // @route   GET /api/complaints/my
 // @access  Private (user)
-exports.getMyComplaints = async (req, res) => {
+exports.getMyComplaints = async (req, res, next) => {
   try {
     const complaints = await Complaint.find({ user: req.user.id }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: complaints.length, data: complaints });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
 // @desc    Get single complaint by ID
 // @route   GET /api/complaints/:id
 // @access  Private
-exports.getComplaintById = async (req, res) => {
+exports.getComplaintById = async (req, res, next) => {
   try {
     const complaint = await Complaint.findById(req.params.id)
       .populate('user', 'name email')
@@ -73,14 +73,14 @@ exports.getComplaintById = async (req, res) => {
 
     res.status(200).json({ success: true, data: complaint });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
 // @desc    Update complaint status / admin response
 // @route   PUT /api/complaints/:id
 // @access  Private (admin)
-exports.updateComplaint = async (req, res) => {
+exports.updateComplaint = async (req, res, next) => {
   try {
     const { status, adminResponse } = req.body;
 
@@ -96,14 +96,14 @@ exports.updateComplaint = async (req, res) => {
 
     res.status(200).json({ success: true, data: complaint });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
 // @desc    Delete a complaint
 // @route   DELETE /api/complaints/:id
 // @access  Private (admin)
-exports.deleteComplaint = async (req, res) => {
+exports.deleteComplaint = async (req, res, next) => {
   try {
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) {
@@ -114,6 +114,6 @@ exports.deleteComplaint = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Complaint deleted' });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
