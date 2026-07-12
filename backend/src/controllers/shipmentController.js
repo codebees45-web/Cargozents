@@ -195,7 +195,6 @@ const NEXT_STATUS = {
   in_transit: 'delivered',
 };
 
-<<<<<<< HEAD
 // Mirrors a shipment's lifecycle onto its linked Order (if any), so an
 // order created from checkout can actually reach 'delivered' and become
 // reviewable — see reviewController.reviewOrderShipper.
@@ -209,8 +208,6 @@ const SHIPMENT_TO_ORDER_STATUS = {
  * Driver advances shipment through its delivery lifecycle.
  * Body: { coordinates?: [lng, lat] }
  */
-=======
->>>>>>> fb0e1b7 (Updated frontend changes)
 const advanceShipmentStatus = async (req, res, next) => {
   try {
     const { coordinates } = req.body;
