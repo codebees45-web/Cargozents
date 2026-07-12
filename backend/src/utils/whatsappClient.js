@@ -12,7 +12,12 @@ const initWhatsApp = () => {
     authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }), // persists login, avoids re-scanning QR every restart
     puppeteer: {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',           // 👈 Prevents Chromium memory crashes
+        '--disable-features=site-per-process' // 👈 Crucial: Fixes the 'detached Frame' issue
+      ],
     },
   });
 
@@ -30,9 +35,18 @@ const initWhatsApp = () => {
     logger.error(`WhatsApp auth failed: ${msg}`);
   });
 
-  client.on('disconnected', (reason) => {
+  client.on('disconnected', async (reason) => {
     isReady = false;
-    logger.error(`WhatsApp client disconnected: ${reason}`);
+    logger.error(`WhatsApp client disconnected: ${reason}. Attempting recovery re-initialization...`);
+    
+    // 👈 Gracefully wipe out the broken browser session and restart a clean client
+    try {
+      await client.destroy();
+      client = null; // Clear out current reference
+      initWhatsApp(); // Spin up a fresh client instance automatically
+    } catch (err) {
+      logger.error(`[WHATSAPP] Critical failure during automatic recovery: ${err.message}`);
+    }
   });
 
   client.initialize();
