@@ -1,4 +1,5 @@
 import Logo from './Logo';
+import AnimatedStorybookRoute from './AnimatedStorybookRoute';
 const AuthLayout = ({ eyebrow, title, subtitle, children }) => {
   return (
     <div className="flex min-h-screen bg-background">
@@ -17,21 +18,10 @@ const AuthLayout = ({ eyebrow, title, subtitle, children }) => {
         </div>
       </div>
 
-      {/* Right: manifest-style visual panel, hidden on mobile */}
-      <div className="relative hidden w-1/2 items-center justify-center border-l border-primary/10 bg-secondary/30 md:flex">
-        <div className="w-full max-w-sm font-mono-ls text-xs leading-loose text-[#5B7A70]">
-          <div className="rounded-xl border border-primary/10 bg-background/60 p-6">
-            <p className="text-primary">MANIFEST // LS-{Math.floor(100000 + Math.random() * 900000)}</p>
-            <div className="mt-4 space-y-2">
-              <p>ROLE ............ SHIPPER</p>
-              <p>PICKUP .......... CHENNAI, TN</p>
-              <p>DROP ............ COIMBATORE, TN</p>
-              <p>STATUS .......... <span className="text-success">MATCHED</span></p>
-              <p>RETURN LEG ...... <span className="text-primary">FILLED</span></p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Right: animated storybook route panel, hidden on mobile */}
+<div className="relative hidden w-1/2 items-center justify-center border-l border-primary/10 bg-secondary/30 md:flex">
+  <AnimatedStorybookRoute />
+</div>
     </div>
   );
 };
