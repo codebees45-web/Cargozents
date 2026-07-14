@@ -16,7 +16,10 @@ const VerifyOtp = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { updateUser } = useAuth();
-  const { userId, email } = location.state || {};
+
+  // 1. Get values from React Router state OR fallback to localStorage backup
+  const userId = location.state?.userId || localStorage.getItem('temp_otp_userId');
+  const email = location.state?.email || localStorage.getItem('temp_otp_email');
 
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -38,6 +41,7 @@ const VerifyOtp = () => {
     }
   };
 
+  // 2. If we absolutely have no userId anywhere, render the safety fallback
   if (!userId) {
     return (
       <AuthLayout eyebrow="VERIFY" title="Nothing to verify">
@@ -57,6 +61,11 @@ const VerifyOtp = () => {
       localStorage.setItem('loadshare_token', data.token);
       updateUser(data.user);
       
+      // 3. Success! Now safely wipe out the temp backup keys from storage
+      localStorage.removeItem('temp_otp_userId');
+      localStorage.removeItem('temp_otp_email');
+      localStorage.removeItem('temp_otp_phone'); // Cleans up register's backup too!
+
       if (!data.user.isProfileComplete && data.user.role !== 'admin') {
         navigate('/onboarding');
       } else {
