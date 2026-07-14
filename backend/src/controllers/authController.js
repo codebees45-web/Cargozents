@@ -45,10 +45,6 @@ const register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
     }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 3666a6996227ac3a8728c88c5fb6e7352b717c44
     const allowedRoles = ['buyer', 'shipper', 'driver', 'agency', 'admin'];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ success: false, message: `Role must be one of: ${allowedRoles.join(', ')}` });
@@ -75,24 +71,24 @@ const register = async (req, res, next) => {
     const otp = createOtp();
 
     const user = await User.create({
-  name,
-  email,
-  phone,
-  password,
-  role,
-  shipperMode: role === 'shipper' ? shipperMode : undefined,
-  agencyProfile:
-    role === 'agency'
-      ? {
-          companyName: agencyProfile.companyName,
-          gstNumber: agencyProfile.gstNumber || '',
-          address: agencyProfile.address || {},
-        }
-      : undefined,
-  otp,
-  isVerified: false,
-  isSuspended: false,
-});
+      name,
+      email,
+      phone,
+      password,
+      role,
+      shipperMode: role === 'shipper' ? shipperMode : undefined,
+      agencyProfile:
+        role === 'agency'
+          ? {
+              companyName: agencyProfile.companyName,
+              gstNumber: agencyProfile.gstNumber || '',
+              address: agencyProfile.address || {},
+            }
+          : undefined,
+      otp,
+      isVerified: false,
+      isSuspended: false,
+    });
 
     if (process.env.NODE_ENV !== 'production') {
       logger.info(`OTP for ${phone}: ${otp.code}`); // keep for dev visibility
@@ -380,22 +376,23 @@ const getMe = async (req, res, next) => {
  */
 const updateMe = async (req, res, next) => {
   try {
-    // Explicit whitelist to avoid mass-assignment of protected fields
-    // (role, isVerified, isSuspended, password, otp, etc.)
     const { name, profileImage, shipperMode, shipperProfile, agencyProfile } = req.body;
 
-    if (name !== undefined) req.user.name = name;
-    if (profileImage !== undefined) req.user.profileImage = profileImage;
+    // 🚀 FIX: Load full Mongoose document to prevent "markModified is not a function"
+    const dbUser = await User.findById(req.user._id);
+    if (!dbUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
-    if (req.user.role === 'shipper') {
-      if (shipperMode !== undefined) req.user.shipperMode = shipperMode;
+    if (name !== undefined) dbUser.name = name;
+    if (profileImage !== undefined) dbUser.profileImage = profileImage;
+
+    if (dbUser.role === 'shipper') {
+      if (shipperMode !== undefined) dbUser.shipperMode = shipperMode;
       if (shipperProfile?.pickupAddress) {
-        // Same fix as completeProfile(): snapshot the pickupAddress as a
-        // plain object first so the fallback location default reliably
-        // applies instead of resolving to undefined.
-        const currentSnapshot = req.user.shipperProfile?.toObject ? req.user.shipperProfile.toObject() : (req.user.shipperProfile || {});
+        const currentSnapshot = dbUser.shipperProfile?.toObject ? dbUser.shipperProfile.toObject() : (dbUser.shipperProfile || {});
         const current = currentSnapshot.pickupAddress || {};
-        req.user.shipperProfile.pickupAddress = {
+        dbUser.shipperProfile.pickupAddress = {
           address: shipperProfile.pickupAddress.address ?? current.address ?? '',
           city: shipperProfile.pickupAddress.city ?? current.city ?? '',
           state: shipperProfile.pickupAddress.state ?? current.state ?? '',
@@ -403,40 +400,52 @@ const updateMe = async (req, res, next) => {
           location: shipperProfile.pickupAddress.location ?? current.location ?? { type: 'Point', coordinates: [0, 0] },
         };
       }
-      req.user.markModified('shipperProfile');
+      dbUser.markModified('shipperProfile');
     }
-    if (req.user.role === 'agency' && agencyProfile) {
-  const current = req.user.agencyProfile || {};
-  req.user.agencyProfile = {
-    companyName: agencyProfile.companyName ?? current.companyName ?? '',
-    gstNumber: agencyProfile.gstNumber ?? current.gstNumber ?? '',
-    address: {
-      line1: agencyProfile.address?.line1 ?? current.address?.line1 ?? '',
-      city: agencyProfile.address?.city ?? current.address?.city ?? '',
-      state: agencyProfile.address?.state ?? current.address?.state ?? '',
-      pincode: agencyProfile.address?.pincode ?? current.address?.pincode ?? '',
-    },
-    fleetSize: current.fleetSize ?? 0,
-    rating: current.rating ?? 0,
-    reviewsCount: current.reviewsCount ?? 0,
-  };
-  req.user.markModified('agencyProfile');
-}
+    
+    if (dbUser.role === 'agency' && agencyProfile) {
+      const current = dbUser.agencyProfile || {};
+      dbUser.agencyProfile = {
+        companyName: agencyProfile.companyName ?? current.companyName ?? '',
+        gstNumber: agencyProfile.gstNumber ?? current.gstNumber ?? '',
+        address: {
+          line1: agencyProfile.address?.line1 ?? current.address?.line1 ?? '',
+          city: agencyProfile.address?.city ?? current.address?.city ?? '',
+          state: agencyProfile.address?.state ?? current.address?.state ?? '',
+          pincode: agencyProfile.address?.pincode ?? current.address?.pincode ?? '',
+        },
+        fleetSize: current.fleetSize ?? 0,
+        rating: current.rating ?? 0,
+        reviewsCount: current.reviewsCount ?? 0,
+      };
+      dbUser.markModified('agencyProfile');
+    }
 
-    await req.user.save();
-    res.status(200).json({ success: true, user: req.user });
+    await dbUser.save();
+    res.status(200).json({ success: true, user: dbUser });
   } catch (err) {
     next(err);
   }
 };
+
+/**
+ * PATCH /api/auth/complete-profile
+ * Executed during onboarding steps to lock in profile fields.
+ */
 const completeProfile = async (req, res, next) => {
   try {
     const { profileImage, buyerProfile, shipperProfile, driverProfile, agencyProfile } = req.body;
 
-    if (profileImage !== undefined) req.user.profileImage = profileImage;
+    // 🚀 FIX: Load full Mongoose document to prevent "markModified is not a function"[cite: 8]
+    const dbUser = await User.findById(req.user._id);
+    if (!dbUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
-    if (req.user.role === 'buyer' && buyerProfile) {
-      req.user.buyerProfile = {
+    if (profileImage !== undefined) dbUser.profileImage = profileImage;
+
+    if (dbUser.role === 'buyer' && buyerProfile) {
+      dbUser.buyerProfile = {
         deliveryAddress: {
           address: buyerProfile.deliveryAddress?.address || '',
           city: buyerProfile.deliveryAddress?.city || '',
@@ -445,33 +454,33 @@ const completeProfile = async (req, res, next) => {
         },
         alternatePhone: buyerProfile.alternatePhone || '',
       };
-      req.user.markModified('buyerProfile');
+      dbUser.markModified('buyerProfile');
     }
 
-    if (req.user.role === 'shipper' && shipperProfile) {
-      const current = req.user.shipperProfile?.toObject ? req.user.shipperProfile.toObject() : (req.user.shipperProfile || {});
-      req.user.shipperMode = shipperProfile.shipperMode || req.user.shipperMode;
-      req.user.shipperProfile.pickupAddress = {
+    if (dbUser.role === 'shipper' && shipperProfile) {
+      const current = dbUser.shipperProfile?.toObject ? dbUser.shipperProfile.toObject() : (dbUser.shipperProfile || {});
+      dbUser.shipperMode = shipperProfile.shipperMode || dbUser.shipperMode;
+      dbUser.shipperProfile.pickupAddress = {
         address: shipperProfile.pickupAddress?.address || current.pickupAddress?.address || '',
         city: shipperProfile.pickupAddress?.city || current.pickupAddress?.city || '',
         state: shipperProfile.pickupAddress?.state || current.pickupAddress?.state || '',
         pincode: shipperProfile.pickupAddress?.pincode || current.pickupAddress?.pincode || '',
         location: current.pickupAddress?.location || { type: 'Point', coordinates: [0, 0] },
       };
-      req.user.markModified('shipperProfile');
+      dbUser.markModified('shipperProfile');
     }
 
-    if (req.user.role === 'driver' && driverProfile) {
-      const current = req.user.driverProfile || {};
-      req.user.driverProfile.licenseNumber = driverProfile.licenseNumber || current.licenseNumber || '';
-      req.user.driverProfile.licensePhoto = driverProfile.licensePhoto || current.licensePhoto || '';
-      req.user.driverProfile.idProofPhoto = driverProfile.idProofPhoto || current.idProofPhoto || '';
-      req.user.markModified('driverProfile');
+    if (dbUser.role === 'driver' && driverProfile) {
+      const current = dbUser.driverProfile || {};
+      dbUser.driverProfile.licenseNumber = driverProfile.licenseNumber || current.licenseNumber || '';
+      dbUser.driverProfile.licensePhoto = driverProfile.licensePhoto || current.licensePhoto || '';
+      dbUser.driverProfile.idProofPhoto = driverProfile.idProofPhoto || current.idProofPhoto || '';
+      dbUser.markModified('driverProfile');
     }
 
-    if (req.user.role === 'agency' && agencyProfile) {
-      const current = req.user.agencyProfile || {};
-      req.user.agencyProfile = {
+    if (dbUser.role === 'agency' && agencyProfile) {
+      const current = dbUser.agencyProfile || {};
+      dbUser.agencyProfile = {
         companyName: agencyProfile.companyName || current.companyName || '',
         gstNumber: agencyProfile.gstNumber || current.gstNumber || '',
         address: {
@@ -484,17 +493,18 @@ const completeProfile = async (req, res, next) => {
         rating: current.rating || 0,
         reviewsCount: current.reviewsCount || 0,
       };
-      req.user.markModified('agencyProfile');
+      dbUser.markModified('agencyProfile');
     }
 
-    req.user.isProfileComplete = true;
-    await req.user.save();
+    dbUser.isProfileComplete = true;
+    await dbUser.save(); // Save works flawlessly now![cite: 8]
 
-    res.status(200).json({ success: true, user: req.user });
+    res.status(200).json({ success: true, user: dbUser });
   } catch (err) {
     next(err);
   }
 };
+
 module.exports = {
   register,
   verifyOtp,

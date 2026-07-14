@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import 'leaflet/dist/leaflet.css';
 
@@ -54,6 +55,7 @@ import BuyerCheckout from './pages/BuyerCheckout';
 
 function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <CartProvider>
       <BrowserRouter>
@@ -289,6 +291,7 @@ function App() {
       </BrowserRouter>
       </CartProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

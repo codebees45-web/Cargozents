@@ -2,13 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: 27 77 62;       /* #1B4D3E — headings/text, default (light) theme */
+  --color-accent: 0 230 118;       /* #00E676 — buttons, default (light) theme */
+  --color-secondary: 238 244 241;  /* #EEF4F1 — card backgrounds, default (light) theme */
+  --color-background: 255 255 255; /* #FFFFFF */
+  --color-muted: 91 122 112;       /* #5B7A70 */
+}
+
+html.dark {
+  --color-primary: 240 230 210;    /* beige — headings/text on dark background */
+  --color-accent: 98 129 65;       /* #628141 — buttons in dark mode */
+  --color-secondary: 40 47 37;     /* slightly lighter than bg, for cards */
+  --color-background: 27 33 26;    /* #1B211A */
+  --color-muted: 168 176 150;      /* muted beige-green for secondary text */
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background-color: #FFFFFF;
+  background-color: rgb(var(--color-background));
+  color: rgb(var(--color-primary));
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 h1, h2, h3, h4 {
@@ -19,10 +37,10 @@ h1, h2, h3, h4 {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #EEF4F1;
+  background: rgb(var(--color-secondary));
 }
 ::-webkit-scrollbar-thumb {
-  background: #1B4D3E;
+  background: rgb(var(--color-primary));
   border-radius: 999px;
 }
 
@@ -30,6 +48,9 @@ h1, h2, h3, h4 {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
+/* ============================================================
+   Backhaul route animation (existing)
+   ============================================================ */
 @keyframes draw-route {
   0%, 100% { stroke-dashoffset: 240; }
   50%, 90% { stroke-dashoffset: 0; }
@@ -58,11 +79,65 @@ h1, h2, h3, h4 {
     opacity: 0;
   }
 }
-
 @media (prefers-reduced-motion: reduce) {
   .route-return-leg {
     animation: none;
     stroke: #00E676;
     stroke-dashoffset: 0;
+  }
+}
+
+/* ============================================================
+   CRT screen effect — supporting classes
+   The `crt-scanline`, `crt-static-noise`, `crt-turn-on`, and
+   `crt-flicker` keyframes/animation names live in tailwind.config.js.
+   These classes give them an actual pattern to animate against.
+   ============================================================ */
+
+/* Repeating horizontal scanlines. Pair with `animate-crt-scanline`. */
+.crt-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+/* Faint grainy static texture. Pair with `animate-crt-static-noise`. */
+.crt-noise {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 3px 3px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Darkened edges to sell the "old monitor" look. Layer this behind/above content as needed. */
+.crt-vignette {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  pointer-events: none;
+}
+
+/* Slight barrel-curve illusion + glow, applied to the CRT screen's outer container. */
+.crt-screen {
+  border-radius: 12px;
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(98, 129, 65, 0.25);
+  overflow: hidden;
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt-scanlines,
+  .crt-noise {
+    animation: none !important;
   }
 }

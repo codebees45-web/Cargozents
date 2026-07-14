@@ -1,4 +1,26 @@
 import Logo from '../common/Logo';
+import { useTheme } from '../../context/ThemeContext';
+
+const ThemeToggle = () => {
+  const { isDark, toggleTheme } = useTheme();
+
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label="Toggle dark mode"
+      className="relative flex h-8 w-14 items-center rounded-full border border-primary/20 bg-secondary/60 px-1 transition"
+    >
+      <span
+        className={`flex h-6 w-6 items-center justify-center rounded-full bg-accent text-[11px] transition-transform ${
+          isDark ? 'translate-x-6' : 'translate-x-0'
+        }`}
+      >
+        {isDark ? '🌙' : '☀️'}
+      </span>
+    </button>
+  );
+};
 
 const Navbar = () => {
   return (
@@ -15,6 +37,7 @@ const Navbar = () => {
           <a href="/contact" className="relative py-1 transition hover:text-primary">CONTACT</a>
         </nav>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <a href="/login" className="rounded-lg px-4 py-2 text-sm font-medium text-primary/70 transition hover:text-primary">
             Log in
           </a>

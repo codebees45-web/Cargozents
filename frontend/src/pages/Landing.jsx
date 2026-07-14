@@ -5,10 +5,12 @@ import HowItWorks from '../components/landing/HowItWorks';
 import RolesSection from '../components/landing/RolesSection';
 import CtaSection from '../components/landing/CtaSection';
 import Logo from '../components/common/Logo';
+import CrtOverlay from '../components/common/CrtOverlay';
 
 const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
+      <CrtOverlay />
       <Navbar />
       <main>
         <Hero />

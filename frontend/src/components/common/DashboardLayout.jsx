@@ -61,18 +61,12 @@ const DashboardLayout = ({ title, subtitle, children }) => {
                   }`
                 }
               >
-<<<<<<< HEAD
-                {({ isActive: active }) => (
+                {({ isActive }) => (
                   <>
-                    {active && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                    {isActive && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
                     {item.label.toUpperCase()}
                   </>
                 )}
-=======
-                {/* 🚀 FIXED: Changed 'active' to 'isActive' right here */}
-                {isActive && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
-                {item.label.toUpperCase()}
->>>>>>> 3666a6996227ac3a8728c88c5fb6e7352b717c44
               </NavLink>
             );
           })}
