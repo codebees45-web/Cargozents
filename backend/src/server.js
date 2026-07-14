@@ -24,7 +24,7 @@ const complaintRoutes = require("./routes/complaintRoutes");
 // NEW: Import subscription routes
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const agencyRoutes = require('./routes/agencyRoutes');
-const truckRoutes = require('./routes/truckRoutes');
+const shipmentAnalyticsRoutes = require('./routes/shipmentAnalyticsRoutes');
 
 const logger = require("./utils/logger");
 
@@ -154,7 +154,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use('/api/agency', agencyRoutes);
-app.use('/api/trucks', truckRoutes);
+app.use('/api/shipment-analytics', shipmentAnalyticsRoutes);
 
 // 404 handler
 app.use((req, res) => {

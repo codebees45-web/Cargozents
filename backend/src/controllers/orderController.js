@@ -1,10 +1,68 @@
-const Order = require('../models/Order');
-const Product = require('../models/Product');
+const { pgQuery, withTransaction } = require('../config/postgres');
+const User = require('../models/User');
 const Review = require('../models/Review');
+const mapOrderRow = require('../utils/mapOrderRow');
+const mapProductRow = require('../utils/mapProductRow');
+const crypto = require('crypto');
+
+/** Batched MongoDB lookup for { _id, name, phone } across a set of user ids. */
+const getUsersInfo = async (userIds, fields = 'name') => {
+  const uniqueIds = [...new Set(userIds.filter(Boolean))];
+  if (uniqueIds.length === 0) return new Map();
+  const users = await User.find({ _id: { $in: uniqueIds } }).select(fields);
+  const map = new Map();
+  users.forEach((u) => {
+    map.set(
+      u._id.toString(),
+      fields.includes('phone') ? { _id: u._id, name: u.name, phone: u.phone } : { _id: u._id, name: u.name }
+    );
+  });
+  return map;
+};
+
+/** Fetches order_items rows for a set of order ids, joined with their product row. */
+const getItemsForOrders = async (orderIds, productFields = null) => {
+  if (orderIds.length === 0) return new Map();
+  const result = await pgQuery(
+    `SELECT oi.order_id, oi.quantity, oi.price_at_purchase, p.*
+     FROM order_items oi
+     JOIN products p ON p.id = oi.product_id
+     WHERE oi.order_id = ANY($1)`,
+    [orderIds]
+  );
+
+  const byOrder = new Map();
+  result.rows.forEach((row) => {
+    const productObj = productFields
+      ? pickFields(mapProductRow(row), productFields)
+      : mapProductRow(row);
+
+    const item = {
+      product: productObj,
+      quantity: row.quantity,
+      price_at_purchase: row.price_at_purchase,
+    };
+    if (!byOrder.has(row.order_id)) byOrder.set(row.order_id, []);
+    byOrder.get(row.order_id).push(item);
+  });
+  return byOrder;
+};
+
+/** Trims a mapped product object down to just the fields Mongoose's .populate(..., 'name images') used to select. */
+const pickFields = (product, fields) => {
+  const picked = { _id: product._id };
+  fields.forEach((f) => {
+    if (product[f] !== undefined) picked[f] = product[f];
+  });
+  return picked;
+};
 
 /**
  * POST /api/orders
- * Buyer places an order
+ * Buyer places an order. All items must belong to the same shipper (one
+ * order = one shipper's catalog), matching how a single Shipment will
+ * later be requested to deliver it.
+ * Body: { items: [{ product, quantity }], deliveryAddress, productPaymentMethod }
  */
 const createOrder = async (req, res, next) => {
   try {
@@ -17,11 +75,7 @@ const createOrder = async (req, res, next) => {
       });
     }
 
-    const products = await Product.find({
-      _id: { $in: items.map((i) => i.product) },
-      isActive: true,
-    });
-
+    const products = await Product.find({ _id: { $in: items.map((i) => i.product) }, isActive: true });
     if (products.length !== items.length) {
       return res.status(400).json({
         success: false,
@@ -29,10 +83,7 @@ const createOrder = async (req, res, next) => {
       });
     }
 
-    const shipperIds = new Set(
-      products.map((p) => p.shipper.toString())
-    );
-
+    const shipperIds = new Set(products.map((p) => p.shipper.toString()));
     if (shipperIds.size > 1) {
       return res.status(400).json({
         success: false,
@@ -43,70 +94,37 @@ const createOrder = async (req, res, next) => {
     let productTotal = 0;
 
     const orderItems = items.map((item) => {
-      const product = products.find(
-        (p) => p._id.toString() === item.product
-      );
-
+      const product = products.find((p) => p._id.toString() === item.product);
       productTotal += product.price * item.quantity;
-
-      return {
-        product: product._id,
-        quantity: item.quantity,
-        priceAtPurchase: product.price,
-      };
+      return { product: product._id, quantity: item.quantity, priceAtPurchase: product.price };
     });
 
 
-    // Reduce stock safely
+    // Atomically claim stock: each update only succeeds if enough stock is
+    // still available at the moment it runs, closing the check-then-write
+    // race where two concurrent orders could both pass a separate check.
     const stockUpdates = await Promise.all(
       orderItems.map((item) =>
         Product.findOneAndUpdate(
-          {
-            _id: item.product,
-            stock: { $gte: item.quantity },
-          },
-          {
-            $inc: { stock: -item.quantity },
-          },
-          {
-            new: true,
-          }
+          { _id: item.product, stock: { $gte: item.quantity } },
+          { $inc: { stock: -item.quantity } },
+          { new: true }
         )
       )
     );
 
-
-    const failedIndex = stockUpdates.findIndex(
-      (item) => !item
-    );
-
-
+    const failedIndex = stockUpdates.findIndex((updated) => !updated);
     if (failedIndex !== -1) {
-
+      // Roll back any stock we did manage to claim before hitting the one
+      // that failed, then report which product ran out.
       await Promise.all(
         stockUpdates
-          .map((updated, index) =>
-            updated
-              ? Product.findByIdAndUpdate(
-                  orderItems[index].product,
-                  {
-                    $inc: {
-                      stock: orderItems[index].quantity,
-                    },
-                  }
-                )
-              : null
-          )
+          .map((updated, i) => (updated ? Product.findByIdAndUpdate(orderItems[i].product, { $inc: { stock: orderItems[i].quantity } }) : null))
           .filter(Boolean)
       );
-
-
-      return res.status(400).json({
-        success: false,
-        message: 'Insufficient stock',
-      });
+      const failedProduct = products.find((p) => p._id.toString() === orderItems[failedIndex].product.toString());
+      return res.status(400).json({ success: false, message: `Insufficient stock for ${failedProduct?.name || 'a product in your order'}` });
     }
-
 
     const order = await Order.create({
       buyer: req.user._id,
@@ -114,18 +132,17 @@ const createOrder = async (req, res, next) => {
       items: orderItems,
       productTotal,
       deliveryAddress,
-      productPaymentMethod:
-        productPaymentMethod || 'cod',
+      productPaymentMethod: productPaymentMethod || 'cod',
+      // Both COD and prepaid orders start 'pending' until a payment-capture
+      // flow (e.g. a Razorpay webhook) actually marks this 'paid'/'failed'.
       productPaymentStatus: 'pending',
     });
 
-
-    res.status(201).json({
-      success: true,
-      order,
-    });
-
+    res.status(201).json({ success: true, order });
   } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, message: err.message });
+    }
     next(err);
   }
 };
@@ -138,21 +155,10 @@ const createOrder = async (req, res, next) => {
  */
 const getMyOrders = async (req, res, next) => {
   try {
+    const orders = await Order.find({ buyer: req.user._id }).sort({ createdAt: -1 }).populate('items.product', 'name images');
 
-    const orders = await Order.find({
-      buyer: req.user._id,
-    })
-      .sort({ createdAt: -1 })
-      .populate(
-        'items.product',
-        'name images unit weightPerUnit stock isActive'
-      )
-      .populate(
-        'shipper',
-        'name'
-      );
-
-
+    // Mark which delivered orders this buyer has already reviewed so the
+    // UI can show "Rate shipper" only where it's still actionable.
     const reviewedIds = new Set(
       (
         await Review.find(
@@ -164,24 +170,12 @@ const getMyOrders = async (req, res, next) => {
         )
       ).map((r) => r.order.toString())
     );
+    const ordersWithReviewFlag = orders.map((o) => ({
+      ...o.toObject(),
+      hasReview: reviewedIds.has(o._id.toString()),
+    }));
 
-
-    const ordersWithReviewFlag = orders.map(
-      (order) => ({
-        ...order.toObject(),
-        hasReview: reviewedIds.has(
-          order._id.toString()
-        ),
-      })
-    );
-
-
-    res.status(200).json({
-      success: true,
-      orders: ordersWithReviewFlag,
-    });
-
-
+    res.status(200).json({ success: true, orders: ordersWithReviewFlag });
   } catch (err) {
     next(err);
   }
@@ -196,27 +190,8 @@ const getMyOrders = async (req, res, next) => {
  */
 const getReceivedOrders = async (req, res, next) => {
   try {
-
-    const orders = await Order.find({
-      shipper: req.user._id,
-    })
-      .sort({ createdAt: -1 })
-      .populate(
-        'buyer',
-        'name phone'
-      )
-      .populate(
-        'items.product',
-        'name'
-      );
-
-
-    res.status(200).json({
-      success: true,
-      orders,
-    });
-
-
+    const orders = await Order.find({ shipper: req.user._id }).sort({ createdAt: -1 }).populate('buyer', 'name phone').populate('items.product', 'name');
+    res.status(200).json({ success: true, orders });
   } catch (err) {
     next(err);
   }
@@ -226,98 +201,40 @@ const getReceivedOrders = async (req, res, next) => {
 
 
 /**
- * PATCH /api/orders/:id/confirm
- * Shipper confirms order
+ * PATCH /api/orders/:id/confirm — shipper confirms an order is ready,
+ * moving it into the queue to have a shipment requested against it.
  */
 const confirmOrder = async (req, res, next) => {
   try {
-
-    const order = await Order.findOne({
-      _id: req.params.id,
-      shipper: req.user._id,
-    });
-
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found',
-      });
-    }
-
-
+    const order = await Order.findOne({ _id: req.params.id, shipper: req.user._id });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
     if (order.status !== 'placed') {
-      return res.status(400).json({
-        success: false,
-        message: `Order is already ${order.status}`,
-      });
+      return res.status(400).json({ success: false, message: `Order is already '${order.status}'` });
     }
 
 
     order.status = 'confirmed_by_shipper';
-
     await order.save();
-
-
-    res.status(200).json({
-      success: true,
-      order,
-    });
-
-
+    res.status(200).json({ success: true, order });
   } catch (err) {
     next(err);
   }
 };
 
-
-
-
-
-/**
- * GET /api/orders/:id
- * Buyer or shipper can view order
- */
+/** GET /api/orders/:id — visible to the buyer who placed it or the shipper who received it */
 const getOrderById = async (req, res, next) => {
   try {
-
     const order = await Order.findById(req.params.id)
-      .populate(
-        'buyer',
-        'name phone'
-      )
-      .populate(
-        'items.product',
-        'name weightPerUnit'
-      );
+      .populate('buyer', 'name phone')
+      .populate('items.product', 'name weightPerUnit');
 
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    if (!order) {
-      return res.status(404).json({
-        success:false,
-        message:'Order not found',
-      });
+    const isBuyer = order.buyer._id.equals(req.user._id);
+    const isShipper = order.shipper.equals(req.user._id);
+    if (!isBuyer && !isShipper && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this order' });
     }
-
-
-    const isBuyer =
-      order.buyer._id.equals(req.user._id);
-
-    const isShipper =
-      order.shipper.equals(req.user._id);
-
-
-    if (
-      !isBuyer &&
-      !isShipper &&
-      req.user.role !== 'admin'
-    ) {
-      return res.status(403).json({
-        success:false,
-        message:'Not authorized',
-      });
-    }
-
 
     res.status(200).json({
       success:true,

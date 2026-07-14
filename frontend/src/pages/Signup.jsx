@@ -62,24 +62,51 @@ const Signup = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const payload = { ...form };
-      if (isAgency) {
-        payload.name = form.agencyProfile.companyName;
-      } else {
-        delete payload.agencyProfile;
-      }
-      const { data } = await registerUser(payload);
-      navigate('/verify-otp', { state: { userId: data.userId, phone: form.phone } });
-    } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+  
+  try {
+    const payload = { ...form };
+    if (isAgency) {
+      payload.name = form.agencyProfile?.companyName || form.name;
+    } else {
+      delete payload.agencyProfile;
     }
-  };
+
+    // 1. Send registration request to your backend
+    const { data } = await registerUser(payload);
+    
+    // Determine the user ID returned from the backend (handles 'userId' or 'id')
+    const resolvedUserId = data?.userId || data?.id || data?.user?.id || data?.user?.userId;
+
+    // 2. Backup details to localStorage so the OTP page has a safety net if state drops
+    if (resolvedUserId) {
+      localStorage.setItem('temp_otp_userId', resolvedUserId);
+    }
+    if (form.email) {
+      localStorage.setItem('temp_otp_email', form.email);
+    }
+    if (form.phone) {
+      localStorage.setItem('temp_otp_phone', form.phone);
+    }
+
+    // 3. Navigate to OTP page, passing state as the primary option
+    navigate('/verify-otp', { 
+      state: { 
+        userId: resolvedUserId,
+        email: form.email,
+        phone: form.phone
+      } 
+    });
+
+  } catch (err) {
+    console.error("Signup error details:", err);
+    setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>

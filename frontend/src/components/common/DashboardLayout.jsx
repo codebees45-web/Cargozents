@@ -53,18 +53,26 @@ const DashboardLayout = ({ title, subtitle, children }) => {
               <NavLink
                 key={item.href}
                 to={item.href}
-                className={({ isActive: active }) =>
-                  `flex items-center gap-2 rounded-lg px-3 py-2 font-mono-ls text-[12px] tracking-wide transition ${
-                    active ? 'bg-primary text-white shadow-sm' : 'text-muted hover:bg-primary/5 hover:text-primary'
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition ${
+                    isActive
+                      ? 'bg-primary/10 text-primary font-semibold'
+                      : 'text-[#5B7A70] hover:bg-secondary/30 hover:text-primary'
                   }`
                 }
               >
+<<<<<<< HEAD
                 {({ isActive: active }) => (
                   <>
                     {active && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
                     {item.label.toUpperCase()}
                   </>
                 )}
+=======
+                {/* 🚀 FIXED: Changed 'active' to 'isActive' right here */}
+                {isActive && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                {item.label.toUpperCase()}
+>>>>>>> 3666a6996227ac3a8728c88c5fb6e7352b717c44
               </NavLink>
             );
           })}

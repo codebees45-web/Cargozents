@@ -10,6 +10,7 @@ let messageQueue = [];
 const initWhatsApp = () => {
   if (client) return client;
 
+<<<<<<< HEAD
   // Return cached initialization promise
   if (initPromise) return initPromise;
 
@@ -55,11 +56,25 @@ const initWhatsApp = () => {
       );
       resolve(null); // Resolve so API doesn't crash
     });
+=======
+  client = new Client({
+    authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }), // persists login, avoids re-scanning QR every restart
+    puppeteer: {
+      headless: true,
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',           // 👈 Prevents Chromium memory crashes
+        '--disable-features=site-per-process' // 👈 Crucial: Fixes the 'detached Frame' issue
+      ],
+    },
+>>>>>>> 3666a6996227ac3a8728c88c5fb6e7352b717c44
   });
 
   return initPromise;
 };
 
+<<<<<<< HEAD
 /**
  * Process queued messages
  */
@@ -76,6 +91,33 @@ const processMessageQueue = async () => {
       callback?.(false);
     }
   }
+=======
+  client.on('ready', () => {
+    isReady = true;
+    logger.info('WhatsApp client is ready');
+  });
+
+  client.on('auth_failure', (msg) => {
+    logger.error(`WhatsApp auth failed: ${msg}`);
+  });
+
+  client.on('disconnected', async (reason) => {
+    isReady = false;
+    logger.error(`WhatsApp client disconnected: ${reason}. Attempting recovery re-initialization...`);
+    
+    // 👈 Gracefully wipe out the broken browser session and restart a clean client
+    try {
+      await client.destroy();
+      client = null; // Clear out current reference
+      initWhatsApp(); // Spin up a fresh client instance automatically
+    } catch (err) {
+      logger.error(`[WHATSAPP] Critical failure during automatic recovery: ${err.message}`);
+    }
+  });
+
+  client.initialize();
+  return client;
+>>>>>>> 3666a6996227ac3a8728c88c5fb6e7352b717c44
 };
 
 /**
