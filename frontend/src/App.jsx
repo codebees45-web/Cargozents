@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import 'leaflet/dist/leaflet.css';
 
@@ -27,6 +28,8 @@ import Contact from './pages/Contact';
 import Faqs from './pages/Faqs';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import HowItWorksPage from './pages/HowItWorksPage';
+import Industries from './pages/Industries';
 import AdminComplaints from './pages/AdminComplaints';
 import AdminReports from './pages/AdminReports';
 import ComplaintsPage from './pages/ComplaintsPage';
@@ -46,10 +49,13 @@ import AgencyProfile from './pages/AgencyProfile';
 import Onboarding from './pages/Onboarding';
 
 import BuyerOrderTracking from './pages/BuyerOrderTracking';
+import BuyerShop from './pages/BuyerShop';
+import BuyerCheckout from './pages/BuyerCheckout';
 
 function App() {
   return (
     <AuthProvider>
+      <CartProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -57,6 +63,8 @@ function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/faqs" element={<Faqs />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/industries" element={<Industries />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/login" element={<Login />} />
@@ -69,7 +77,7 @@ function App() {
             path="/buyer/dashboard"
             element={
               <ProtectedRoute allowedRoles={['buyer']}>
-                <BuyerDashboard />
+                <BuyerShop />
               </ProtectedRoute>
             }
           />
@@ -78,6 +86,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['buyer']}>
                 <BuyerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/checkout"
+            element={
+              <ProtectedRoute allowedRoles={['buyer']}>
+                <BuyerCheckout />
               </ProtectedRoute>
             }
           />
@@ -106,22 +122,6 @@ function App() {
             }
           />
           <Route
-            path="/shipper/shipments/new"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <PostShipment />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute allowedRoles={['buyer', 'shipper', 'driver', 'agency', 'admin']}>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/shipper/products"
             element={
               <ProtectedRoute allowedRoles={['shipper']}>
@@ -138,14 +138,29 @@ function App() {
             }
           />
           <Route
-            path="/complaints"
+            path="/shipper/subscription"
             element={
-              <ProtectedRoute allowedRoles={['buyer', 'shipper']}>
-                <ComplaintsPage />
+              <ProtectedRoute allowedRoles={['shipper']}>
+                <ShipperSubscription />
               </ProtectedRoute>
             }
           />
-
+          <Route
+            path="/shipper/profile"
+            element={
+              <ProtectedRoute allowedRoles={['shipper']}>
+                <ShipperProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shipper/post-shipment"
+            element={
+              <ProtectedRoute allowedRoles={['shipper']}>
+                <PostShipment />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/driver/dashboard"
             element={
@@ -179,10 +194,34 @@ function App() {
             }
           />
           <Route
+            path="/driver/documents"
+            element={
+              <ProtectedRoute allowedRoles={['driver']}>
+                <DriverDocuments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/shipments"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminShipments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/drivers"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDrivers />
               </ProtectedRoute>
             }
           />
@@ -203,34 +242,18 @@ function App() {
             }
           />
           <Route
-            path="/admin/drivers"
+            path="/complaints"
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDrivers />
+              <ProtectedRoute allowedRoles={['buyer', 'shipper', 'driver', 'agency', 'admin']}>
+                <ComplaintsPage />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/driver/documents"
+            path="/profile"
             element={
-              <ProtectedRoute allowedRoles={['driver']}>
-                <DriverDocuments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shipper/subscription"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <ShipperSubscription />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
+              <ProtectedRoute allowedRoles={['buyer', 'shipper']}>
+                <Profile />
               </ProtectedRoute>
             }
           />
@@ -264,6 +287,7 @@ function App() {
           <Route path="*" element={<div className="p-10">Page under construction</div>} />
         </Routes>
       </BrowserRouter>
+      </CartProvider>
     </AuthProvider>
   );
 }

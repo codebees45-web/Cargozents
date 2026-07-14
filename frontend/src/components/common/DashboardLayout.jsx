@@ -1,6 +1,7 @@
 import Logo from './Logo';
 import { useAuth } from '../../context/AuthContext';
-import { NavLink, useLocation } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
+import { NavLink, Link } from 'react-router-dom';
 
 const navByRole = {
   buyer: [
@@ -34,8 +35,10 @@ const navByRole = {
 
 const DashboardLayout = ({ title, subtitle, children }) => {
   const { user, logout } = useAuth();
-  const location = useLocation();
   const nav = navByRole[user?.role] || [];
+  // Cart is only meaningful for buyers; useCart is safe to call here since
+  // CartProvider wraps the whole app, but the icon itself only renders for buyers.
+  const { totalItems } = useCart();
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -46,7 +49,6 @@ const DashboardLayout = ({ title, subtitle, children }) => {
         </a>
         <nav className="mt-10 space-y-1">
           {nav.map((item) => {
-            const isActive = location.pathname === item.href;
             return (
               <NavLink
                 key={item.href}
@@ -57,8 +59,12 @@ const DashboardLayout = ({ title, subtitle, children }) => {
                   }`
                 }
               >
-                {active && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
-                {item.label.toUpperCase()}
+                {({ isActive: active }) => (
+                  <>
+                    {active && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                    {item.label.toUpperCase()}
+                  </>
+                )}
               </NavLink>
             );
           })}
@@ -73,6 +79,20 @@ const DashboardLayout = ({ title, subtitle, children }) => {
             {subtitle && <p className="mt-1 text-sm text-[#5B7A70]">{subtitle}</p>}
           </div>
           <div className="flex items-center gap-4">
+            {user?.role === 'buyer' && (
+              <Link to="/buyer/checkout" className="relative rounded-lg p-2 text-primary/70 transition hover:bg-primary/5 hover:text-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="9" cy="21" r="1" />
+                  <circle cx="20" cy="21" r="1" />
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {totalItems > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent font-mono-ls text-[9px] font-bold text-primary">
+                    {totalItems}
+                  </span>
+                )}
+              </Link>
+            )}
             <span className="font-mono-ls text-[11px] text-[#5B7A70]">
               {user?.name?.toUpperCase()} · {user?.role?.toUpperCase()}
             </span>

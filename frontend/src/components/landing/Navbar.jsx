@@ -7,8 +7,10 @@ const Navbar = () => {
         <a href="/" className="transition hover:opacity-80">
           <Logo />
         </a>
-        <nav className="hidden gap-8 font-mono-ls text-[13px] text-muted md:flex">
+        <nav className="hidden gap-6 font-mono-ls text-[13px] text-muted md:flex">
           <a href="/about" className="relative py-1 transition hover:text-primary">ABOUT</a>
+          <a href="/how-it-works" className="relative py-1 transition hover:text-primary">HOW IT WORKS</a>
+          <a href="/industries" className="relative py-1 transition hover:text-primary">INDUSTRIES</a>
           <a href="/pricing" className="relative py-1 transition hover:text-primary">PRICING</a>
           <a href="/contact" className="relative py-1 transition hover:text-primary">CONTACT</a>
         </nav>

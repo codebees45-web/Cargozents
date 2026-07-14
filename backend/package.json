@@ -5,7 +5,11 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "dev:clean": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/free-port.ps1 && nodemon src/server.js",
+    "seed:workflow": "node src/scripts/seedWorkflowData.js",
+    "seed:workflow:edge": "node src/scripts/seedWorkflowEdgeCases.js",
+    "seed:workflow:stress": "node src/scripts/seedWorkflowStress.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
