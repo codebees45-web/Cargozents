@@ -5,24 +5,24 @@ import { NavLink, Link } from 'react-router-dom';
 
 const navByRole = {
   buyer: [
-  { label: "Dashboard", href: "/buyer/dashboard" },
-  { label: "Book Shipment", href: "/buyer/book-shipment" },
-  { label: "My Orders", href: "/buyer/orders" },
-  { label: "Payments", href: "/buyer/payments" },
-  { label: "Invoices", href: "/buyer/invoices" },
-  { label: "Addresses", href: "/buyer/addresses" },
-  { label: "Notifications", href: "/buyer/notifications" },
-  { label: "Support", href: "/buyer/support" },
-  { label: "Settings", href: "/buyer/settings" },
-  { label: "Profile", href: "/buyer/profile" },
-],
+    { label: "Dashboard", href: "/buyer/dashboard" },
+    { label: "Book Shipment", href: "/buyer/book-shipment" },
+    { label: "My Orders", href: "/buyer/orders" },
+    { label: "Payments", href: "/buyer/payments" },
+    { label: "Invoices", href: "/buyer/invoices" },
+    { label: "Addresses", href: "/buyer/addresses" },
+    { label: "Notifications", href: "/buyer/notifications" },
+    { label: "Support", href: "/buyer/support" },
+    { label: "Settings", href: "/buyer/settings" },
+    { label: "Profile", href: "/driver/profile" }, // Pointing to the profile route we made
+  ],
   shipper: [
     { label: 'Overview', href: '/shipper/dashboard' },
     { label: 'Products', href: '/shipper/products' },
     { label: 'Shipments', href: '/shipper/shipments' },
     { label: 'Orders received', href: '/shipper/orders' },
     { label: 'Subscription', href: '/shipper/subscription' },
-    { label: 'Profile', href: '/profile' },
+    { label: 'Profile', href: '/driver/profile' },
   ],
   driver: [
     { label: 'Overview', href: '/driver/dashboard' },
@@ -30,6 +30,13 @@ const navByRole = {
     { label: 'Trip history', href: '/driver/trips' },
     { label: 'Wallet', href: '/driver/wallet' },
     { label: 'Documents', href: '/driver/documents' },
+    { label: 'Profile', href: '/driver/profile' }, // <-- FIXED: Added Profile here!
+  ],
+  agency: [
+    { label: 'Overview', href: '/agency/dashboard' },
+    { label: 'Manage Fleet', href: '/agency/fleet' },
+    { label: 'Drivers', href: '/agency/drivers' },
+    { label: 'Profile', href: '/driver/profile' }, // <-- Added here too
   ],
   admin: [
     { label: 'Overview', href: '/admin/dashboard' },
@@ -37,14 +44,16 @@ const navByRole = {
     { label: 'Driver verification', href: '/admin/drivers' },
     { label: 'Complaints', href: '/admin/complaints' },
     { label: 'Reports', href: '/admin/reports' },
+    { label: 'Profile', href: '/driver/profile' }, // <-- And here!
   ],
 };
 
 const DashboardLayout = ({ title, subtitle, children }) => {
   const { user, logout } = useAuth();
-  const nav = navByRole[user?.role] || [];
-  // Cart is only meaningful for buyers; useCart is safe to call here since
-  // CartProvider wraps the whole app, but the icon itself only renders for buyers.
+  
+  // Provide a safe fallback if user role isn't recognized immediately
+  const nav = navByRole[user?.role] || navByRole.driver; 
+  
   const { totalItems } = useCart();
 
   return (

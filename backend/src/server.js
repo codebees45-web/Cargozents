@@ -9,12 +9,15 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const { Server } = require("socket.io");
+const path = require("path");
 
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
 const { initWhatsApp } = require("./utils/whatsappClient");
 
+// Route Imports
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes"); // 🟢 ADDED: Imports your user profile routes
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const shipmentRoutes = require("./routes/shipmentRoutes");
@@ -27,8 +30,6 @@ const agencyRoutes = require('./routes/agencyRoutes');
 const shipmentAnalyticsRoutes = require('./routes/shipmentAnalyticsRoutes');
 const pricingRoutes = require("./routes/pricingRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
-const path = require("path");
-
 const mapsRoutes = require("./routes/mapsRoutes");
 
 const logger = require("./utils/logger");
@@ -36,9 +37,7 @@ const logger = require("./utils/logger");
 const app = express();
 let server = null;
 
-// CLIENT_URL can contain a comma-separated list of deployed frontend origins.
-// In development, Vite may move from 5173 to another local port when 5173 is
-// occupied, so allow local browser origins without weakening production CORS.
+// CLIENT_URL verification logic
 const allowedOrigins = new Set(
   (process.env.CLIENT_URL || "")
     .split(",")
@@ -67,7 +66,6 @@ const shutdown = (signal) => {
     mongoose.connection.close().then(finish).catch(finish);
   });
 
-  // Force-exit if the port does not release (common on Windows + nodemon).
   setTimeout(finish, 2000).unref();
 };
 
@@ -156,7 +154,7 @@ const startServer = async () => {
   }
 };
 
-// Middleware
+// Global Middleware
 app.use(helmet());
 
 app.use(
@@ -170,7 +168,6 @@ app.use(
 );
 
 app.use(express.json({ limit: '15mb' }));
-
 app.use(morgan("dev"));
 
 // Health check
@@ -181,8 +178,9 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Routes
+// App API Route Mounts
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes); // 🟢 ADDED: Mounts the profile endpoint underneath /api/users
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/shipments", shipmentRoutes);
@@ -196,15 +194,12 @@ app.use('/api/shipment-analytics', shipmentAnalyticsRoutes);
 app.use("/api/pricing", pricingRoutes);
 app.use("/api/maps", mapsRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use(
-  "/uploads",
-  express.static(
-    path.join(__dirname, "../uploads")
-  )
-);
 
+// Static Uploads Serving (Handles absolute or nested setup paths cleanly)
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// 404 handler
+// 404 Route handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -212,12 +207,12 @@ app.use((req, res) => {
   });
 });
 
-// Error handler
+// Global Centralized Error handler
 app.use(errorHandler);
 
 startServer();
 
-// nodemon sends SIGUSR2 on restart — release the port before the new process starts.
+// Nodemon port cleanup hooks
 process.once('SIGUSR2', () => {
   if (!server) return process.kill(process.pid, 'SIGUSR2');
   server.close(() => {
@@ -243,4 +238,3 @@ process.on('uncaughtException', (err) => {
 });
 
 module.exports = app;
-

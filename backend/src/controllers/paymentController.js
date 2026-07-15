@@ -1,9 +1,6 @@
 const crypto = require("crypto");
 const razorpay = require("../config/razorpay");
 const Order = require("../models/Order");
-const {
-  generateInvoice,
-} = require("../services/invoiceService");
 
 exports.createPayment = async (req, res) => {
   try {
@@ -43,6 +40,7 @@ exports.createPayment = async (req, res) => {
 
   }
 };
+
 exports.verifyPayment = async (req, res) => {
 
   try {
@@ -79,23 +77,24 @@ exports.verifyPayment = async (req, res) => {
 
     const order = await Order.findById(orderId);
 
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
     order.payment.status = "Paid";
-    const invoice =
-        await generateInvoice(order);
 
-    order.payment.invoiceNumber =
-        invoice.invoiceNo;
+    // Invoice generation removed
+    order.payment.invoiceNumber = "";
+    order.payment.invoiceUrl = "";
 
-    order.payment.invoiceUrl =
-        `/uploads/invoices/${invoice.invoiceNo}.pdf`;
     order.payment.paidAt = new Date();
-    order.payment.razorpayPaymentId =
-      razorpay_payment_id;
-    order.payment.razorpaySignature =
-      razorpay_signature;
+    order.payment.razorpayPaymentId = razorpay_payment_id;
+    order.payment.razorpaySignature = razorpay_signature;
 
-    order.tracking.currentStatus =
-      "Completed";
+    order.tracking.currentStatus = "Completed";
 
     await order.save();
 

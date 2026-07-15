@@ -34,8 +34,7 @@ import Industries from './pages/Industries';
 import AdminComplaints from './pages/AdminComplaints';
 import AdminReports from './pages/AdminReports';
 import ComplaintsPage from './pages/ComplaintsPage';
-import Profile from './pages/Profile';
-import ShipperProfile from './pages/ShipperProfile';
+import Profile from './pages/Profile'; // <-- The new Universal Profile Component
 import ShipperProducts from './pages/ShipperProducts';
 import ShipperOrders from './pages/ShipperOrders';
 import ShipperSubscription from './pages/ShipperSubscription';
@@ -46,7 +45,6 @@ import AgencyOverview from './pages/AgencyOverview';
 import AgencyOrders from './pages/AgencyOrders';
 import AvailableTrucks from './pages/AvailableTrucks';
 import TruckTracking from './pages/TruckTracking';
-import AgencyProfile from './pages/AgencyProfile';
 import Onboarding from './pages/Onboarding';
 
 import BuyerOrderTracking from './pages/BuyerOrderTracking';
@@ -60,11 +58,9 @@ import OrderDetails from "./pages/buyer/OrderDetails";
 import PaymentHistory from "./pages/buyer/PaymentHistory";
 import Notifications from "./pages/buyer/Notifications";
 import SavedAddresses from "./pages/buyer/SavedAddresses";
-import BuyerProfile from "./pages/buyer/BuyerProfile";
 import Support from "./pages/buyer/Support";
 import Settings from "./pages/buyer/Settings";
 import Invoices from "./pages/buyer/Invoices";
-
 
 function App() {
   return (
@@ -73,6 +69,7 @@ function App() {
       <CartProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Landing />} />
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<Pricing />} />
@@ -88,19 +85,12 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
+          {/* Buyer Routes */}
           <Route
             path="/buyer/dashboard"
             element={
               <ProtectedRoute allowedRoles={['buyer']}>
                 <BuyerShop />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/profile"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <BuyerProfile />
               </ProtectedRoute>
             }
           />
@@ -135,7 +125,7 @@ function App() {
                     <SavedAddresses />
                 </ProtectedRoute>
             }
-        />
+          />
           <Route
             path="/buyer/notifications"
             element={
@@ -167,14 +157,6 @@ function App() {
           <Route
             path="/buyer/orders"
             element={
-              <ProtectedRoute allowedRoles={['buyer']}>
-                <BuyerDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/orders"
-            element={
               <ProtectedRoute allowedRoles={["buyer"]}>
                 <MyOrders />
               </ProtectedRoute>
@@ -201,18 +183,20 @@ function App() {
             }
           />
           <Route
-            path="/shipper/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <ShipperDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/buyer/orders/:orderId/track"
             element={
               <ProtectedRoute allowedRoles={['buyer']}>
                 <BuyerOrderTracking />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Shipper Routes */}
+          <Route
+            path="/shipper/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['shipper']}>
+                <ShipperDashboard />
               </ProtectedRoute>
             }
           />
@@ -249,14 +233,6 @@ function App() {
             }
           />
           <Route
-            path="/shipper/profile"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <ShipperProfile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/shipper/post-shipment"
             element={
               <ProtectedRoute allowedRoles={['shipper']}>
@@ -264,6 +240,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Driver Routes */}
           <Route
             path="/driver/dashboard"
             element={
@@ -304,6 +282,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Admin Routes */}
           <Route
             path="/admin/dashboard"
             element={
@@ -344,6 +324,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Shared Routes */}
           <Route
             path="/complaints"
             element={
@@ -353,18 +335,21 @@ function App() {
             }
           />
           <Route
-            path="/profile"
-            element={
-              <ProtectedRoute allowedRoles={['buyer', 'shipper']}>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/onboarding"
             element={
               <ProtectedRoute>
                 <Onboarding />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* --- FIXED UNIVERSAL PROFILE ROUTE --- */}
+          {/* All 5 roles are explicitly allowed here to load the single multi-role Profile component */}
+          <Route
+            path="/driver/profile"
+            element={
+              <ProtectedRoute allowedRoles={['buyer', 'shipper', 'driver', 'agency', 'admin']}>
+                <Profile />
               </ProtectedRoute>
             }
           />
@@ -378,16 +363,17 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* These pages render INSIDE the dashboard layout */}
             <Route index element={<AgencyOverview />} />
             <Route path="overview" element={<AgencyOverview />} />
             <Route path="orders-received" element={<AgencyOrders />} />
             <Route path="available-trucks" element={<AvailableTrucks />} />
             <Route path="truck-tracking" element={<TruckTracking />} />
-            <Route path="profile" element={<AgencyProfile />} />
+            {/* Agency profile inside the nested dashboard layout can also safely point to the base fallback */}
+            <Route path="profile" element={<Profile />} />
           </Route>
 
-          <Route path="*" element={<div className="p-10">Page under construction</div>} />
+          {/* Fallback Missing Page Handling */}
+          <Route path="*" element={<div className="p-10 text-white bg-background min-h-screen">Page under construction</div>} />
         </Routes>
       </BrowserRouter>
       </CartProvider>
