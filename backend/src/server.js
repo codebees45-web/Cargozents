@@ -22,8 +22,6 @@ const driverRoutes = require("./routes/driverRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
-const orderRoutes = require("./routes/orderRoutes");
-// NEW: Import subscription routes
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const agencyRoutes = require('./routes/agencyRoutes');
 const shipmentAnalyticsRoutes = require('./routes/shipmentAnalyticsRoutes');
@@ -246,35 +244,3 @@ process.on('uncaughtException', (err) => {
 
 module.exports = app;
 
-import http from "http";
-import app from "./app.js";
-import { Server } from "socket.io";
-
-const PORT = process.env.PORT || 5000;
-
-const server = http.createServer(app);
-
-export const io = new Server(server, {
-    cors: {
-        origin: "http://localhost:5173",
-        credentials: true
-    }
-});
-
-io.on("connection", (socket) => {
-
-    console.log("Socket Connected:", socket.id);
-
-    socket.on("disconnect", () => {
-
-        console.log("Socket Disconnected");
-
-    });
-
-});
-
-server.listen(PORT, () => {
-
-    console.log(`Server running on ${PORT}`);
-
-});

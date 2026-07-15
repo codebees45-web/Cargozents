@@ -2,13 +2,13 @@ const express = require("express");
 
 const router = express.Router();
 
-const auth = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
 const pricingController = require("../controllers/pricingController");
 
 router.post(
   "/calculate",
-  auth,
+  protect,
   pricingController.calculatePrice
 );
 

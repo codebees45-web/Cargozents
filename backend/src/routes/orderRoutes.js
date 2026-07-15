@@ -2,7 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
-const auth = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
 const orderController = require("../controllers/orderController");
 const validateOrder = require("../middleware/validateOrder");
@@ -16,7 +16,7 @@ const validateOrder = require("../middleware/validateOrder");
 // Create Order
 router.post(
   "/",
-  auth,
+  protect,
   validateOrder,
   orderController.createOrder
 );
@@ -24,21 +24,21 @@ router.post(
 // Get Logged-in User Orders
 router.get(
   "/my-orders",
-  auth,
+  protect,
   orderController.getMyOrders
 );
 
 // Get Single Order
 router.get(
   "/:id",
-  auth,
+  protect,
   orderController.getOrderById
 );
 
 // Cancel Order
 router.patch(
   "/:id/cancel",
-  auth,
+  protect,
   orderController.cancelOrder
 );
 
@@ -51,21 +51,21 @@ router.patch(
 // Assign Driver
 router.patch(
   "/:id/assign-driver",
-  auth,
+  protect,
   orderController.assignDriver
 );
 
 // Update Status
 router.patch(
   "/:id/status",
-  auth,
+  protect,
   orderController.updateOrderStatus
 );
 
 // Generate Delivery OTP
 router.post(
   "/:id/generate-otp",
-  auth,
+  protect,
   orderController.generateOTP
 );
 
