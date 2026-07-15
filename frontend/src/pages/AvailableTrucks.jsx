@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import DashboardLayout from '../components/common/DashboardLayout';
 import EmptyState from '../components/common/EmptyState';
 import AddTruckModal from '../components/common/AddTruckModal';
 import { getAgencyTrucks, addAgencyTruck, updateAgencyTruck, deleteAgencyTruck } from '../services/agencyService';
@@ -59,17 +58,24 @@ const AvailableTrucks = () => {
   };
 
   return (
-    <DashboardLayout title="Available Trucks" subtitle="Your fleet — vehicles registered under your agency.">
-      <div className="flex items-center justify-between">
-        <div />
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Integrated Header and Action Bar */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-primary/10 pb-6 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-primary font-display">Available Trucks</h1>
+          <p className="text-sm text-[#5B7A70] mt-1">
+            Your fleet — vehicles registered under your agency.
+          </p>
+        </div>
         <button
           onClick={() => setShowModal(true)}
-          className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-primary transition hover:shadow-glow"
+          className="rounded-lg bg-accent px-4 py-2.5 text-xs font-semibold text-primary transition hover:shadow-glow self-start md:self-auto"
         >
           + Add New Truck
         </button>
       </div>
 
+      {/* Grid and Empty States */}
       <div className="mt-6">
         {trucks === null ? (
           <p className="text-sm text-[#5B7A70]">Loading…</p>
@@ -139,7 +145,7 @@ const AvailableTrucks = () => {
       {error && trucks?.length > 0 && <p className="mt-4 text-xs text-warning">{error}</p>}
 
       {showModal && <AddTruckModal onSubmit={handleAdd} onClose={() => setShowModal(false)} />}
-    </DashboardLayout>
+    </div>
   );
 };
 

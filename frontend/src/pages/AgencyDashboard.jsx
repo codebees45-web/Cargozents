@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from '../hooks/useAuth';
 
 const AgencyDashboard = () => {
   const { user, logout } = useAuth();
@@ -14,7 +14,7 @@ const AgencyDashboard = () => {
     }
   };
 
-  // Sidebar link styles matching the precise styling from image_d23a53.png
+  // Sidebar link styles matching the precise styling with green active background
   const getNavLinkClass = ({ isActive }) => {
     const baseClasses = "flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold tracking-wider rounded-md transition-all duration-150";
     return isActive
@@ -25,7 +25,7 @@ const AgencyDashboard = () => {
   return (
     <div className="flex min-h-screen bg-white text-gray-800 font-sans">
       
-      {/* 1. LEFT SIDEBAR */}
+      {/* 1. SINGLE MAIN SIDEBAR (SIDEBAR 1) */}
       <aside className="w-60 bg-white border-r border-gray-100 flex flex-col justify-between shrink-0 p-6">
         <div>
           {/* Logo Section */}
@@ -63,7 +63,16 @@ const AgencyDashboard = () => {
               {({ isActive }) => (
                 <>
                   {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />}
-                  AVAILABLE TRUCKS
+                  MANAGE FLEET
+                </>
+              )}
+            </NavLink>
+
+            <NavLink to="/agency/drivers" className={getNavLinkClass}>
+              {({ isActive }) => (
+                <>
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />}
+                  DRIVERS
                 </>
               )}
             </NavLink>
@@ -76,6 +85,15 @@ const AgencyDashboard = () => {
                 </>
               )}
             </NavLink>
+
+            <NavLink to="/agency/support" className={getNavLinkClass}>
+              {({ isActive }) => (
+                <>
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />}
+                  SUPPORT
+                </>
+              )}
+            </NavLink>
             
             <NavLink to="/agency/profile" className={getNavLinkClass}>
               {({ isActive }) => (
@@ -85,10 +103,18 @@ const AgencyDashboard = () => {
                 </>
               )}
             </NavLink>
+            <NavLink to="/agency/setting" className={getNavLinkClass}>
+              {({ isActive }) => (
+                <>
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />}
+                  SETTINGS
+                </>
+              )}
+            </NavLink>
           </nav>
         </div>
 
-        {/* Footer info or minimal note down sidebar if necessary */}
+        {/* Footer info at bottom of sidebar */}
         <div className="px-2 text-[10px] text-gray-400 font-medium tracking-wider">
           AGENCY PORTAL v1.0
         </div>

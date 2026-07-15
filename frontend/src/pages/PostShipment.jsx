@@ -6,7 +6,7 @@ import FormSelect from '../components/common/FormSelect';
 import FormTextarea from '../components/common/FormTextarea';
 import GeoPointFields from '../components/common/GeoPointFields';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const emptyGeoPoint = { address: '', city: '', state: '', pincode: '', coordinates: ['', ''] };
 

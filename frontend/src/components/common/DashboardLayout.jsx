@@ -1,5 +1,5 @@
 import Logo from './Logo';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../context/CartContext';
 import { NavLink, Link } from 'react-router-dom';
 
@@ -14,7 +14,7 @@ const navByRole = {
     { label: "Notifications", href: "/buyer/notifications" },
     { label: "Support", href: "/buyer/support" },
     { label: "Settings", href: "/buyer/settings" },
-    { label: "Profile", href: "/driver/profile" }, // Pointing to the profile route we made
+    { label: "Profile", href: "/driver/profile" },
   ],
   shipper: [
     { label: 'Overview', href: '/shipper/dashboard' },
@@ -22,6 +22,8 @@ const navByRole = {
     { label: 'Shipments', href: '/shipper/shipments' },
     { label: 'Orders received', href: '/shipper/orders' },
     { label: 'Subscription', href: '/shipper/subscription' },
+    { label: 'Support', href: '/shipper/support' },       // 🟢 Standardized to label/href
+    { label: 'Settings', href: '/shipper/settings' },     // 🟢 Standardized to label/href
     { label: 'Profile', href: '/driver/profile' },
   ],
   driver: [
@@ -30,13 +32,17 @@ const navByRole = {
     { label: 'Trip history', href: '/driver/trips' },
     { label: 'Wallet', href: '/driver/wallet' },
     { label: 'Documents', href: '/driver/documents' },
-    { label: 'Profile', href: '/driver/profile' }, // <-- FIXED: Added Profile here!
+    { label: 'Support', href: '/driver/support' },   
+    { label: 'Settings', href: '/driver/settings' },  
+    { label: 'Profile', href: '/driver/profile' },
   ],
   agency: [
     { label: 'Overview', href: '/agency/dashboard' },
     { label: 'Manage Fleet', href: '/agency/fleet' },
     { label: 'Drivers', href: '/agency/drivers' },
-    { label: 'Profile', href: '/driver/profile' }, // <-- Added here too
+    { label: 'Support', href: '/agency/support' },
+    { label: 'Settings', href: '/agency/settings' }, 
+    { label: 'Profile', href: '/driver/profile' },
   ],
   admin: [
     { label: 'Overview', href: '/admin/dashboard' },
@@ -44,7 +50,7 @@ const navByRole = {
     { label: 'Driver verification', href: '/admin/drivers' },
     { label: 'Complaints', href: '/admin/complaints' },
     { label: 'Reports', href: '/admin/reports' },
-    { label: 'Profile', href: '/driver/profile' }, // <-- And here!
+    { label: 'Profile', href: '/driver/profile' },
   ],
 };
 
@@ -80,7 +86,7 @@ const DashboardLayout = ({ title, subtitle, children }) => {
                 {({ isActive }) => (
                   <>
                     {isActive && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
-                    {item.label.toUpperCase()}
+                    {item.label?.toUpperCase() || ''} {/* 🟢 Added optional chaining guard */}
                   </>
                 )}
               </NavLink>
@@ -89,7 +95,7 @@ const DashboardLayout = ({ title, subtitle, children }) => {
         </nav>
       </aside>
 
-      {/* Main */}
+      {/* Main Content Area */}
       <div className="flex-1">
         <header className="flex items-center justify-between border-b border-primary/10 px-6 py-5 md:px-10">
           <div>
@@ -112,7 +118,7 @@ const DashboardLayout = ({ title, subtitle, children }) => {
               </Link>
             )}
             <span className="font-mono-ls text-[11px] text-[#5B7A70]">
-              {user?.name?.toUpperCase()} · {user?.role?.toUpperCase()}
+              {user?.name?.toUpperCase() || ''} &middot; {user?.role?.toUpperCase() || ''}
             </span>
             <button
               onClick={logout}

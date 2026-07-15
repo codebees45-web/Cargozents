@@ -12,32 +12,41 @@ import VerifyOtp from './pages/VerifyOtp';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import BuyerDashboard from './pages/BuyerDashboard';
-import ShipperDashboard from './pages/ShipperDashboard';
-import DriverDashboard from './pages/DriverDashboard';
-import DriverLoads from './pages/DriverLoads';
-import DriverTrips from './pages/DriverTrips';
-import DriverWallet from './pages/DriverWallet';
 import AdminDashboard from './pages/AdminDashboard';
 import PostShipment from './pages/PostShipment';
-import ShipperShipments from './pages/ShipperShipments';
 import AdminShipments from './pages/AdminShipments';
 import AdminDrivers from './pages/AdminDrivers';
-import DriverDocuments from './pages/DriverDocuments';
 import About from './pages/About';
 import Pricing from './pages/Pricing';
 import Contact from './pages/Contact';
 import Faqs from './pages/Faqs';
-import Terms from './pages/Terms';
-import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';       
+import Privacy from './pages/Privacy';   
 import HowItWorksPage from './pages/HowItWorksPage';
 import Industries from './pages/Industries';
 import AdminComplaints from './pages/AdminComplaints';
 import AdminReports from './pages/AdminReports';
 import ComplaintsPage from './pages/ComplaintsPage';
-import Profile from './pages/Profile'; // <-- The new Universal Profile Component
-import ShipperProducts from './pages/ShipperProducts';
-import ShipperOrders from './pages/ShipperOrders';
+import Profile from './pages/Profile'; 
+
+// --- DRIVER IMPORTS ---
+import DriverDashboard from './pages/DriverDashboard';
+import DriverLoads from './pages/DriverLoads';
+import DriverTrips from './pages/DriverTrips';
+import DriverWallet from './pages/DriverWallet';
+import DriverDocuments from './pages/DriverDocuments';
+// Note: Uncomment these if you have created the settings/support files
+import DriverSupport from './pages/DriverSupport';
+import DriverSettings from './pages/DriverSettings';
+
+// --- SHIPPER IMPORTS ---
+import ShipperDashboard from './pages/ShipperDashboard';
+import ShipperShipments from './pages/ShipperShipments';
+import ShipperProducts from './pages/ShipperProducts';     // 🟢 RESTORED
+import ShipperOrders from './pages/ShipperOrders';         // 🟢 RESTORED
 import ShipperSubscription from './pages/ShipperSubscription';
+import ShipperSupport from './pages/ShipperSupport';       // 🟢 NEWLY ADDED
+import ShipperSettings from './pages/ShipperSettings'; // 🟢 RESTORED
 
 // --- AGENCY IMPORTS ---
 import AgencyDashboard from './pages/AgencyDashboard';
@@ -46,7 +55,11 @@ import AgencyOrders from './pages/AgencyOrders';
 import AvailableTrucks from './pages/AvailableTrucks';
 import TruckTracking from './pages/TruckTracking';
 import Onboarding from './pages/Onboarding';
+import AgencySupport from './pages/Agency/Support';
+import AgencyDrivers from './pages/Agency/Drivers'; 
+import AgencySetting from "./pages/Agency/Settings";
 
+// --- BUYER IMPORTS ---
 import BuyerOrderTracking from './pages/BuyerOrderTracking';
 import BuyerShop from './pages/BuyerShop';
 import BuyerCheckout from './pages/BuyerCheckout';
@@ -64,327 +77,360 @@ import Invoices from "./pages/buyer/Invoices";
 function App() {
   return (
     <ThemeProvider>
-    <AuthProvider>
-      <CartProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/faqs" element={<Faqs />} />
-          <Route path="/how-it-works" element={<HowItWorksPage />} />
-          <Route path="/industries" element={<Industries />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/verify-otp" element={<VerifyOtp />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+      <AuthProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Landing />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/faqs" element={<Faqs />} />
+              <Route path="/how-it-works" element={<HowItWorksPage />} />
+              <Route path="/industries" element={<Industries />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/verify-otp" element={<VerifyOtp />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Buyer Routes */}
-          <Route
-            path="/buyer/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['buyer']}>
-                <BuyerShop />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/settings"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/invoices"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <Invoices />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/support"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <Support />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/addresses"
-            element={
-                <ProtectedRoute allowedRoles={["buyer"]}>
-                    <SavedAddresses />
-                </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/notifications"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <Notifications />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/orders/:orderId"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <OrderDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/payments"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <PaymentHistory />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/vehicle-selection"
-            element={<VehicleSelection />}
-          />
-          <Route
-            path="/buyer/orders"
-            element={
-              <ProtectedRoute allowedRoles={['buyer']}>
-                <BuyerDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/orders"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <MyOrders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/order-confirmation"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <OrderConfirmation />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/book-shipment"
-            element={<BookShipment />}
-          />
-          <Route
-            path="/buyer/checkout"
-            element={
-              <ProtectedRoute allowedRoles={['buyer']}>
-                <BuyerCheckout />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/buyer/orders/:orderId/track"
-            element={
-              <ProtectedRoute allowedRoles={['buyer']}>
-                <BuyerOrderTracking />
-              </ProtectedRoute>
-            }
-          />
+              {/* Buyer Routes */}
+              <Route
+                path="/buyer/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['buyer']}>
+                    <BuyerShop />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/settings"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/invoices"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <Invoices />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/support"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <Support />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/addresses"
+                element={
+                    <ProtectedRoute allowedRoles={["buyer"]}>
+                        <SavedAddresses />
+                    </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <Notifications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/orders/:orderId"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <OrderDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/payments"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <PaymentHistory />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/vehicle-selection"
+                element={<VehicleSelection />}
+              />
+              <Route
+                path="/buyer/orders"
+                element={
+                  <ProtectedRoute allowedRoles={['buyer']}>
+                    <BuyerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/order-confirmation"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <OrderConfirmation />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/book-shipment"
+                element={<BookShipment />}
+              />
+              <Route
+                path="/buyer/checkout"
+                element={
+                  <ProtectedRoute allowedRoles={['buyer']}>
+                    <BuyerCheckout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/orders/:orderId/track"
+                element={
+                  <ProtectedRoute allowedRoles={['buyer']}>
+                    <BuyerOrderTracking />
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* Shipper Routes */}
-          <Route
-            path="/shipper/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <ShipperDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shipper/shipments"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <ShipperShipments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shipper/products"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <ShipperProducts />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shipper/orders"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <ShipperOrders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shipper/subscription"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <ShipperSubscription />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shipper/post-shipment"
-            element={
-              <ProtectedRoute allowedRoles={['shipper']}>
-                <PostShipment />
-              </ProtectedRoute>
-            }
-          />
+              {/* Shipper Routes */}
+              <Route
+                path="/shipper/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <ShipperDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/shipper/shipments"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <ShipperShipments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/shipper/products"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <ShipperProducts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/shipper/orders"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <ShipperOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/shipper/subscription"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <ShipperSubscription />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/shipper/post-shipment"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <PostShipment />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/shipper/support"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <ShipperSupport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/shipper/settings"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <ShipperSettings />
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* Driver Routes */}
-          <Route
-            path="/driver/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['driver']}>
-                <DriverDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/driver/loads"
-            element={
-              <ProtectedRoute allowedRoles={['driver']}>
-                <DriverLoads />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/driver/trips"
-            element={
-              <ProtectedRoute allowedRoles={['driver']}>
-                <DriverTrips />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/driver/wallet"
-            element={
-              <ProtectedRoute allowedRoles={['driver']}>
-                <DriverWallet />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/driver/documents"
-            element={
-              <ProtectedRoute allowedRoles={['driver']}>
-                <DriverDocuments />
-              </ProtectedRoute>
-            }
-          />
+              {/* Driver Routes */}
+              <Route
+                path="/driver/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['driver']}>
+                    <DriverDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/driver/loads"
+                element={
+                  <ProtectedRoute allowedRoles={['driver']}>
+                    <DriverLoads />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/driver/trips"
+                element={
+                  <ProtectedRoute allowedRoles={['driver']}>
+                    <DriverTrips />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/driver/wallet"
+                element={
+                  <ProtectedRoute allowedRoles={['driver']}>
+                    <DriverWallet />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/driver/documents"
+                element={
+                  <ProtectedRoute allowedRoles={['driver']}>
+                    <DriverDocuments />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Note: Kept commented out here to avoid runtime reference errors if files do not exist */}
+              
+              <Route
+                path="/driver/support"
+                element={
+                  <ProtectedRoute allowedRoles={['driver']}>
+                    <DriverSupport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/driver/settings"
+                element={
+                  <ProtectedRoute allowedRoles={['driver']}>
+                    <DriverSettings />
+                  </ProtectedRoute>
+                }
+              /> 
+              
 
-          {/* Admin Routes */}
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/shipments"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminShipments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/drivers"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDrivers />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/complaints"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminComplaints />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/reports"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminReports />
-              </ProtectedRoute>
-            }
-          />
+              {/* Admin Routes */}
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/shipments"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminShipments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/drivers"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminDrivers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/complaints"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminComplaints />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/reports"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminReports />
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* Shared Routes */}
-          <Route
-            path="/complaints"
-            element={
-              <ProtectedRoute allowedRoles={['buyer', 'shipper', 'driver', 'agency', 'admin']}>
-                <ComplaintsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/onboarding"
-            element={
-              <ProtectedRoute>
-                <Onboarding />
-              </ProtectedRoute>
-            }
-          />
+              {/* Shared Routes */}
+              <Route
+                path="/complaints"
+                element={
+                  <ProtectedRoute allowedRoles={['buyer', 'shipper', 'driver', 'agency', 'admin']}>
+                    <ComplaintsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/onboarding"
+                element={
+                  <ProtectedRoute>
+                    <Onboarding />
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* --- FIXED UNIVERSAL PROFILE ROUTE --- */}
-          {/* All 5 roles are explicitly allowed here to load the single multi-role Profile component */}
-          <Route
-            path="/driver/profile"
-            element={
-              <ProtectedRoute allowedRoles={['buyer', 'shipper', 'driver', 'agency', 'admin']}>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+              {/* UNIVERSAL PROFILE ROUTE */}
+              <Route
+                path="/driver/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['buyer', 'shipper', 'driver', 'agency', 'admin']}>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* --- AGENCY DASHBOARD (NESTED ROUTES) --- */}
-          <Route
-            path="/agency"
-            element={
-              <ProtectedRoute allowedRoles={['agency']}>
-                <AgencyDashboard />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AgencyOverview />} />
-            <Route path="overview" element={<AgencyOverview />} />
-            <Route path="orders-received" element={<AgencyOrders />} />
-            <Route path="available-trucks" element={<AvailableTrucks />} />
-            <Route path="truck-tracking" element={<TruckTracking />} />
-            {/* Agency profile inside the nested dashboard layout can also safely point to the base fallback */}
-            <Route path="profile" element={<Profile />} />
-          </Route>
+              {/* --- AGENCY DASHBOARD (NESTED ROUTES) --- */}
+              <Route
+                path="/agency"
+                element={
+                  <ProtectedRoute allowedRoles={['agency']}>
+                    <AgencyDashboard />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<AgencyOverview />} />
+                <Route path="overview" element={<AgencyOverview />} />
+                <Route path="dashboard" element={<AgencyOverview />} /> 
+                <Route path="orders-received" element={<AgencyOrders />} />
+                
+                <Route path="available-trucks" element={<AvailableTrucks />} />
+                <Route path="manage-fleet" element={<AvailableTrucks />} /> 
+                <Route path="fleet" element={<AvailableTrucks />} /> 
+                
+                <Route path="drivers" element={<AgencyDrivers />} /> 
+                <Route path="truck-tracking" element={<TruckTracking />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="support" element={<AgencySupport />} />
+                <Route path="settings" element={<AgencySetting />} /> 
+              </Route>
 
-          {/* Fallback Missing Page Handling */}
-          <Route path="*" element={<div className="p-10 text-white bg-background min-h-screen">Page under construction</div>} />
-        </Routes>
-      </BrowserRouter>
-      </CartProvider>
-    </AuthProvider>
+              {/* Fallback Missing Page Handling */}
+              <Route path="*" element={<div className="p-10 text-white bg-background min-h-screen">Page under construction</div>} />
+            </Routes>
+          </BrowserRouter>
+        </CartProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

@@ -16,10 +16,12 @@ api.interceptors.request.use((config) => {
 });
 
 // Global 401 handling: token expired/invalid -> force logout.
+// Skip auth routes (login, register, etc.) so they can handle their own errors.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthRoute = error.config?.url?.includes('/auth/');
+    if (error.response?.status === 401 && !isAuthRoute) {
       localStorage.removeItem('loadshare_token');
       localStorage.removeItem('loadshare_user');
       window.location.href = '/login';

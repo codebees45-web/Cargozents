@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from '../components/common/AuthLayout';
 import FormInput from '../components/common/FormInput';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const roleRedirect = {
   buyer: '/buyer/dashboard',

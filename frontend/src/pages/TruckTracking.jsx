@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import TrackingMap from '../components/common/TrackingMap';
 import { fakeTracking } from '../data/fakeMapData';
 import { getMyShipments, getAssignedShipments, getAgencyShipments, getShipmentTracking } from '../services/shipmentService';

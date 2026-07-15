@@ -4,7 +4,7 @@ import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
 import StarRating from '../components/common/StarRating';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const STATUS_LABEL = {
   delivered: 'Delivered',
