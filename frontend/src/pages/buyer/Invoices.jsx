@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/common/DashboardLayout";
+import { printInvoice } from "../../utils/printInvoice";
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState([]);
@@ -23,6 +24,27 @@ export default function Invoices() {
       },
     ]);
   }, []);
+
+  const downloadInvoice = (invoice) => {
+    const opened = printInvoice({
+      heading: "CargoZent Invoice",
+      subheading: `Invoice ${invoice.invoiceNo}`,
+      rows: [
+        ["Invoice No", invoice.invoiceNo],
+        ["Order ID", invoice.orderId],
+        ["Amount", `₹${invoice.amount}`],
+        ["Date", invoice.date],
+        ["Status", invoice.status],
+      ],
+      footer: "Thank you for shipping with CargoZent.",
+    });
+
+    if (!opened) {
+      alert(
+        "Please allow pop-ups for this site to download the invoice."
+      );
+    }
+  };
 
   return (
     <DashboardLayout
@@ -84,6 +106,7 @@ export default function Invoices() {
                 <td className="px-6 py-4">
 
                   <button
+                    onClick={() => downloadInvoice(invoice)}
                     className="rounded-lg border border-primary/20 px-4 py-2 text-primary hover:bg-primary/5"
                   >
                     Download PDF

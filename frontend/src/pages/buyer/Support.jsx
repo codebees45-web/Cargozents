@@ -10,7 +10,7 @@ export default function Support() {
     description: "",
   });
 
-  const [tickets] = useState([
+  const [tickets, setTickets] = useState([
     {
       id: "TKT-1001",
       subject: "Shipment Delay",
@@ -35,9 +35,35 @@ export default function Support() {
   const submitTicket = (e) => {
     e.preventDefault();
 
+    if (!ticket.category || !ticket.subject || !ticket.description) {
+      alert("Please fill in category, subject and description.");
+      return;
+    }
+
     // buyerService.createSupportTicket(ticket)
 
-    console.log(ticket);
+    const newTicket = {
+      id: `TKT-${1000 + tickets.length + 1}`,
+      subject: ticket.subject,
+      status: "Open",
+      createdAt: new Date().toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+    };
+
+    setTickets((prev) => [newTicket, ...prev]);
+
+    setTicket({
+      category: "",
+      priority: "Medium",
+      orderId: "",
+      subject: "",
+      description: "",
+    });
+
+    alert(`Ticket ${newTicket.id} submitted. Our team will get back to you shortly.`);
   };
 
   const statusClass = (status) => {

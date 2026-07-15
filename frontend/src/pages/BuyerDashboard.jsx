@@ -21,8 +21,58 @@ const STATUS_STYLES = {
   cancelled: 'bg-danger/10 text-danger',
 };
 
+// Freight ("Book Shipment") orders track their status separately, on
+// tracking.currentStatus, using its own vocabulary.
+const SHIPMENT_STATUS_STYLES = {
+  Submitted: 'bg-secondary text-primary/70',
+  'Admin Review': 'bg-primary/10 text-primary',
+  Approved: 'bg-primary/10 text-primary',
+  'Driver Assigned': 'bg-warning/10 text-warning',
+  'Driver Accepted': 'bg-warning/10 text-warning',
+  'Pickup Started': 'bg-warning/10 text-warning',
+  'Picked Up': 'bg-warning/10 text-warning',
+  'In Transit': 'bg-warning/10 text-warning',
+  'Reached Destination': 'bg-warning/10 text-warning',
+  Delivered: 'bg-success/10 text-success',
+  Completed: 'bg-success/10 text-success',
+  Cancelled: 'bg-danger/10 text-danger',
+};
+
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+// Normalizes a product order or a freight/shipment order into the same
+// shape so the list below doesn't need to branch everywhere.
+const describeOrder = (o) => {
+  if (o.orderType === 'shipment') {
+    const status = o.tracking?.currentStatus || 'Submitted';
+    return {
+      title: o.goods?.name || 'Shipment',
+      extraCount: 0,
+      thumb: null,
+      amount: o.pricing?.totalAmount || 0,
+      statusLabel: status.toUpperCase(),
+      statusClass: SHIPMENT_STATUS_STYLES[status] || 'bg-secondary text-primary/70',
+      isDelivered: ['Delivered', 'Completed'].includes(status),
+      isCancelled: status === 'Cancelled',
+      isActive: !['Delivered', 'Completed', 'Cancelled'].includes(status),
+      isProduct: false,
+    };
+  }
+  const status = o.status || 'placed';
+  return {
+    title: o.items?.[0]?.product?.name || 'Order',
+    extraCount: (o.items?.length || 1) - 1,
+    thumb: o.items?.[0]?.product?.images?.[0],
+    amount: o.productTotal || 0,
+    statusLabel: status.replace(/_/g, ' ').toUpperCase(),
+    statusClass: STATUS_STYLES[status] || 'bg-secondary text-primary/70',
+    isDelivered: status === 'delivered',
+    isCancelled: status === 'cancelled',
+    isActive: ACTIVE_STATUSES.includes(status),
+    isProduct: true,
+  };
+};
 
 const BuyerDashboard = () => {
   const [orders, setOrders] = useState(null);
@@ -38,7 +88,7 @@ const BuyerDashboard = () => {
 
   const fetchOrders = () => {
     api
-      .get('/orders/mine')
+      .get('/orders/my-orders')
       .then(({ data }) => setOrders(data.orders || []))
       .catch(() => setOrders((prev) => prev ?? []));
   };
@@ -50,7 +100,7 @@ const BuyerDashboard = () => {
     // avoid needless requests.
     pollRef.current = setInterval(() => {
       setOrders((prev) => {
-        if (prev?.some((o) => ACTIVE_STATUSES.includes(o.status))) fetchOrders();
+        if (prev?.some((o) => describeOrder(o).isActive)) fetchOrders();
         return prev;
       });
     }, POLL_INTERVAL_MS);
@@ -70,15 +120,16 @@ const BuyerDashboard = () => {
     navigate('/buyer/checkout');
   };
 
-  const activeOrder = orders?.find((o) => !['delivered', 'cancelled'].includes(o.status));
+  const activeOrder = orders?.find((o) => describeOrder(o).isActive);
+  const activeOrderView = activeOrder ? describeOrder(activeOrder) : null;
 
   return (
     <DashboardLayout title="My orders" subtitle="Your past and current orders.">
-      {activeOrder && (
+      {activeOrderView && (
         <div className="mb-8 rounded-xl border border-primary/30 bg-primary/5 px-5 py-4">
           <p className="font-mono-ls text-[11px] text-primary">ACTIVE ORDER</p>
           <p className="mt-1 text-sm text-primary">
-            ₹{activeOrder.productTotal} · {activeOrder.status?.replace(/_/g, ' ')}
+            ₹{activeOrderView.amount} · {activeOrderView.statusLabel.replace(/_/g, ' ')}
           </p>
         </div>
       )}
@@ -99,15 +150,13 @@ const BuyerDashboard = () => {
           ) : (
             <ul className="space-y-3">
               {orders.map((o) => {
-                const firstItem = o.items?.[0];
-                const thumb = firstItem?.product?.images?.[0];
-                const extraCount = (o.items?.length || 1) - 1;
+                const view = describeOrder(o);
                 return (
                   <li key={o._id} className="rounded-xl border border-primary/10 bg-secondary/10 p-4">
                     <div className="flex items-start gap-3">
                       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-secondary/40">
-                        {thumb ? (
-                          <img src={thumb} alt="" className="h-full w-full object-cover" />
+                        {view.thumb ? (
+                          <img src={view.thumb} alt="" className="h-full w-full object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary/20">
@@ -123,26 +172,29 @@ const BuyerDashboard = () => {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="truncate font-display text-sm font-semibold text-primary">
-                              {firstItem?.product?.name || 'Order'}
-                              {extraCount > 0 && <span className="text-muted"> +{extraCount} more</span>}
+                              {view.title}
+                              {view.extraCount > 0 && <span className="text-muted"> +{view.extraCount} more</span>}
+                              {!view.isProduct && <span className="ml-2 text-[10px] font-mono-ls text-muted/70">FREIGHT</span>}
                             </p>
                             <p className="mt-0.5 font-mono-ls text-[10px] text-muted">
                               #{o._id.slice(-6).toUpperCase()} · {formatDate(o.createdAt)}
                             </p>
                           </div>
-                          <span
-                            className={`shrink-0 rounded-full px-2.5 py-1 font-mono-ls text-[9px] tracking-wide ${
-                              STATUS_STYLES[o.status] || 'bg-secondary text-primary/70'
-                            }`}
-                          >
-                            {o.status?.replace(/_/g, ' ').toUpperCase()}
+                          <span className={`shrink-0 rounded-full px-2.5 py-1 font-mono-ls text-[9px] tracking-wide ${view.statusClass}`}>
+                            {view.statusLabel}
                           </span>
                         </div>
 
                         <div className="mt-3 flex items-center justify-between">
-                          <p className="font-display text-sm font-bold text-primary">₹{o.productTotal}</p>
-                          <div className="flex gap-2">
-                            {!['delivered', 'cancelled', 'placed', 'confirmed_by_shipper'].includes(o.status) && (
+                          <p className="font-display text-sm font-bold text-primary">₹{view.amount}</p>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <Link
+                              to={`/buyer/orders/${o._id}`}
+                              className="rounded-full border border-primary/15 px-3 py-1 text-[11px] font-semibold text-primary transition hover:border-primary/40"
+                            >
+                              Details
+                            </Link>
+                            {view.isActive && (
                               <Link
                                 to={`/buyer/orders/${o._id}/track`}
                                 className="rounded-full border border-primary/15 px-3 py-1 text-[11px] font-semibold text-primary transition hover:border-primary/40"
@@ -150,7 +202,7 @@ const BuyerDashboard = () => {
                                 Track
                               </Link>
                             )}
-                            {o.status === 'delivered' &&
+                            {view.isProduct && view.isDelivered &&
                               (o.hasReview ? (
                                 <span className="self-center font-mono-ls text-[11px] text-success">RATED</span>
                               ) : (
@@ -161,7 +213,7 @@ const BuyerDashboard = () => {
                                   Rate shipper
                                 </button>
                               ))}
-                            {['delivered', 'cancelled'].includes(o.status) && (
+                            {view.isProduct && (view.isDelivered || view.isCancelled) && (
                               <button
                                 onClick={() => handleReorder(o)}
                                 className="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-primary transition hover:shadow-glow"

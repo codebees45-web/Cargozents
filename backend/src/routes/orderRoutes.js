@@ -6,6 +6,7 @@ const { protect } = require("../middleware/auth");
 
 const orderController = require("../controllers/orderController");
 const validateOrder = require("../middleware/validateOrder");
+const validateProductOrder = require("../middleware/validateProductOrder");
 
 /*
 |--------------------------------------------------------------------------
@@ -13,12 +14,20 @@ const validateOrder = require("../middleware/validateOrder");
 |--------------------------------------------------------------------------
 */
 
-// Create Order
+// Create Order (freight / Book Shipment flow)
 router.post(
   "/",
   protect,
   validateOrder,
   orderController.createOrder
+);
+
+// Create Product Order (Shop / Cart / Checkout flow)
+router.post(
+  "/product",
+  protect,
+  validateProductOrder,
+  orderController.createProductOrder
 );
 
 // Get Logged-in User Orders

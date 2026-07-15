@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/common/DashboardLayout";
 
 import BookingStepper from "../../components/buyer/BookingStepper";
@@ -17,6 +18,7 @@ import mapsService from "../../services/mapsService";
 import ShipmentRouteMap from "../../components/buyer/ShipmentRouteMap";
 
 export default function BookShipment() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const TOTAL_STEPS = 5;
   const [distance, setDistance] = useState(0);
@@ -87,13 +89,13 @@ export default function BookShipment() {
             goods: {
               name: formData.goodsName,
               category: formData.goodsCategory,
-              quantity: formData.quantity,
-              weight: formData.weight,
+              quantity: Number(formData.quantity),
+              weight: Number(formData.weight),
 
               dimensions: {
-                length: formData.length,
-                width: formData.width,
-                height: formData.height,
+                length: Number(formData.length),
+                width: Number(formData.width),
+                height: Number(formData.height),
               },
 
               fragile: formData.fragile,
@@ -112,18 +114,15 @@ export default function BookShipment() {
             vehicle: selectedVehicle,
 
             pricing: {
-              totalAmount: estimatedPrice,
+              totalAmount: estimatedPrice > 0 ? estimatedPrice : 1,
             },
 
             documents: formData.documents,
           };
 
-          const response =
-            await orderService.createOrder(payload);
+          const response = await orderService.createOrder(payload);
 
-          alert("Booking Created Successfully");
-
-          console.log(response);
+          navigate("/buyer/order-confirmation", { state: { order: response.order } });
 
         } catch (err) {
 

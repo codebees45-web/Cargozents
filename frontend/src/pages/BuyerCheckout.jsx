@@ -75,7 +75,7 @@ const BuyerCheckout = () => {
     setPlacing(true);
     setError('');
     try {
-      const { data } = await api.post('/orders', {
+      const { data } = await api.post('/orders/product', {
         items: cart.items.map((i) => ({ product: i.product, quantity: i.quantity })),
         deliveryAddress: {
           line1: address.line1,

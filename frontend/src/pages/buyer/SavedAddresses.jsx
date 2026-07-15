@@ -1,5 +1,6 @@
 import { useState } from "react";
 import DashboardLayout from "../../components/common/DashboardLayout";
+import FormInput from "../../components/common/FormInput";
 
 const initialAddresses = [
   {
@@ -22,8 +23,18 @@ const initialAddresses = [
   },
 ];
 
+const emptyForm = {
+  label: "",
+  name: "",
+  phone: "",
+  address: "",
+};
+
 export default function SavedAddresses() {
   const [addresses, setAddresses] = useState(initialAddresses);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(emptyForm);
 
   const setDefault = (id) => {
     setAddresses((prev) =>
@@ -38,6 +49,56 @@ export default function SavedAddresses() {
     setAddresses((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const openAddModal = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (address) => {
+    setEditingId(address.id);
+    setForm({
+      label: address.label,
+      name: address.name,
+      phone: address.phone,
+      address: address.address,
+    });
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (editingId) {
+      setAddresses((prev) =>
+        prev.map((item) =>
+          item.id === editingId ? { ...item, ...form } : item
+        )
+      );
+    } else {
+      setAddresses((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          default: prev.length === 0,
+          ...form,
+        },
+      ]);
+    }
+
+    closeModal();
+  };
+
   return (
     <DashboardLayout
       title="Saved Addresses"
@@ -47,7 +108,10 @@ export default function SavedAddresses() {
 
         <div className="flex justify-end">
 
-          <button className="rounded-lg bg-primary px-5 py-3 text-white">
+          <button
+            onClick={openAddModal}
+            className="rounded-lg bg-primary px-5 py-3 text-white"
+          >
             Add Address
           </button>
 
@@ -104,6 +168,7 @@ export default function SavedAddresses() {
                 )}
 
                 <button
+                  onClick={() => openEditModal(address)}
                   className="rounded-lg border border-primary/20 px-4 py-2 text-primary"
                 >
                   Edit
@@ -141,6 +206,70 @@ export default function SavedAddresses() {
         )}
 
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+
+            <h2 className="text-lg font-semibold text-primary">
+              {editingId ? "Edit Address" : "Add Address"}
+            </h2>
+
+            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+
+              <FormInput
+                label="Label (e.g. Home, Office)"
+                name="label"
+                value={form.label}
+                onChange={handleChange}
+              />
+
+              <FormInput
+                label="Contact Name"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+              />
+
+              <FormInput
+                label="Phone Number"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+              />
+
+              <FormInput
+                label="Full Address"
+                name="address"
+                value={form.address}
+                onChange={handleChange}
+              />
+
+              <div className="flex justify-end gap-3 pt-2">
+
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="rounded-lg border border-primary/20 px-4 py-2 text-primary"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="rounded-lg bg-primary px-5 py-2 text-white"
+                >
+                  {editingId ? "Save Changes" : "Add Address"}
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
     </DashboardLayout>
   );
 }

@@ -69,10 +69,20 @@ const orderSchema = new mongoose.Schema(
       default: null,
     },
 
+    // "shipment" = freight booking (Book Shipment wizard). "product" = a
+    // cart order placed against a shipper's product catalog (Shop/Checkout).
+    // The two flows share this collection because a lot of downstream logic
+    // (reviews, cancellation, status timeline) is identical, but only a
+    // subset of the fields below is populated for either type.
+    orderType: {
+      type: String,
+      enum: ["shipment", "product"],
+      default: "shipment",
+    },
+
     pickup: {
       address: {
         type: String,
-        required: true,
       },
 
       latitude: Number,
@@ -85,7 +95,6 @@ const orderSchema = new mongoose.Schema(
     delivery: {
       address: {
         type: String,
-        required: true,
       },
 
       latitude: Number,
@@ -95,10 +104,79 @@ const orderSchema = new mongoose.Schema(
       contactPhone: String,
     },
 
+    // --- Product-order (Shop/Checkout) fields ---
+    items: [
+      {
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+        },
+        quantity: {
+          type: Number,
+          min: 1,
+        },
+        priceAtPurchase: Number,
+      },
+    ],
+
+    productTotal: {
+      type: Number,
+      default: 0,
+    },
+
+    deliveryAddress: {
+      line1: String,
+      city: String,
+      state: String,
+      pincode: String,
+      location: {
+        type: {
+          type: String,
+          enum: ["Point"],
+          default: "Point",
+        },
+        coordinates: {
+          type: [Number],
+          default: [0, 0],
+        },
+      },
+    },
+
+    productPaymentMethod: {
+      type: String,
+      enum: ["cod", "upi", "card", "netbanking"],
+    },
+
+    productPaymentStatus: {
+      type: String,
+      enum: ["pending", "paid"],
+      default: "pending",
+    },
+
+    // Lifecycle for product orders (mirrors what the buyer dashboard UI
+    // expects). Shipment orders continue to use tracking.currentStatus
+    // below instead.
+    status: {
+      type: String,
+      enum: [
+        "placed",
+        "confirmed_by_shipper",
+        "awaiting_shipment",
+        "shipment_requested",
+        "out_for_delivery",
+        "delivered",
+        "cancelled",
+      ],
+    },
+
+    hasReview: {
+      type: Boolean,
+      default: false,
+    },
+
     goods: {
       name: {
         type: String,
-        required: true,
       },
 
       category: String,
@@ -255,6 +333,16 @@ const orderSchema = new mongoose.Schema(
 
       expiresAt: Date,
     },
+    deliveryVerification: {
+        otp: {
+            type: String,
+        },
+        verified: {
+            type: Boolean,
+            default: false,
+        },
+        verifiedAt: Date,
+    },
 
     documents: [documentSchema],
 
@@ -272,5 +360,7 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+
 
 module.exports = mongoose.model("Order", orderSchema);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../components/common/DashboardLayout";
 import StatusBadge from "../../components/buyer/StatusBadge";
+import { printInvoice } from "../../utils/printInvoice";
 const paymentData = [
   {
     id: "TXN983452",
@@ -45,6 +46,28 @@ export default function PaymentHistory() {
         payment.orderId.toLowerCase().includes(search.toLowerCase())
     );
   }, [payments, search]);
+
+  const downloadReceipt = (payment) => {
+    const opened = printInvoice({
+      heading: "CargoZent Payment Receipt",
+      subheading: `Transaction ${payment.id}`,
+      rows: [
+        ["Transaction ID", payment.id],
+        ["Order ID", payment.orderId],
+        ["Payment Method", payment.method],
+        ["Amount", `₹${payment.amount}`],
+        ["Status", payment.status],
+        ["Date", payment.date],
+      ],
+      footer: "Thank you for shipping with CargoZent.",
+    });
+
+    if (!opened) {
+      alert(
+        "Please allow pop-ups for this site to download the invoice."
+      );
+    }
+  };
 
   return (
     <DashboardLayout
@@ -115,7 +138,10 @@ export default function PaymentHistory() {
 
                   <td className="px-6 py-4">
 
-                    <button className="rounded-md border border-primary/20 px-4 py-2 text-primary hover:bg-primary/5">
+                    <button
+                      onClick={() => downloadReceipt(payment)}
+                      className="rounded-md border border-primary/20 px-4 py-2 text-primary hover:bg-primary/5"
+                    >
                       Invoice
                     </button>
 

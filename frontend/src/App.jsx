@@ -53,7 +53,6 @@ import BuyerCheckout from './pages/BuyerCheckout';
 import BookShipment from "./pages/buyer/BookShipment";
 import VehicleSelection from "./pages/buyer/VehicleSelection";
 import OrderConfirmation from "./pages/buyer/OrderConfirmation";
-import MyOrders from "./pages/buyer/MyOrders";
 import OrderDetails from "./pages/buyer/OrderDetails";
 import PaymentHistory from "./pages/buyer/PaymentHistory";
 import Notifications from "./pages/buyer/Notifications";
@@ -153,6 +152,14 @@ function App() {
           <Route
             path="/buyer/vehicle-selection"
             element={<VehicleSelection />}
+          />
+          <Route
+            path="/buyer/orders"
+            element={
+              <ProtectedRoute allowedRoles={['buyer']}>
+                <BuyerDashboard />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/buyer/orders"

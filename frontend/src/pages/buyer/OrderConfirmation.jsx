@@ -1,18 +1,17 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import DashboardLayout from "../../components/common/DashboardLayout";
 
 export default function OrderConfirmation() {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const order = state?.order;
 
-  const order = {
-    orderId: "CGZ-202600124",
-    bookingDate: new Date().toLocaleDateString(),
-    estimatedPickup: "Today, 04:30 PM",
-    estimatedDelivery: "Tomorrow, 02:00 PM",
-    paymentStatus: "Paid",
-    shipmentStatus: "Awaiting Driver Assignment",
-    amount: "₹850",
-  };
+  // This page only makes sense right after a booking succeeds — if someone
+  // lands here directly (refresh, bookmarked link, back button) send them
+  // to their order list instead of showing fabricated data.
+  if (!order) {
+    return <Navigate to="/buyer/orders" replace />;
+  }
 
   return (
     <DashboardLayout
@@ -62,7 +61,7 @@ export default function OrderConfirmation() {
                 </p>
 
                 <h3 className="font-semibold text-primary mt-1">
-                  {order.orderId}
+                  {order.orderId || order._id}
                 </h3>
               </div>
 
@@ -72,38 +71,28 @@ export default function OrderConfirmation() {
                 </p>
 
                 <h3 className="font-semibold text-primary mt-1">
-                  {order.bookingDate}
+                  {new Date(order.createdAt).toLocaleDateString()}
                 </h3>
               </div>
 
               <div>
                 <p className="text-xs uppercase text-[#5B7A70]">
-                  Pickup Time
+                  Pickup
                 </p>
 
                 <h3 className="font-semibold text-primary mt-1">
-                  {order.estimatedPickup}
+                  {order.pickup?.address}
                 </h3>
               </div>
 
               <div>
                 <p className="text-xs uppercase text-[#5B7A70]">
-                  Expected Delivery
+                  Delivery
                 </p>
 
                 <h3 className="font-semibold text-primary mt-1">
-                  {order.estimatedDelivery}
+                  {order.delivery?.address}
                 </h3>
-              </div>
-
-              <div>
-                <p className="text-xs uppercase text-[#5B7A70]">
-                  Payment Status
-                </p>
-
-                <span className="inline-flex mt-2 rounded-md bg-success/10 px-3 py-1 text-success text-sm font-medium">
-                  {order.paymentStatus}
-                </span>
               </div>
 
               <div>
@@ -112,7 +101,7 @@ export default function OrderConfirmation() {
                 </p>
 
                 <span className="inline-flex mt-2 rounded-md bg-warning/10 px-3 py-1 text-warning text-sm font-medium">
-                  {order.shipmentStatus}
+                  {order.tracking?.currentStatus || "Submitted"}
                 </span>
               </div>
 
@@ -123,11 +112,11 @@ export default function OrderConfirmation() {
               <div className="flex justify-between">
 
                 <span className="text-[#5B7A70]">
-                  Total Paid
+                  Estimated Total
                 </span>
 
                 <span className="text-2xl font-bold text-primary">
-                  {order.amount}
+                  ₹{order.pricing?.totalAmount ?? 0}
                 </span>
 
               </div>
@@ -137,9 +126,7 @@ export default function OrderConfirmation() {
             <div className="mt-8 flex flex-wrap gap-4">
 
               <button
-                onClick={() =>
-                  navigate(`/buyer/orders/${order.orderId}/track`)
-                }
+                onClick={() => navigate(`/buyer/orders/${order._id}/track`)}
                 className="rounded-lg bg-primary px-6 py-3 text-white transition hover:opacity-90"
               >
                 Track Shipment

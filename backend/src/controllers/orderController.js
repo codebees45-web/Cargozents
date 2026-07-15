@@ -1,8 +1,8 @@
 const Order = require("../models/Order");
-const { v4: uuidv4 } = require("uuid");
+const Product = require("../models/Product");
 
 /**
- * Create Order
+ * Create Order (freight / "Book Shipment" flow)
  */
 exports.createOrder = async (req, res) => {
   try {
@@ -11,6 +11,7 @@ exports.createOrder = async (req, res) => {
     const order = await Order.create({
       orderId,
       buyer: req.user._id,
+      orderType: "shipment",
 
       pickup: req.body.pickup,
       delivery: req.body.delivery,
@@ -53,14 +54,122 @@ exports.createOrder = async (req, res) => {
 };
 
 /**
+ * Create Product Order (Shop / Cart / Checkout flow)
+ *
+ * Prices and stock are re-read from the database rather than trusted from
+ * the client, and all items in the cart must belong to the same shipper
+ * (a cart only ever holds one shipper's products at a time on the frontend).
+ */
+exports.createProductOrder = async (req, res) => {
+  try {
+    const { items, deliveryAddress, productPaymentMethod } = req.body;
+
+    const productIds = items.map((i) => i.product);
+    const products = await Product.find({ _id: { $in: productIds } });
+
+    if (products.length !== productIds.length) {
+      return res.status(404).json({
+        success: false,
+        message: "One or more products in your cart could not be found",
+      });
+    }
+
+    const shipperIds = new Set(products.map((p) => p.shipper.toString()));
+    if (shipperIds.size > 1) {
+      return res.status(400).json({
+        success: false,
+        message: "All items in an order must be from the same shipper",
+      });
+    }
+
+    const productsById = new Map(products.map((p) => [p._id.toString(), p]));
+
+    let productTotal = 0;
+    const orderItems = [];
+
+    for (const { product: productId, quantity } of items) {
+      const product = productsById.get(productId);
+
+      if (!product.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: `"${product.name}" is no longer available`,
+        });
+      }
+      if (quantity > product.stock) {
+        return res.status(400).json({
+          success: false,
+          message: `Only ${product.stock} of "${product.name}" left in stock`,
+        });
+      }
+
+      productTotal += product.price * quantity;
+      orderItems.push({
+        product: product._id,
+        quantity,
+        priceAtPurchase: product.price,
+      });
+    }
+
+    const orderId = `CGZ-${Date.now()}`;
+
+    const order = await Order.create({
+      orderId,
+      buyer: req.user._id,
+      shipper: products[0].shipper,
+      orderType: "product",
+
+      items: orderItems,
+      productTotal,
+      deliveryAddress,
+      productPaymentMethod,
+      productPaymentStatus: productPaymentMethod === "cod" ? "pending" : "pending",
+
+      status: "placed",
+    });
+
+    // Best-effort stock decrement — not wrapped in a transaction since this
+    // project doesn't run Mongo as a replica set locally, but good enough
+    // for the current single-shipper-per-order flow.
+    await Promise.all(
+      orderItems.map((i) =>
+        Product.findByIdAndUpdate(i.product, { $inc: { stock: -i.quantity } })
+      )
+    );
+
+    const populatedOrder = await Order.findById(order._id).populate(
+      "items.product"
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Order placed successfully",
+      order: populatedOrder,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+/**
  * Get Logged-in User Orders
+ * Optional ?type=product|shipment query param to filter by order type.
  */
 exports.getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({
-      buyer: req.user._id,
-    })
+    const filter = { buyer: req.user._id };
+    if (req.query.type === "product" || req.query.type === "shipment") {
+      filter.orderType = req.query.type;
+    }
+
+    const orders = await Order.find(filter)
       .populate("driver", "name phone")
+      .populate("items.product")
       .sort({ createdAt: -1 });
 
     res.json({
@@ -83,7 +192,9 @@ exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate("buyer", "name email")
-      .populate("driver", "name phone");
+      .populate("driver", "name phone")
+      .populate("shipper", "name")
+      .populate("items.product");
 
     if (!order) {
       return res.status(404).json({
@@ -103,8 +214,9 @@ exports.getOrderById = async (req, res) => {
     });
   }
 };
+
 /**
- * Cancel Order
+ * Cancel Order — works for both shipment and product orders.
  */
 exports.cancelOrder = async (req, res) => {
   try {
@@ -117,19 +229,36 @@ exports.cancelOrder = async (req, res) => {
       });
     }
 
-    order.tracking.currentStatus = "Cancelled";
+    if (!order.buyer.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to cancel this order",
+      });
+    }
 
-    order.tracking.timeline.push({
-      status: "Cancelled",
-      message: "Order cancelled by buyer",
-      createdAt: new Date(),
-    });
+    if (order.orderType === "product") {
+      if (["delivered", "cancelled"].includes(order.status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Order already ${order.status}`,
+        });
+      }
+      order.status = "cancelled";
+    } else {
+      order.tracking.currentStatus = "Cancelled";
+      order.tracking.timeline.push({
+        status: "Cancelled",
+        message: "Order cancelled by buyer",
+        createdAt: new Date(),
+      });
+    }
 
     await order.save();
 
     res.json({
       success: true,
       message: "Order cancelled successfully",
+      order,
     });
   } catch (err) {
     res.status(500).json({
@@ -140,7 +269,7 @@ exports.cancelOrder = async (req, res) => {
 };
 
 /**
- * Update Order Status
+ * Update Order Status (shipment orders — driver/admin/shipper actions)
  */
 exports.updateOrderStatus = async (req, res) => {
   try {
@@ -155,95 +284,16 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    order.tracking.currentStatus = status;
-
-    order.tracking.timeline.push({
-      status,
-      message: `Status changed to ${status}`,
-      createdAt: new Date(),
-    });
-
-    await order.save();
-
-    const io = req.app.get("io");
-
-    if (io) {
-      io.to(order._id.toString()).emit("status-update", {
-        bookingId: order._id,
+    if (order.orderType === "product") {
+      order.status = status;
+    } else {
+      order.tracking.currentStatus = status;
+      order.tracking.timeline.push({
         status,
+        message: `Status changed to ${status}`,
+        createdAt: new Date(),
       });
     }
-
-    res.json({
-      success: true,
-      message: "Order status updated",
-      order,
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-};/**
- * Cancel Order
- */
-exports.cancelOrder = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
-    }
-
-    order.tracking.currentStatus = "Cancelled";
-
-    order.tracking.timeline.push({
-      status: "Cancelled",
-      message: "Order cancelled by buyer",
-      createdAt: new Date(),
-    });
-
-    await order.save();
-
-    res.json({
-      success: true,
-      message: "Order cancelled successfully",
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-};
-
-/**
- * Update Order Status
- */
-exports.updateOrderStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
-    }
-
-    order.tracking.currentStatus = status;
-
-    order.tracking.timeline.push({
-      status,
-      message: `Status changed to ${status}`,
-      createdAt: new Date(),
-    });
 
     await order.save();
 
@@ -268,6 +318,7 @@ exports.updateOrderStatus = async (req, res) => {
     });
   }
 };
+
 /**
  * Assign Driver
  */
@@ -323,9 +374,7 @@ exports.generateOTP = async (req, res) => {
       });
     }
 
-    const otp = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     order.deliveryOTP = {
       code: otp,
