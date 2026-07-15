@@ -8,6 +8,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const { Server } = require("socket.io");
 
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
@@ -21,10 +22,16 @@ const driverRoutes = require("./routes/driverRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 // NEW: Import subscription routes
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const agencyRoutes = require('./routes/agencyRoutes');
 const shipmentAnalyticsRoutes = require('./routes/shipmentAnalyticsRoutes');
+const pricingRoutes = require("./routes/pricingRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const path = require("path");
+
+const mapsRoutes = require("./routes/mapsRoutes");
 
 const logger = require("./utils/logger");
 
@@ -76,6 +83,39 @@ const listenOnPort = (port) =>
     const tryListen = () => {
       attempt += 1;
       const srv = http.createServer(app);
+
+      const io = new Server(srv, {
+        cors: {
+          origin: (process.env.CLIENT_URL || "")
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+          credentials: true,
+        },
+      });
+
+      app.set("io", io);
+
+      io.on("connection", (socket) => {
+        logger.info(`Socket Connected: ${socket.id}`);
+
+        socket.on("join-booking", (bookingId) => {
+          socket.join(bookingId);
+          logger.info(`${socket.id} joined booking ${bookingId}`);
+        });
+
+        socket.on("driver-location", (payload) => {
+          io.to(payload.bookingId).emit("location-update", payload);
+        });
+
+        socket.on("booking-status", (payload) => {
+          io.to(payload.bookingId).emit("status-update", payload);
+        });
+
+        socket.on("disconnect", () => {
+          logger.info(`Socket Disconnected: ${socket.id}`);
+        });
+      });
 
       srv.once('error', (err) => {
         srv.close();
@@ -155,6 +195,16 @@ app.use("/api/complaints", complaintRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use('/api/agency', agencyRoutes);
 app.use('/api/shipment-analytics', shipmentAnalyticsRoutes);
+app.use("/api/pricing", pricingRoutes);
+app.use("/api/maps", mapsRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use(
+  "/uploads",
+  express.static(
+    path.join(__dirname, "../uploads")
+  )
+);
+
 
 // 404 handler
 app.use((req, res) => {
@@ -195,3 +245,36 @@ process.on('uncaughtException', (err) => {
 });
 
 module.exports = app;
+
+import http from "http";
+import app from "./app.js";
+import { Server } from "socket.io";
+
+const PORT = process.env.PORT || 5000;
+
+const server = http.createServer(app);
+
+export const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:5173",
+        credentials: true
+    }
+});
+
+io.on("connection", (socket) => {
+
+    console.log("Socket Connected:", socket.id);
+
+    socket.on("disconnect", () => {
+
+        console.log("Socket Disconnected");
+
+    });
+
+});
+
+server.listen(PORT, () => {
+
+    console.log(`Server running on ${PORT}`);
+
+});

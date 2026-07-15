@@ -1,9 +1,12 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
 /**
- * Verifies the JWT and attaches the decoded user data directly to req.user.
- * In a hybrid setup, we bypass the MongoDB User.findById check because 
- * the user lives in Supabase.
+ * Verifies the JWT and attaches the corresponding Mongoose user document to req.user.
+ * We look the user up in MongoDB (rather than trusting the decoded token payload
+ * alone) so controllers can safely call document methods like .save() and
+ * .markModified(), and so we always reflect the user's current state
+ * (role changes, suspension, etc).
  */
 const protect = async (req, res, next) => {
   try {
@@ -13,17 +16,21 @@ const protect = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    
+
     // 1. Verify the VIP Pass using the shared secret
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 2. Trust the token and attach the user data directly.
-    // We map both id and _id so MongoDB routes that expect req.user._id don't break.
-    req.user = {
-      _id: decoded.id || decoded._id,
-      id: decoded.id || decoded._id,
-      role: decoded.role || 'admin', // Ensures authorize() doesn't fail
-    };
+    // 2. Load the real Mongoose document so downstream code can use
+    // document methods (save, markModified, etc).
+    const user = await User.findById(decoded.id || decoded._id);
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Not authorized, user no longer exists' });
+    }
+    if (user.isSuspended) {
+      return res.status(403).json({ success: false, message: 'Account suspended' });
+    }
+
+    req.user = user;
 
     next();
   } catch (err) {

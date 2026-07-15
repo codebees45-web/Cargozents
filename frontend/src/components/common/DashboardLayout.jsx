@@ -5,10 +5,17 @@ import { NavLink, Link } from 'react-router-dom';
 
 const navByRole = {
   buyer: [
-    { label: 'Browse', href: '/buyer/dashboard' },
-    { label: 'My orders', href: '/buyer/orders' },
-    { label: 'Profile', href: '/profile' },
-  ],
+  { label: "Dashboard", href: "/buyer/dashboard" },
+  { label: "Book Shipment", href: "/buyer/book-shipment" },
+  { label: "My Orders", href: "/buyer/orders" },
+  { label: "Payments", href: "/buyer/payments" },
+  { label: "Invoices", href: "/buyer/invoices" },
+  { label: "Addresses", href: "/buyer/addresses" },
+  { label: "Notifications", href: "/buyer/notifications" },
+  { label: "Support", href: "/buyer/support" },
+  { label: "Settings", href: "/buyer/settings" },
+  { label: "Profile", href: "/buyer/profile" },
+],
   shipper: [
     { label: 'Overview', href: '/shipper/dashboard' },
     { label: 'Products', href: '/shipper/products' },

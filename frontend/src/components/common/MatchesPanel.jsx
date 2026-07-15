@@ -50,7 +50,7 @@ const MatchesPanel = ({ shipmentId, onAssigned }) => {
 
   return (
     <div className="mt-3 space-y-2">
-      {matches.map((m) => (
+      {matches.map((m, index) => (
         <div
           key={m.vehicleId}
           className="flex items-center justify-between rounded-lg border border-primary/10 bg-background px-4 py-3"
@@ -58,12 +58,19 @@ const MatchesPanel = ({ shipmentId, onAssigned }) => {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-mono-ls text-xs text-primary">{m.registrationNumber}</span>
+              {index === 0 && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                  🤖 AI RECOMMENDED
+                </span>
+              )}
               {m.isBackhaulMatch && (
                 <span className="rounded-full bg-success/10 px-2 py-0.5 font-mono-ls text-[10px] text-success">
                   BACKHAUL
                 </span>
               )}
-              <span className="font-mono-ls text-[10px] text-[#5B7A70]">SCORE {m.priorityScore}</span>
+              <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
+                AI Score {m.priorityScore}
+              </span>
             </div>
             <p className="mt-1 text-xs text-[#5B7A70]">
               {m.driver.name} · {m.driver.phone} · {m.distanceToPickupKm} km away · ETA {m.etaMinutes} min
@@ -77,9 +84,18 @@ const MatchesPanel = ({ shipmentId, onAssigned }) => {
           <button
             disabled={assigningId === m.vehicleId}
             onClick={() => assign(m.vehicleId)}
-            className="shrink-0 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-primary transition hover:shadow-glow disabled:opacity-60"
+            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition
+                  ${
+                    index === 0
+                      ? "bg-primary text-white hover:opacity-90"
+                      : "bg-accent text-primary hover:shadow-glow"
+                  }`}
           >
-            {assigningId === m.vehicleId ? 'Assigning…' : 'Assign'}
+            {assigningId === m.vehicleId
+              ? "Assigning..."
+              : index === 0
+              ? "Assign AI Driver"
+              : "Assign"}
           </button>
         </div>
       ))}

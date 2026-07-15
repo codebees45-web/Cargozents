@@ -1,21 +1,44 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const orderItemSchema = new mongoose.Schema(
+const trackingEventSchema = new mongoose.Schema(
   {
-    product: {
+    status: {
+      type: String,
+      required: true,
+    },
+
+    message: {
+      type: String,
+      default: "",
+    },
+
+    location: {
+      latitude: Number,
+      longitude: Number,
+      address: String,
+    },
+
+    updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true,
+      ref: "User",
     },
-    quantity: {
-      type: Number,
-      required: true,
-      min: 1,
+
+    createdAt: {
+      type: Date,
+      default: Date.now,
     },
-    priceAtPurchase: {
-      // snapshot price so later product edits don't rewrite order history
-      type: Number,
-      required: true,
+  },
+  { _id: false }
+);
+
+const documentSchema = new mongoose.Schema(
+  {
+    name: String,
+    url: String,
+    type: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   { _id: false }
@@ -23,79 +46,231 @@ const orderItemSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
   {
-    buyer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true,
-    },
-    shipper: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true,
-    },
-    items: {
-      type: [orderItemSchema],
-      required: true,
-      validate: (v) => Array.isArray(v) && v.length > 0,
-    },
-    productTotal: {
-      // sum of items — Shipper is paid this amount, separate from delivery
-      type: Number,
+    orderId: {
+      type: String,
+      unique: true,
       required: true,
     },
 
-    deliveryAddress: {
-      line1: { type: String, required: true },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      pincode: { type: String, required: true },
-      location: {
-        type: { type: String, enum: ['Point'], default: 'Point' },
-        coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
+    buyer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    shipper: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    driver: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    pickup: {
+      address: {
+        type: String,
+        required: true,
+      },
+
+      latitude: Number,
+      longitude: Number,
+
+      contactName: String,
+      contactPhone: String,
+    },
+
+    delivery: {
+      address: {
+        type: String,
+        required: true,
+      },
+
+      latitude: Number,
+      longitude: Number,
+
+      contactName: String,
+      contactPhone: String,
+    },
+
+    goods: {
+      name: {
+        type: String,
+        required: true,
+      },
+
+      category: String,
+
+      quantity: Number,
+
+      weight: Number,
+
+      dimensions: {
+        length: Number,
+        width: Number,
+        height: Number,
+      },
+
+      fragile: {
+        type: Boolean,
+        default: false,
+      },
+
+      hazardous: {
+        type: Boolean,
+        default: false,
+      },
+
+      refrigerated: {
+        type: Boolean,
+        default: false,
+      },
+
+      stackable: {
+        type: Boolean,
+        default: true,
+      },
+
+      notes: String,
+    },
+
+    vehicle: {
+      type: {
+        type: String,
+      },
+
+      capacity: Number,
+
+      registrationNumber: String,
+    },
+
+    shipment: {
+      deliveryType: {
+        type: String,
+        enum: [
+          "Standard",
+          "Express",
+          "Same Day",
+        ],
+        default: "Standard",
+      },
+
+      pickupSchedule: Date,
+
+      estimatedDistance: Number,
+
+      estimatedDuration: Number,
+    },
+
+    pricing: {
+      baseFare: {
+        type: Number,
+        default: 0,
+      },
+
+      distanceCharge: {
+        type: Number,
+        default: 0,
+      },
+
+      fuelCharge: {
+        type: Number,
+        default: 0,
+      },
+
+      tollCharge: {
+        type: Number,
+        default: 0,
+      },
+
+      insuranceCharge: {
+        type: Number,
+        default: 0,
+      },
+
+      gst: {
+        type: Number,
+        default: 0,
+      },
+
+      totalAmount: {
+        type: Number,
+        default: 0,
       },
     },
 
-    // Product payment status — independent of delivery payment,
-    // per the "separate payments" decision.
-    productPaymentStatus: {
-      type: String,
-      enum: ['pending', 'paid', 'failed', 'refunded'],
-      default: 'pending',
-    },
-    productPaymentMethod: {
-      type: String,
-      enum: ['upi', 'card', 'cod', 'netbanking'],
+    payment:{
+
+        status:String,
+
+        razorpayOrderId:String,
+
+        razorpayPaymentId:String,
+
+        razorpaySignature:String,
+
+        transactionId:String,
+
+        invoiceNumber:String,
+
+        invoiceUrl:String,
+
+        paidAt:Date
+
+        },
+
+    tracking: {
+      currentStatus: {
+        type: String,
+        enum: [
+          "Draft",
+          "Submitted",
+          "Admin Review",
+          "Approved",
+          "Driver Assigned",
+          "Driver Accepted",
+          "Pickup Started",
+          "Picked Up",
+          "In Transit",
+          "Reached Destination",
+          "Delivered",
+          "Completed",
+          "Cancelled",
+        ],
+        default: "Draft",
+      },
+
+      timeline: [trackingEventSchema],
     },
 
-    // Overall order lifecycle. "awaiting_shipment" means the Shipper has
-    // been paid/confirmed but hasn't requested a truck yet.
-    status: {
-      type: String,
-      enum: [
-        'placed',
-        'confirmed_by_shipper',
-        'awaiting_shipment',
-        'shipment_requested',
-        'out_for_delivery',
-        'delivered',
-        'cancelled',
-      ],
-      default: 'placed',
+    deliveryOTP: {
+      code: String,
+
+      verified: {
+        type: Boolean,
+        default: false,
+      },
+
+      expiresAt: Date,
     },
 
-    // Set once the Shipper requests a truck for this order — links
-    // forward to the freight side of the system.
-    shipment: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Shipment',
-      default: null,
+    documents: [documentSchema],
+
+    rating: {
+      stars: {
+        type: Number,
+        min: 1,
+        max: 5,
+      },
+
+      review: String,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-orderSchema.index({ 'deliveryAddress.location': '2dsphere' });
-
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.model("Order", orderSchema);

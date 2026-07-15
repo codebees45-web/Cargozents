@@ -19,10 +19,17 @@ const initWhatsApp = () => {
       puppeteer: {
         headless: true,
         args: [
+
           '--no-sandbox', 
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',           // 👈 Prevents Chromium memory crashes
-          '--disable-features=site-per-process' // 👈 Crucial: Fixes the 'detached Frame' issue
+          '--disable-features=site-per-process', // 👈 Crucial: Fixes the 'detached Frame' issue
+
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',            // 👈 Prevents Chromium memory crashes
+          '--disable-features=site-per-process', // 👈 Crucial: Fixes the 'detached Frame' issue
+
         ],
       },
     });
@@ -46,8 +53,12 @@ const initWhatsApp = () => {
 
     client.on('disconnected', async (reason) => {
       isReady = false;
+
       logger.error(`[WHATSAPP] Client disconnected: ${reason}. Attempting recovery re-initialization...`);
       
+
+      logger.warn(`[WHATSAPP] Client disconnected: ${reason}. Attempting recovery re-initialization...`);
+
       // 👈 Gracefully wipe out the broken browser session and restart a clean client
       try {
         await client.destroy();

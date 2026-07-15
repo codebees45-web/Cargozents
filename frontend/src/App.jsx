@@ -52,6 +52,19 @@ import Onboarding from './pages/Onboarding';
 import BuyerOrderTracking from './pages/BuyerOrderTracking';
 import BuyerShop from './pages/BuyerShop';
 import BuyerCheckout from './pages/BuyerCheckout';
+import BookShipment from "./pages/buyer/BookShipment";
+import VehicleSelection from "./pages/buyer/VehicleSelection";
+import OrderConfirmation from "./pages/buyer/OrderConfirmation";
+import MyOrders from "./pages/buyer/MyOrders";
+import OrderDetails from "./pages/buyer/OrderDetails";
+import PaymentHistory from "./pages/buyer/PaymentHistory";
+import Notifications from "./pages/buyer/Notifications";
+import SavedAddresses from "./pages/buyer/SavedAddresses";
+import BuyerProfile from "./pages/buyer/BuyerProfile";
+import Support from "./pages/buyer/Support";
+import Settings from "./pages/buyer/Settings";
+import Invoices from "./pages/buyer/Invoices";
+
 
 function App() {
   return (
@@ -84,12 +97,100 @@ function App() {
             }
           />
           <Route
+            path="/buyer/profile"
+            element={
+              <ProtectedRoute allowedRoles={["buyer"]}>
+                <BuyerProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/settings"
+            element={
+              <ProtectedRoute allowedRoles={["buyer"]}>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/invoices"
+            element={
+              <ProtectedRoute allowedRoles={["buyer"]}>
+                <Invoices />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/support"
+            element={
+              <ProtectedRoute allowedRoles={["buyer"]}>
+                <Support />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/addresses"
+            element={
+                <ProtectedRoute allowedRoles={["buyer"]}>
+                    <SavedAddresses />
+                </ProtectedRoute>
+            }
+        />
+          <Route
+            path="/buyer/notifications"
+            element={
+              <ProtectedRoute allowedRoles={["buyer"]}>
+                <Notifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/orders/:orderId"
+            element={
+              <ProtectedRoute allowedRoles={["buyer"]}>
+                <OrderDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/payments"
+            element={
+              <ProtectedRoute allowedRoles={["buyer"]}>
+                <PaymentHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/vehicle-selection"
+            element={<VehicleSelection />}
+          />
+          <Route
             path="/buyer/orders"
             element={
               <ProtectedRoute allowedRoles={['buyer']}>
                 <BuyerDashboard />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/buyer/orders"
+            element={
+              <ProtectedRoute allowedRoles={["buyer"]}>
+                <MyOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/order-confirmation"
+            element={
+              <ProtectedRoute allowedRoles={["buyer"]}>
+                <OrderConfirmation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/book-shipment"
+            element={<BookShipment />}
           />
           <Route
             path="/buyer/checkout"

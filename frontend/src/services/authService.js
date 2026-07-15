@@ -1,9 +1,7 @@
 import api from './api';
 
-// Inside src/services/authService.js
 export const registerUser = (payload) => api.post('/auth/register', payload);
 export const loginUser = (payload) => api.post('/auth/login', payload);
-
 export const verifyOtp = (payload) => api.post('/auth/verify-otp', payload);
 export const resendOtp = (payload) => api.post('/auth/resend-otp', payload);
 export const forgotPassword = (payload) => api.post('/auth/forgot-password', payload);
