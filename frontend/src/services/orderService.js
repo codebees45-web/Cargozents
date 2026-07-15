@@ -106,24 +106,3 @@ const orderService = {
 };
 
 export default orderService;
-
-/**
- * NOTE: these are named exports (not part of the orderService object above)
- * because BuyerOrderTracking.jsx and ShipperOrders.jsx import them by name.
- * The backend routes/controllers for these do NOT exist yet
- * (checked orderRoutes.js / orderController.js) — these calls will 404
- * until matching backend endpoints are added.
- */
-
-export const getOrderTracking = async (orderId) => {
-  const response = await api.get(`/orders/${orderId}/tracking`);
-  return response.data; // expected shape: { order, tracking }
-};
-
-export const getReceivedOrders = async () => {
-  return api.get("/orders/received"); // returns full axios response — caller destructures { data }
-};
-
-export const confirmOrder = async (orderId) => {
-  return api.patch(`/orders/${orderId}/confirm`); // returns full axios response — caller destructures { data }
-};
