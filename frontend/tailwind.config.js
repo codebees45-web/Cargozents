@@ -5,6 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // --- 🔄 Your Existing Variables ---
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
         accent: 'rgb(var(--color-accent) / <alpha-value>)',
         dark: 'rgb(var(--color-primary) / <alpha-value>)',
@@ -14,6 +15,14 @@ export default {
         danger: '#EF4444',
         background: 'rgb(var(--color-background) / <alpha-value>)',
         muted: 'rgb(var(--color-muted) / <alpha-value>)',
+
+        // --- 🌌 New Premium Eye-Calming Dark Theme System ---
+        darkbg: '#0A110E',        // Deep matte canvas background
+        darksurface: '#121E1A',   // Rich forest-charcoal surface for cards, panels & sidebars
+        darkinput: '#1A2A24',     // Smooth, deep background for fields & selectors
+        darkborder: '#233931',    // Ultra-low contrast clean line dividers
+        darktext: '#E2EAE6',      // Soft luminous text (prevents eye strain)
+        darksage: '#8AA399',      // Soothing matte gray-green for secondary subtitles
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -21,7 +30,7 @@ export default {
       },
       boxShadow: {
         glow: '0 0 40px rgba(98, 129, 65, 0.35)',
-        card: '0 8px 30px rgba(27, 33, 26, 0.12)',
+        card: '0 8px 30px rgba(10, 17, 14, 0.4)', // Darker soft shadow profile
       },
       keyframes: {
         'truck-drive': {

@@ -18,7 +18,7 @@ export default function AgencySettings() {
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [showToast, setShowToast] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   // Generic handler for toggles
   const handleToggle = (key) => {
@@ -42,8 +42,7 @@ export default function AgencySettings() {
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      setShowModal(true);
     }, 1000);
   };
 
@@ -68,25 +67,36 @@ export default function AgencySettings() {
   );
 
   return (
-    <div className="max-w-4xl pb-10 relative">
+    <div className="p-6 max-w-4xl pb-10 relative">
       
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed bottom-10 right-10 z-50 bg-[#1C4E3A] text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 border border-emerald-500/20 animate-in fade-in slide-in-from-bottom-5">
-          <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-          </svg>
-          <p className="text-sm font-bold tracking-wide">Settings saved successfully!</p>
+      {/* 🟢 Clean Interior Page Title Block */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[#133C2C]">Settings</h1>
+        <p className="text-sm text-gray-500">Manage your account configuration and notification preferences.</p>
+      </div>
+      
+      {/* CENTERED POPUP MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center animate-in fade-in zoom-in duration-200">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mb-5">
+              <svg className="h-8 w-8 text-[#1C4E3A]" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-extrabold text-[#133C2C] mb-2">Settings Saved!</h3>
+            <p className="text-sm text-gray-500 mb-8 leading-relaxed">
+              Your profile preferences have been updated successfully.
+            </p>
+            <button
+              onClick={() => setShowModal(false)}
+              className="w-full rounded-lg bg-[#1C4E3A] py-3.5 text-sm font-bold text-white transition-all hover:bg-[#133C2C] shadow-md"
+            >
+              Okay
+            </button>
+          </div>
         </div>
       )}
-
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#133C2C] font-display">Settings</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Manage your account preferences.
-        </p>
-      </div>
 
       <div className="space-y-6">
         
