@@ -162,14 +162,6 @@ function App() {
             }
           />
           <Route
-            path="/buyer/orders"
-            element={
-              <ProtectedRoute allowedRoles={["buyer"]}>
-                <MyOrders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/buyer/order-confirmation"
             element={
               <ProtectedRoute allowedRoles={["buyer"]}>
