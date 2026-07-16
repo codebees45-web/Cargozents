@@ -8,8 +8,7 @@ const initialAddresses = [
     label: "Home",
     name: "Nagaraj K",
     phone: "9876543210",
-    address:
-      "12, Gandhi Street, Tambaram, Chennai, Tamil Nadu - 600045",
+    address: "12, Gandhi Street, Tambaram, Chennai, Tamil Nadu - 600045",
     default: true,
   },
   {
@@ -17,8 +16,7 @@ const initialAddresses = [
     label: "Office",
     name: "Nagaraj K",
     phone: "9876543210",
-    address:
-      "CIT Campus, Kundrathur Road, Chennai, Tamil Nadu",
+    address: "CIT Campus, Kundrathur Road, Chennai, Tamil Nadu",
     default: false,
   },
 ];
@@ -133,119 +131,107 @@ export default function SavedAddresses() {
       title="Saved Addresses"
       subtitle="Manage pickup and delivery addresses."
     >
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-5xl mx-auto">
 
+        {/* Header Action Row */}
         <div className="flex justify-end">
-
           <button
             onClick={openAddModal}
-            className="rounded-lg bg-primary px-5 py-3 text-white"
+            className="rounded-lg bg-[#00E676] px-5 py-2.5 text-xs font-bold text-[#0A110E] shadow-lg shadow-[#00E676]/10 transition-all duration-200 hover:bg-[#34D399] hover:shadow-[0_0_15px_rgba(0,230,118,0.4)]"
           >
             Add Address
           </button>
-
         </div>
 
-        {addresses.map((address) => (
+        {/* Address Cards List */}
+        <div className="space-y-4">
+          {addresses.map((address) => (
+            <div
+              key={address.id}
+              className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm transition hover:border-primary/20"
+            >
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                
+                {/* Information Area */}
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-3">
+                    <h2 className="font-bold text-lg text-primary">
+                      {address.label}
+                    </h2>
+                    {address.default && (
+                      <span className="rounded bg-[#00E676]/10 border border-[#00E676]/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#00E676]">
+                        Default
+                      </span>
+                    )}
+                  </div>
 
-          <div
-            key={address.id}
-            className="rounded-xl border border-primary/10 bg-white p-6 shadow-sm"
-          >
+                  <p className="mt-3 font-semibold text-primary/95">
+                    {address.name}
+                  </p>
 
-            <div className="flex justify-between">
+                  <p className="text-[#8AA399] text-xs font-medium">
+                    {address.phone}
+                  </p>
 
-              <div>
-
-                <div className="flex items-center gap-3">
-
-                  <h2 className="font-semibold text-lg text-primary">
-                    {address.label}
-                  </h2>
-
-                  {address.default && (
-                    <span className="rounded bg-success/10 px-3 py-1 text-xs text-success">
-                      Default
-                    </span>
-                  )}
-
+                  <p className="mt-2 text-[#8AA399] text-sm max-w-2xl leading-relaxed">
+                    {address.address}
+                  </p>
                 </div>
 
-                <p className="mt-3 font-medium">
-                  {address.name}
-                </p>
+                {/* Actions Area */}
+                <div className="flex flex-wrap gap-2 shrink-0 w-full sm:w-auto justify-end self-end sm:self-start">
+                  {!address.default && (
+                    <button
+                      onClick={() => setDefault(address.id)}
+                      className="rounded-lg border border-[#00E676]/30 bg-[#00E676]/5 px-4 py-2 text-xs font-semibold text-[#00E676] transition hover:bg-[#00E676]/10"
+                    >
+                      Set Default
+                    </button>
+                  )}
 
-                <p className="text-[#5B7A70]">
-                  {address.phone}
-                </p>
-
-                <p className="mt-2 text-[#5B7A70]">
-                  {address.address}
-                </p>
-
-              </div>
-
-              <div className="flex gap-3">
-
-                {!address.default && (
                   <button
-                    onClick={() => setDefault(address.id)}
-                    className="rounded-lg border border-primary/20 px-4 py-2 text-primary"
+                    onClick={() => openEditModal(address)}
+                    className="rounded-lg border border-primary/15 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition hover:border-primary/30 hover:bg-primary/10"
                   >
-                    Set Default
+                    Edit
                   </button>
-                )}
 
-                <button
-                  onClick={() => openEditModal(address)}
-                  className="rounded-lg border border-primary/20 px-4 py-2 text-primary"
-                >
-                  Edit
-                </button>
-
-                <button
-                  onClick={() => deleteAddress(address.id)}
-                  className="rounded-lg border border-danger/20 px-4 py-2 text-danger"
-                >
-                  Delete
-                </button>
+                  <button
+                    onClick={() => deleteAddress(address.id)}
+                    className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-2 text-xs font-semibold text-red-400 transition hover:border-red-500/40 hover:bg-red-500/10"
+                  >
+                    Delete
+                  </button>
+                </div>
 
               </div>
-
             </div>
+          ))}
+        </div>
 
-          </div>
-
-        ))}
-
+        {/* Empty State Layout */}
         {addresses.length === 0 && (
-
-          <div className="rounded-xl border border-primary/10 bg-white p-12 text-center">
-
-            <h2 className="text-xl font-semibold text-primary">
+          <div className="rounded-xl border border-primary/10 bg-secondary/20 p-12 text-center">
+            <h2 className="text-xl font-bold text-primary">
               No Saved Addresses
             </h2>
-
-            <p className="mt-2 text-[#5B7A70]">
+            <p className="mt-2 text-[#8AA399] text-sm">
               Add your first address to make booking shipments faster.
             </p>
-
           </div>
-
         )}
-
       </div>
 
+      {/* Modal View Box */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs px-4">
+          <div className="w-full max-w-md rounded-xl border border-primary/10 bg-[#121E1A] p-6 shadow-2xl shadow-black/50">
 
-            <h2 className="text-lg font-semibold text-primary">
+            <h2 className="text-lg font-bold text-primary">
               {editingId ? "Edit Address" : "Add Address"}
             </h2>
 
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-
               <FormInput
                 label="Label (e.g. Home, Office)"
                 name="label"
@@ -274,23 +260,22 @@ export default function SavedAddresses() {
                 onChange={handleChange}
               />
 
+              {/* Modal Buttons Grid */}
               <div className="flex justify-end gap-3 pt-2">
-
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-lg border border-primary/20 px-4 py-2 text-primary"
+                  className="rounded-lg border border-primary/15 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary hover:border-primary/30 hover:bg-primary/10 transition-all"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="rounded-lg bg-primary px-5 py-2 text-white"
+                  className="rounded-lg bg-[#00E676] px-5 py-2 text-xs font-bold text-[#0A110E] shadow-lg shadow-[#00E676]/10 hover:bg-[#34D399] hover:shadow-[0_0_15px_rgba(0,230,118,0.4)] transition-all"
                 >
                   {editingId ? "Save Changes" : "Add Address"}
                 </button>
-
               </div>
 
             </form>

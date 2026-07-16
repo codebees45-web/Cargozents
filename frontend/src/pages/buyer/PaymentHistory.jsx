@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../components/common/DashboardLayout";
-import StatusBadge from "../../components/buyer/StatusBadge";
 import { printInvoice } from "../../utils/printInvoice";
+
 const paymentData = [
   {
     id: "TXN983452",
@@ -24,18 +24,28 @@ const paymentData = [
     orderId: "CGZ-100127",
     amount: 3400,
     method: "Net Banking",
-    status: "Success",
+    status: "Failed",
     date: "18 Jul 2026",
   },
 ];
+
+// Local status style mapping configuration (High contrast, pure white text)
+const statusConfig = {
+  Pending: { bg: "#FF9100", text: "#FFFFFF", shadow: "rgba(255, 145, 0, 0.25)" },
+  Accepted: { bg: "#00B0FF", text: "#FFFFFF", shadow: "rgba(0, 176, 255, 0.25)" },
+  "Driver Assigned": { bg: "#00B0FF", text: "#FFFFFF", shadow: "rgba(0, 176, 255, 0.25)" },
+  "In Transit": { bg: "#00B0FF", text: "#FFFFFF", shadow: "rgba(0, 176, 255, 0.25)" },
+  Delivered: { bg: "#00E676", text: "#FFFFFF", shadow: "rgba(0, 230, 118, 0.25)" },
+  Cancelled: { bg: "#FF3D00", text: "#FFFFFF", shadow: "rgba(255, 61, 0, 0.25)" },
+  Failed: { bg: "#FF3D00", text: "#FFFFFF", shadow: "rgba(255, 61, 0, 0.25)" },
+  Success: { bg: "#00E676", text: "#FFFFFF", shadow: "rgba(0, 230, 118, 0.25)" },
+};
 
 export default function PaymentHistory() {
   const [payments, setPayments] = useState([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    // Later:
-    // buyerService.getPaymentHistory()
     setPayments(paymentData);
   }, []);
 
@@ -63,9 +73,7 @@ export default function PaymentHistory() {
     });
 
     if (!opened) {
-      alert(
-        "Please allow pop-ups for this site to download the invoice."
-      );
+      alert("Please allow pop-ups for this site to download the invoice.");
     }
   };
 
@@ -74,89 +82,100 @@ export default function PaymentHistory() {
       title="Payment History"
       subtitle="View all payment transactions."
     >
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-5xl mx-auto">
 
+        {/* Search Input with Premium Dark Overrides */}
         <input
           type="text"
           placeholder="Search Transaction ID or Order ID"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full lg:w-96 rounded-lg border border-primary/10 px-4 py-3"
+          className="w-full lg:w-96 rounded-lg border border-primary/10 bg-secondary/20 px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none text-primary placeholder-primary/40"
         />
 
-        <div className="overflow-hidden rounded-xl border border-primary/10 bg-white shadow-sm">
-
-          <table className="w-full">
-
-            <thead className="bg-secondary/20">
-
-              <tr className="text-left">
-
-                <th className="px-6 py-4">Transaction</th>
-                <th className="px-6 py-4">Order</th>
-                <th className="px-6 py-4">Method</th>
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Action</th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {filteredPayments.map((payment) => (
-
-                <tr
-                  key={payment.id}
-                  className="border-t border-primary/10"
-                >
-                  <td className="px-6 py-4 font-medium">
-                    {payment.id}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {payment.orderId}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {payment.method}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    ₹{payment.amount}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <StatusBadge status={payment.status} />
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {payment.date}
-                  </td>
-
-                  <td className="px-6 py-4">
-
-                    <button
-                      onClick={() => downloadReceipt(payment)}
-                      className="rounded-md border border-primary/20 px-4 py-2 text-primary hover:bg-primary/5"
-                    >
-                      Invoice
-                    </button>
-
-                  </td>
-
+        {/* Main Dark-Matte Card Table Container */}
+        <div className="overflow-hidden rounded-xl border border-primary/10 bg-secondary/20 shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              
+              <thead className="border-b border-primary/10 text-xs font-bold uppercase tracking-wider text-[#8AA399]">
+                <tr>
+                  <th className="px-6 py-4">Transaction</th>
+                  <th className="px-6 py-4">Order</th>
+                  <th className="px-6 py-4">Method</th>
+                  <th className="px-6 py-4">Amount</th>
+                  <th className="px-6 py-4 text-center">Status</th>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4 text-center">Action</th>
                 </tr>
+              </thead>
 
-              ))}
+              <tbody className="divide-y divide-primary/10 font-medium text-primary">
+                {filteredPayments.map((payment) => {
+                  // Select style from local status config
+                  const styleConfig = statusConfig[payment.status] || {
+                    bg: "#4B5563",
+                    text: "#FFFFFF",
+                    shadow: "rgba(0, 0, 0, 0.1)",
+                  };
 
-            </tbody>
+                  return (
+                    <tr 
+                      key={payment.id} 
+                      className="transition hover:bg-primary/5"
+                    >
+                      <td className="whitespace-nowrap px-6 py-4 font-bold">
+                        {payment.id}
+                      </td>
 
-          </table>
+                      <td className="whitespace-nowrap px-6 py-4 text-[#8AA399]">
+                        {payment.orderId}
+                      </td>
+
+                      <td className="whitespace-nowrap px-6 py-4 text-[#8AA399]">
+                        {payment.method}
+                      </td>
+
+                      <td className="whitespace-nowrap px-6 py-4 font-bold">
+                        ₹{payment.amount}
+                      </td>
+
+                      {/* Direct Inline Renderer (Bypasses broken external files) */}
+                      <td className="whitespace-nowrap px-6 py-4 text-center">
+                        <span
+                          className="inline-flex items-center justify-center rounded-md px-3 py-1 text-xs font-extrabold uppercase tracking-wider min-w-[90px] text-center select-none"
+                          style={{
+                            backgroundColor: styleConfig.bg,
+                            color: styleConfig.text,
+                            boxShadow: `0 4px 10px ${styleConfig.shadow}`,
+                          }}
+                        >
+                          {payment.status}
+                        </span>
+                      </td>
+
+                      <td className="whitespace-nowrap px-6 py-4 text-[#8AA399]">
+                        {payment.date}
+                      </td>
+
+                      <td className="whitespace-nowrap px-6 py-4 text-center">
+                        <button
+                          onClick={() => downloadReceipt(payment)}
+                          className="rounded-lg border border-[#00E676]/30 bg-[#00E676]/5 px-4 py-1.5 text-xs font-bold text-[#00E676] transition-all duration-200 hover:bg-[#00E676]/10 hover:border-[#00E676]"
+                        >
+                          Invoice
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+
+            </table>
+          </div>
 
           {filteredPayments.length === 0 && (
-            <div className="p-10 text-center text-[#5B7A70]">
+            <div className="p-10 text-center text-[#8AA399] font-medium">
               No payment records found.
             </div>
           )}
