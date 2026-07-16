@@ -1,28 +1,55 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
 
-export default function ShipperSettings() {
-  const [settings, setSettings] = useState({
-    instantBookingAlerts: true,
-    biddingUpdates: true,
-    invoiceGenerationAlerts: true,
-    emailReports: true,
-    twoFactor: false,
-  });
+const STORAGE_KEY = 'shipper_settings';
 
-  const [companyPrefs, setCompanyPrefs] = useState({
-    defaultCurrency: 'INR (₹)',
-    timezone: 'IST (UTC+05:30)',
-  });
+const DEFAULT_SETTINGS = {
+  instantBookingAlerts: true,
+  biddingUpdates: true,
+  invoiceGenerationAlerts: true,
+  emailReports: true,
+  twoFactor: false,
+};
+
+const DEFAULT_COMPANY_PREFS = {
+  defaultCurrency: 'INR (₹)',
+  timezone: 'IST (UTC+05:30)',
+};
+
+export default function ShipperSettings() {
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+
+  const [companyPrefs, setCompanyPrefs] = useState(DEFAULT_COMPANY_PREFS);
 
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
+
+  // Load previously saved settings on mount.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.settings) setSettings((prev) => ({ ...prev, ...parsed.settings }));
+        if (parsed.companyPrefs) setCompanyPrefs((prev) => ({ ...prev, ...parsed.companyPrefs }));
+      }
+    } catch (err) {
+      console.error('Failed to load saved settings:', err);
+    }
+  }, []);
 
   const handleToggle = (key) => setSettings(prev => ({ ...prev, [key]: !prev[key] }));
   const handleSelectChange = (e) => setCompanyPrefs(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSave = () => {
     setIsSaving(true);
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings, companyPrefs }));
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+    }
+
     setTimeout(() => {
       setIsSaving(false);
       setShowToast(true);

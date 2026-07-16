@@ -1,24 +1,23 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from "react";
+import DashboardLayout from "../../components/common/DashboardLayout";
 
-export default function AgencySettings() {
-  // State for toggles
-  const [settings, setSettings] = useState({
-    emailNotif: true,
-    smsNotif: true,
-    pushNotif: true,
-    marketingNotif: false,
-    twoFactor: false,
-    darkMode: false,
-  });
+const DEFAULT_SETTINGS = {
+  emailNotifications: true,
+  smsNotifications: true,
+  pushNotifications: true,
+  marketingEmails: false,
+  twoFactorAuth: false,
+  darkMode: false,
+  language: "English",
+  currency: "INR",
+};
 
-  // State for dropdowns
-  const [preferences, setPreferences] = useState({
-    language: 'English',
-    currency: 'INR',
-  });
+const STORAGE_KEY = "buyer_settings";
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [showToast, setShowToast] = useState(false);
+export default function Settings() {
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   // Load previously saved settings on mount
   useEffect(() => {
@@ -45,69 +44,47 @@ export default function AgencySettings() {
       ...prev,
       [e.target.name]: e.target.value,
     }));
+    setSaved(false);
   };
 
-  // Simulate Save Action
-  const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    }, 1000);
+  const saveSettings = async () => {
+    try {
+      setSaving(true);
+      // No backend endpoint exists yet for buyer settings, so we persist
+      // locally for now. Swap this for buyerService.updateSettings(settings)
+      // once a real API route is added.
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      setSaved(true);
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+      alert("Could not save settings. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
-
-  // Reusable Custom Toggle Switch Component
-  const ToggleSwitch = ({ label, isChecked, onChange }) => (
-    <div className="flex items-center justify-between py-3.5">
-      <span className="text-[15px] font-semibold text-[#133C2C]">{label}</span>
-      <button
-        type="button"
-        onClick={onChange}
-        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
-          isChecked ? 'bg-[#1C4E3A]' : 'bg-gray-200'
-        }`}
-      >
-        <span
-          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-            isChecked ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </button>
-    </div>
-  );
 
   return (
-    <div className="max-w-4xl pb-10 relative">
-      
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed bottom-10 right-10 z-50 bg-[#1C4E3A] text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 border border-emerald-500/20 animate-in fade-in slide-in-from-bottom-5">
-          <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-          </svg>
-          <p className="text-sm font-bold tracking-wide">Settings saved successfully!</p>
-        </div>
-      )}
+    <DashboardLayout
+      title="Settings"
+      subtitle="Manage your account preferences."
+    >
+      <div className="max-w-5xl mx-auto space-y-6">
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#133C2C] font-display">Settings</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Manage your account preferences.
-        </p>
-      </div>
+        {/* Notification Settings */}
 
-      <div className="space-y-6">
-        
-        {/* 1. Notification Preferences Card */}
-        <div className="bg-white rounded-xl border border-gray-100 p-8 shadow-sm">
-          <h2 className="text-lg font-bold text-[#133C2C] mb-4">Notification Preferences</h2>
-          <div className="flex flex-col divide-y divide-gray-50">
-            <ToggleSwitch 
-              label="Email Notifications" 
-              isChecked={settings.emailNotif} 
-              onChange={() => handleToggle('emailNotif')} 
+        <div className="bg-white rounded-xl border border-primary/10 shadow-sm p-6">
+
+          <h2 className="text-lg font-semibold text-primary">
+            Notification Preferences
+          </h2>
+
+          <div className="mt-6 space-y-5">
+
+            <Toggle
+              title="Email Notifications"
+              value={settings.emailNotifications}
+              onChange={() => handleToggle("emailNotifications")}
             />
 
             <Toggle

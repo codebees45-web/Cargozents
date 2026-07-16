@@ -159,7 +159,7 @@ export default function BookShipment() {
         weight: Number(formData.weight),
         insurance: formData.insurance,
         deliveryType: formData.deliveryType,
-        couponDiscount: 0,
+        couponDiscount: Number(formData.couponDiscount || 0),
       });
 
       setEstimatedPrice(pricing.total);
@@ -217,6 +217,7 @@ export default function BookShipment() {
     formData.weight,
     formData.insurance,
     formData.deliveryType,
+    formData.couponDiscount,
   ]);
 
   const swapLocations = () => {
@@ -299,6 +300,13 @@ export default function BookShipment() {
                 <ShipmentOptions
                   formData={formData}
                   handleChange={handleChange}
+                  onApplyCoupon={(discount, code) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      couponDiscount: discount,
+                      appliedCoupon: code,
+                    }))
+                  }
                 />
 
                 <DeliveryContact
@@ -377,7 +385,7 @@ export default function BookShipment() {
 
           {/* Right Side */}
 
-          <div className="space-y-8">
+          <div className="sticky top-8 max-h-[calc(100vh-4rem)] space-y-8 overflow-y-auto pb-4">
 
             <ShipmentSummary
               formData={formData}
@@ -418,6 +426,7 @@ export default function BookShipment() {
               selectedVehicle={selectedVehicle}
               insurance={formData.insurance}
               couponDiscount={formData.couponDiscount || 0}
+              onContinue={step < TOTAL_STEPS ? nextStep : undefined}
             />
 
           </div>

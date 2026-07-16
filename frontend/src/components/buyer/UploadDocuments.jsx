@@ -14,18 +14,54 @@ export default function UploadDocuments({
   const inputRef = useRef(null);
 
   const [files, setFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
-  const handleUpload = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-
-    const updatedFiles = [...files, ...selectedFiles];
-
-    setFiles(updatedFiles);
-
-    setFormData({
-      ...formData,
-      documents: updatedFiles,
+  // File objects cannot survive JSON.stringify (they serialize to `{}`),
+  // and the order submission goes out as a plain JSON POST — not
+  // multipart/form-data — so without this conversion every "uploaded"
+  // document silently turns into an empty object and never reaches the
+  // server. Converting to a base64 data URL keeps the actual bytes intact
+  // through JSON serialization.
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
+
+  const handleUpload = async (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length === 0) return;
+
+    setUploading(true);
+
+    try {
+      const encoded = await Promise.all(
+        selectedFiles.map(async (file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: await fileToDataUrl(file),
+        }))
+      );
+
+      const updatedFiles = [...files, ...encoded];
+
+      setFiles(updatedFiles);
+
+      setFormData({
+        ...formData,
+        documents: updatedFiles,
+      });
+    } catch (err) {
+      console.error("Failed to read file(s):", err);
+      alert("Could not read one of the selected files. Please try again.");
+    } finally {
+      setUploading(false);
+      // Allow re-selecting the same file after removal.
+      e.target.value = "";
+    }
   };
 
   const removeFile = (index) => {
@@ -63,8 +99,10 @@ export default function UploadDocuments({
       {/* Upload Area */}
 
       <div
-        onClick={() => inputRef.current.click()}
-        className="mt-8 cursor-pointer rounded-xl border-2 border-dashed border-primary/20 p-10 text-center hover:bg-primary/5 transition"
+        onClick={() => !uploading && inputRef.current.click()}
+        className={`mt-8 rounded-xl border-2 border-dashed border-primary/20 p-10 text-center transition ${
+          uploading ? "cursor-wait opacity-70" : "cursor-pointer hover:bg-primary/5"
+        }`}
       >
 
         <Upload
@@ -73,7 +111,7 @@ export default function UploadDocuments({
         />
 
         <h3 className="mt-4 font-semibold">
-          Drag & Drop files here
+          {uploading ? "Reading files..." : "Drag & Drop files here"}
         </h3>
 
         <p className="mt-2 text-sm text-[#5B7A70]">
@@ -91,6 +129,7 @@ export default function UploadDocuments({
           type="file"
           multiple
           hidden
+          disabled={uploading}
           onChange={handleUpload}
         />
 

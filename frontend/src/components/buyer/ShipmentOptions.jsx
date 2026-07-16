@@ -1,9 +1,50 @@
-import { Calendar, ShieldCheck, TicketPercent } from "lucide-react";
+import { useState } from "react";
+import { Calendar, ShieldCheck, TicketPercent, CheckCircle2, XCircle } from "lucide-react";
+
+// No backend coupon endpoint exists yet, so we validate against a small
+// local table for now. Swap this for a real API call once one exists.
+const COUPON_TABLE = {
+  FIRST50: { discount: 50, label: "₹50 off on your first shipment" },
+  SAVE100: { discount: 100, label: "₹100 off" },
+  CARGO10: { discount: 10, label: "₹10 off" },
+};
 
 export default function ShipmentOptions({
   formData,
   handleChange,
+  onApplyCoupon,
 }) {
+  const [couponStatus, setCouponStatus] = useState(null); // { ok: bool, message: string } | null
+  const [applying, setApplying] = useState(false);
+
+  const applyCoupon = () => {
+    const code = formData.coupon?.trim().toUpperCase();
+
+    if (!code) {
+      setCouponStatus({ ok: false, message: "Enter a coupon code first." });
+      return;
+    }
+
+    setApplying(true);
+
+    // Simulate a lookup so the button gives real feedback instead of
+    // resolving instantly (and to leave a clear spot to swap in a real
+    // API call later).
+    setTimeout(() => {
+      const match = COUPON_TABLE[code];
+
+      if (match) {
+        onApplyCoupon?.(match.discount, code);
+        setCouponStatus({ ok: true, message: `Applied: ${match.label}` });
+      } else {
+        onApplyCoupon?.(0, "");
+        setCouponStatus({ ok: false, message: "Invalid or expired coupon code." });
+      }
+
+      setApplying(false);
+    }, 400);
+  };
+
   return (
     <div className="bg-white rounded-xl border border-primary/10 shadow-sm p-6">
 
@@ -141,17 +182,38 @@ export default function ShipmentOptions({
               placeholder="Enter coupon"
               name="coupon"
               value={formData.coupon}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                setCouponStatus(null);
+              }}
               className="flex-1 rounded-lg border border-primary/10 px-4 py-3"
             />
 
             <button
-              className="rounded-lg bg-primary px-6 text-white"
+              type="button"
+              onClick={applyCoupon}
+              disabled={applying}
+              className="rounded-lg bg-primary px-6 text-white disabled:opacity-60"
             >
-              Apply
+              {applying ? "Applying..." : "Apply"}
             </button>
 
           </div>
+
+          {couponStatus && (
+            <p
+              className={`mt-2 flex items-center gap-1.5 text-sm ${
+                couponStatus.ok ? "text-success" : "text-danger"
+              }`}
+            >
+              {couponStatus.ok ? (
+                <CheckCircle2 size={16} />
+              ) : (
+                <XCircle size={16} />
+              )}
+              {couponStatus.message}
+            </p>
+          )}
 
         </div>
 

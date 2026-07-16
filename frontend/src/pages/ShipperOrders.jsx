@@ -163,7 +163,7 @@ const ShipperOrders = () => {
                             )}
                             {o.status === 'confirmed_by_shipper' && (
                               <a
-                                href={`/shipper/shipments/new?orderId=${o._id}`}
+                                href={`/shipper/post-shipment?orderId=${o._id}`}
                                 className="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-primary transition hover:shadow-glow"
                               >
                                 Post shipment

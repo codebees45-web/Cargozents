@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/common/DashboardLayout';
 import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
@@ -26,6 +27,7 @@ const FILTERS = [
 const isActiveStatus = (status) => ['assigned', 'accepted', 'picked_up', 'in_transit'].includes(status);
 
 const ShipperShipments = () => {
+  const navigate = useNavigate();
   const [shipments, setShipments] = useState(null);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
@@ -75,9 +77,13 @@ const ShipperShipments = () => {
             </button>
           ))}
         </div>
-        <a href="/shipper/shipments/new" className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-primary transition hover:shadow-glow">
+        <button
+          type="button"
+          onClick={() => navigate('/shipper/post-shipment')}
+          className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-primary transition hover:shadow-glow"
+        >
           + Post a shipment
-        </a>
+        </button>
       </div>
 
       <div className="mt-6">
@@ -90,7 +96,7 @@ const ShipperShipments = () => {
             title="Nothing here yet"
             body="Shipments matching this filter will show up here once you post one."
             actionLabel="Post a shipment"
-            onAction={() => (window.location.href = '/shipper/shipments/new')}
+            onAction={() => navigate('/shipper/post-shipment')}
           />
         ) : (
           <div className="overflow-hidden rounded-xl border border-primary/10">
@@ -117,7 +123,17 @@ const ShipperShipments = () => {
                     <td className="px-4 py-3 text-[#5B7A70]">₹{s.finalPrice || s.estimatedPrice}</td>
                     <td className="px-4 py-3 text-[#5B7A70]">{s.scheduledDate ? new Date(s.scheduledDate).toLocaleDateString() : '—'}</td>
                     <td className={`px-4 py-3 font-mono-ls text-xs ${STATUS_STYLES[s.status] || 'text-[#5B7A70]'}`}>
-                      {s.status?.replace('_', ' ').toUpperCase()}
+                      <div className="flex items-center gap-2">
+                        <span>{s.status?.replace('_', ' ').toUpperCase()}</span>
+                        {isActiveStatus(s.status) && (
+                          <button
+                            onClick={() => navigate(`/shipper/shipments/${s._id}/track`)}
+                            className="rounded-full border border-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary transition hover:border-primary/40"
+                          >
+                            Track
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {s.status !== 'delivered' ? (

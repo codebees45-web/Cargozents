@@ -6,6 +6,7 @@ export default function PriceBreakdown({
   selectedVehicle,
   insurance = "Standard",
   couponDiscount = 0,
+  onContinue,
 }) {
   const pricing = useMemo(() => {
     const km = Number(distance || 0);
@@ -69,7 +70,7 @@ export default function PriceBreakdown({
   );
 
   return (
-    <div className="bg-white rounded-xl border border-primary/10 shadow-sm p-6 sticky top-6">
+    <div className="bg-white rounded-xl border border-primary/10 shadow-sm p-6">
 
       <div className="flex items-center gap-3">
 
@@ -159,15 +160,19 @@ export default function PriceBreakdown({
 
       </div>
 
-      <div className="mt-6">
+      {onContinue && (
+        <div className="mt-6">
 
-        <button
-          className="w-full rounded-lg bg-primary py-3 text-white font-semibold hover:opacity-90 transition"
-        >
-          Continue Booking
-        </button>
+          <button
+            type="button"
+            onClick={onContinue}
+            className="w-full rounded-lg bg-primary py-3 text-white font-semibold hover:opacity-90 transition"
+          >
+            Continue Booking
+          </button>
 
-      </div>
+        </div>
+      )}
 
     </div>
   );

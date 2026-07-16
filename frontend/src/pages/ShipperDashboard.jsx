@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/common/DashboardLayout';
 import TruckLoader from '../components/common/TruckLoader';
 import EmptyState from '../components/common/EmptyState';
@@ -14,6 +15,7 @@ const StatField = ({ label, value }) => (
 
 const ShipperDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [shipments, setShipments] = useState(null);
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState('');
@@ -64,9 +66,13 @@ const ShipperDashboard = () => {
         <section>
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold text-primary">Recent shipments</h2>
-            <a href="/shipper/shipments/new" className="text-xs text-primary hover:underline">
+            <button
+              type="button"
+              onClick={() => navigate('/shipper/post-shipment')}
+              className="text-xs text-primary hover:underline"
+            >
               + Post a shipment
-            </a>
+            </button>
           </div>
           <div className="mt-4">
             {shipments === null ? (
@@ -76,7 +82,7 @@ const ShipperDashboard = () => {
                 title="No shipments yet"
                 body="Post a shipment when you need a truck — for a raw load or once an order is ready to go out."
                 actionLabel="Post a shipment"
-                onAction={() => (window.location.href = '/shipper/shipments/new')}
+                onAction={() => navigate('/shipper/post-shipment')}
               />
             ) : (
               <ul className="divide-y divide-white/5 rounded-xl border border-primary/10">
@@ -96,9 +102,13 @@ const ShipperDashboard = () => {
         <section>
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold text-primary">Orders received</h2>
-            <a href="/shipper/orders" className="text-xs text-primary hover:underline">
+            <button
+              type="button"
+              onClick={() => navigate('/shipper/orders')}
+              className="text-xs text-primary hover:underline"
+            >
               View all
-            </a>
+            </button>
           </div>
           <div className="mt-4">
             {orders === null ? (
@@ -108,7 +118,7 @@ const ShipperDashboard = () => {
                 title="No orders yet"
                 body="Once your products go live, buyer orders will show up here for you to confirm and ship."
                 actionLabel="Manage products"
-                onAction={() => (window.location.href = '/shipper/products')}
+                onAction={() => navigate('/shipper/products')}
               />
             ) : (
               <ul className="divide-y divide-white/5 rounded-xl border border-primary/10">

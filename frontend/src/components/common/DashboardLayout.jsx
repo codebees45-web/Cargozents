@@ -22,9 +22,8 @@ const navByRole = {
     { label: 'Shipments', href: '/shipper/shipments' },
     { label: 'Orders received', href: '/shipper/orders' },
     { label: 'Subscription', href: '/shipper/subscription' },
-    { label: 'Notifications', href: '/shipper/notifications' },
-    { label: 'Support', href: '/shipper/support' },       
-    { label: 'Settings', href: '/shipper/settings' },     
+    { label: 'Support', href: '/shipper/support' },       // 🟢 Standardized to label/href
+    { label: 'Settings', href: '/shipper/settings' },     // 🟢 Standardized to label/href
     { label: 'Profile', href: '/driver/profile' },
   ],
   driver: [
@@ -33,7 +32,6 @@ const navByRole = {
     { label: 'Trip history', href: '/driver/trips' },
     { label: 'Wallet', href: '/driver/wallet' },
     { label: 'Documents', href: '/driver/documents' },
-    { label: 'Notifications', href: '/driver/notifications' },
     { label: 'Support', href: '/driver/support' },   
     { label: 'Settings', href: '/driver/settings' },  
     { label: 'Profile', href: '/driver/profile' },
@@ -58,13 +56,16 @@ const navByRole = {
 
 const DashboardLayout = ({ title, subtitle, children }) => {
   const { user, logout } = useAuth();
+  
+  // Provide a safe fallback if user role isn't recognized immediately
   const nav = navByRole[user?.role] || navByRole.driver; 
+  
   const { totalItems } = useCart();
 
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="hidden w-60 shrink-0 border-r border-primary/10 bg-secondary/20 px-5 py-8 md:block">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 overflow-y-auto border-r border-primary/10 bg-secondary/20 px-5 py-8 md:block">
         <a href="/" className="block transition hover:opacity-80">
           <Logo />
         </a>
@@ -85,7 +86,7 @@ const DashboardLayout = ({ title, subtitle, children }) => {
                 {({ isActive }) => (
                   <>
                     {isActive && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
-                    {item.label?.toUpperCase() || ''} 
+                    {item.label?.toUpperCase() || ''} {/* 🟢 Added optional chaining guard */}
                   </>
                 )}
               </NavLink>
@@ -95,8 +96,8 @@ const DashboardLayout = ({ title, subtitle, children }) => {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-y-auto">
-        <header className="flex items-center justify-between border-b border-primary/10 px-6 py-5 md:px-10 shrink-0">
+      <div className="flex-1">
+        <header className="flex items-center justify-between border-b border-primary/10 px-6 py-5 md:px-10">
           <div>
             <h1 className="font-display text-xl font-bold text-primary">{title}</h1>
             {subtitle && <p className="mt-1 text-sm text-[#5B7A70]">{subtitle}</p>}
@@ -127,10 +128,7 @@ const DashboardLayout = ({ title, subtitle, children }) => {
             </button>
           </div>
         </header>
-        
-        <main className="flex-1 px-6 py-8 md:px-10">
-          {children}
-        </main>
+        <main className="px-6 py-8 md:px-10">{children}</main>
       </div>
     </div>
   );
