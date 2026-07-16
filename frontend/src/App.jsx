@@ -75,9 +75,6 @@ import Support from "./pages/buyer/Support";
 import Settings from "./pages/buyer/Settings";
 import Invoices from "./pages/buyer/Invoices";
 
-import ShipperNotifications from './pages/ShipperNotifications';
-import ShipperShipmentTracking from './pages/ShipperShipmentTracking';
-
 function App() {
   return (
     <ThemeProvider>
@@ -168,7 +165,11 @@ function App() {
               />
               <Route
                 path="/buyer/vehicle-selection"
-                element={<VehicleSelection />}
+                element={
+                  <ProtectedRoute allowedRoles={['buyer']}>
+                    <VehicleSelection />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/buyer/orders"
@@ -188,7 +189,11 @@ function App() {
               />
               <Route
                 path="/buyer/book-shipment"
-                element={<BookShipment />}
+                element={
+                  <ProtectedRoute allowedRoles={['buyer']}>
+                    <BookShipment />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/buyer/checkout"
@@ -212,22 +217,6 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['shipper']}>
                     <ShipperDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/shipper/settings"
-                element={
-                  <ProtectedRoute allowedRoles={['shipper']}>
-                    <ShipperSettings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/shipper/shipments/:shipmentId/track"
-                element={
-                  <ProtectedRoute allowedRoles={['shipper']}>
-                    <ShipperShipmentTracking />
                   </ProtectedRoute>
                 }
               />
