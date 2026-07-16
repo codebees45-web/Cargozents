@@ -224,6 +224,10 @@ export default function BookShipment() {
       ...prev,
       pickupAddress: prev.deliveryAddress,
       deliveryAddress: prev.pickupAddress,
+      pickupLatitude: prev.deliveryLatitude,
+      pickupLongitude: prev.deliveryLongitude,
+      deliveryLatitude: prev.pickupLatitude,
+      deliveryLongitude: prev.pickupLongitude,
     }));
   };
 
@@ -330,32 +334,44 @@ export default function BookShipment() {
                 selectedVehicle={selectedVehicle}
                 estimatedPrice={estimatedPrice}
                 onConfirm={submitBooking}
+                loading={loading}
               />
             )}
 
-            <div className="flex justify-between">
+            {step < TOTAL_STEPS && (
+              <div className="flex justify-between">
 
-              <button
-                disabled={step === 1}
-                onClick={previousStep}
-                className="rounded-lg border border-primary/20 px-6 py-3 disabled:opacity-50"
-              >
-                Previous
-              </button>
+                <button
+                  disabled={step === 1}
+                  onClick={previousStep}
+                  className="rounded-lg border border-primary/20 px-6 py-3 disabled:opacity-50"
+                >
+                  Previous
+                </button>
 
-              <button
-                onClick={nextStep}
-                disabled={step === TOTAL_STEPS}
-                className="rounded-lg bg-primary px-8 py-3 text-white disabled:opacity-50"
-              >
-                {step < 4
-                  ? "Next"
-                  : step === 4
-                  ? "Review Booking"
-                  : "Ready to Confirm"}
-              </button>
+                <button
+                  onClick={nextStep}
+                  className="rounded-lg bg-primary px-8 py-3 text-white disabled:opacity-50"
+                >
+                  {step === 4 ? "Review Booking" : "Next"}
+                </button>
 
-            </div>
+              </div>
+            )}
+
+            {step === TOTAL_STEPS && (
+              <div className="flex justify-start">
+
+                <button
+                  disabled={loading}
+                  onClick={previousStep}
+                  className="rounded-lg border border-primary/20 px-6 py-3 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+
+              </div>
+            )}
 
           </div>
 

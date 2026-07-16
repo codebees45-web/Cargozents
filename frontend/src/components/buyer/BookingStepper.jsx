@@ -18,6 +18,11 @@ const steps = [
   },
   {
     id: 4,
+    title: "Documents",
+    description: "Upload Documents",
+  },
+  {
+    id: 5,
     title: "Review",
     description: "Price & Review",
   },

@@ -5,6 +5,7 @@ export default function ReviewBooking({
   selectedVehicle,
   estimatedPrice,
   onConfirm,
+  loading = false,
 }) {
   return (
     <div className="bg-white rounded-xl border border-primary/10 shadow-sm p-6">
@@ -159,9 +160,10 @@ export default function ReviewBooking({
 
         <button
           onClick={onConfirm}
-          className="w-full rounded-lg bg-primary py-4 text-white text-lg font-semibold hover:opacity-90 transition"
+          disabled={loading}
+          className="w-full rounded-lg bg-primary py-4 text-white text-lg font-semibold hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Confirm Booking
+          {loading ? "Placing Order..." : "Confirm Booking"}
         </button>
 
       </div>

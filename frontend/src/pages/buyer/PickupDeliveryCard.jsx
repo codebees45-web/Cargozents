@@ -12,36 +12,30 @@ export default function PickupDeliveryCard({
   loadingDistance,
 }) {
   const [locating, setLocating] = useState(false);
-  const [locateError, setLocateError] = useState("");
 
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setLocateError("Geolocation is not supported by this browser.");
+      alert("Geolocation isn't supported by this browser.");
       return;
     }
 
     setLocating(true);
-    setLocateError("");
-
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-
         try {
-          const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
-          const res = await fetch(url, {
-            headers: { Accept: "application/json" },
-          });
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+            { headers: { Accept: "application/json" } }
+          );
           const data = await res.json();
-
           onPickupSelect({
-            address: data.display_name || `${latitude}, ${longitude}`,
+            address: data?.display_name || `${latitude}, ${longitude}`,
             latitude,
             longitude,
           });
         } catch (err) {
           console.error("Reverse geocoding failed:", err);
-          // Still set the coordinates even if we can't resolve an address.
           onPickupSelect({
             address: `${latitude}, ${longitude}`,
             latitude,
@@ -53,11 +47,7 @@ export default function PickupDeliveryCard({
       },
       (err) => {
         console.error("Geolocation failed:", err);
-        setLocateError(
-          err.code === err.PERMISSION_DENIED
-            ? "Location access denied. Please enable it in your browser settings."
-            : "Could not detect your location."
-        );
+        alert("Couldn't get your current location. Please allow location access and try again.");
         setLocating(false);
       }
     );
@@ -93,17 +83,9 @@ export default function PickupDeliveryCard({
             disabled={locating}
             className="mt-3 flex items-center gap-2 text-primary text-sm disabled:opacity-60"
           >
-            {locating ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Navigation size={16} />
-            )}
-            {locating ? "Detecting location..." : "Use Current Location"}
+            {locating ? <Loader2 size={16} className="animate-spin" /> : <Navigation size={16} />}
+            {locating ? "Locating..." : "Use Current Location"}
           </button>
-
-          {locateError && (
-            <p className="mt-1 text-xs text-danger">{locateError}</p>
-          )}
 
         </div>
 

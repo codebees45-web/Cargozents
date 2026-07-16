@@ -30,14 +30,43 @@ const emptyForm = {
   address: "",
 };
 
+const STORAGE_KEY = "buyer_saved_addresses";
+
+function loadAddresses() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch (err) {
+    console.error("Failed to load saved addresses:", err);
+  }
+  return initialAddresses;
+}
+
+function persistAddresses(addresses) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(addresses));
+  } catch (err) {
+    console.error("Failed to save addresses:", err);
+  }
+}
+
 export default function SavedAddresses() {
-  const [addresses, setAddresses] = useState(initialAddresses);
+  const [addresses, setAddresses] = useState(loadAddresses);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
+  // Keep localStorage in sync whenever addresses change.
+  const updateAddresses = (updater) => {
+    setAddresses((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      persistAddresses(next);
+      return next;
+    });
+  };
+
   const setDefault = (id) => {
-    setAddresses((prev) =>
+    updateAddresses((prev) =>
       prev.map((item) => ({
         ...item,
         default: item.id === id,
@@ -46,7 +75,7 @@ export default function SavedAddresses() {
   };
 
   const deleteAddress = (id) => {
-    setAddresses((prev) => prev.filter((item) => item.id !== id));
+    updateAddresses((prev) => prev.filter((item) => item.id !== id));
   };
 
   const openAddModal = () => {
@@ -80,13 +109,13 @@ export default function SavedAddresses() {
     e.preventDefault();
 
     if (editingId) {
-      setAddresses((prev) =>
+      updateAddresses((prev) =>
         prev.map((item) =>
           item.id === editingId ? { ...item, ...form } : item
         )
       );
     } else {
-      setAddresses((prev) => [
+      updateAddresses((prev) => [
         ...prev,
         {
           id: Date.now(),
