@@ -35,19 +35,19 @@ import DriverLoads from './pages/DriverLoads';
 import DriverTrips from './pages/DriverTrips';
 import DriverWallet from './pages/DriverWallet';
 import DriverDocuments from './pages/DriverDocuments';
-// Note: Uncomment these if you have created the settings/support files
 import DriverSupport from './pages/DriverSupport';
 import DriverSettings from './pages/DriverSettings';
+import DriverNotifications from './pages/DriverNotifications';
 
 // --- SHIPPER IMPORTS ---
 import ShipperDashboard from './pages/ShipperDashboard';
 import ShipperShipments from './pages/ShipperShipments';
-import ShipperProducts from './pages/ShipperProducts';     // 🟢 RESTORED
-import ShipperOrders from './pages/ShipperOrders';         // 🟢 RESTORED
+import ShipperProducts from './pages/ShipperProducts';     
+import ShipperOrders from './pages/ShipperOrders';         
 import ShipperSubscription from './pages/ShipperSubscription';
-import ShipperSupport from './pages/ShipperSupport';       // 🟢 NEWLY ADDED
-import ShipperSettings from './pages/ShipperSettings'; // 🟢 RESTORED
-
+import ShipperSupport from './pages/ShipperSupport';       
+import ShipperSettings from './pages/ShipperSettings'; 
+import ShipperNotifications from './pages/ShipperNotifications';
 // --- AGENCY IMPORTS ---
 import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyOverview from './pages/AgencyOverview';
@@ -57,7 +57,8 @@ import TruckTracking from './pages/TruckTracking';
 import Onboarding from './pages/Onboarding';
 import AgencySupport from './pages/Agency/Support';
 import AgencyDrivers from './pages/Agency/Drivers'; 
-import AgencySetting from "./pages/Agency/Settings";
+// 🟢 FIXED: Changed variable name here to match element usage below
+import AgencySettings from "./pages/Agency/Settings";
 
 // --- BUYER IMPORTS ---
 import BuyerOrderTracking from './pages/BuyerOrderTracking';
@@ -252,6 +253,14 @@ function App() {
                 }
               />
               <Route
+                path="/shipper/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <ShipperNotifications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/shipper/support"
                 element={
                   <ProtectedRoute allowedRoles={['shipper']}>
@@ -309,8 +318,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              {/* Note: Kept commented out here to avoid runtime reference errors if files do not exist */}
-              
+              <Route
+                path="/driver/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={['driver']}>
+                    <DriverNotifications />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/driver/support"
                 element={
@@ -327,7 +342,6 @@ function App() {
                   </ProtectedRoute>
                 }
               /> 
-              
 
               {/* Admin Routes */}
               <Route
@@ -421,7 +435,7 @@ function App() {
                 <Route path="truck-tracking" element={<TruckTracking />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="support" element={<AgencySupport />} />
-                <Route path="settings" element={<AgencySetting />} /> 
+                <Route path="settings" element={<AgencySettings />} /> 
               </Route>
 
               {/* Fallback Missing Page Handling */}

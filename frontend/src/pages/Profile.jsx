@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '../components/common/DashboardLayout';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api'; 
 
@@ -136,9 +135,9 @@ const Profile = () => {
 
     if (isLoading) {
         return (
-            <DashboardLayout title="Profile">
-                <div className="text-[#5B7A70] dark:text-emerald-400 p-6 font-medium">Syncing database data...</div>
-            </DashboardLayout>
+            <div className="p-6 max-w-4xl pb-10">
+                <div className="text-[#5B7A70] dark:text-emerald-400 font-medium">Syncing database data...</div>
+            </div>
         );
     }
 
@@ -147,8 +146,15 @@ const Profile = () => {
     const labelClasses = "text-[11px] font-bold uppercase tracking-wider text-[#5B7A70] dark:text-emerald-400 mb-1.5";
 
     return (
-        <DashboardLayout title="Profile" subtitle={`Manage your account information.`}>
-            <div className="mx-auto max-w-4xl rounded-2xl border border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 md:p-10 shadow-sm">
+        <div className="p-6 max-w-4xl pb-10 relative">
+            
+            {/* 🟢 CLEAN INTERIOR VIEW HEADING BLOCK */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-[#2D4A40] dark:text-emerald-400">Profile</h1>
+                <p className="text-sm text-gray-500 dark:text-neutral-400">Manage your account information.</p>
+            </div>
+
+            <div className="mx-auto rounded-2xl border border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 md:p-10 shadow-sm">
                 
                 {message && (
                     <div className={`mb-8 p-4 rounded-xl text-center font-semibold text-sm ${
@@ -247,7 +253,7 @@ const Profile = () => {
                     </button>
                 </form>
             </div>
-        </DashboardLayout>
+        </div>
     );
 };
 

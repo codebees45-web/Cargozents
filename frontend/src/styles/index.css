@@ -8,14 +8,19 @@
   --color-secondary: 238 244 241;  /* #EEF4F1 — card backgrounds, default (light) theme */
   --color-background: 255 255 255; /* #FFFFFF */
   --color-muted: 91 122 112;       /* #5B7A70 */
+  --color-border: 218 226 222;     
+  --color-input: 244 247 245;      
 }
 
+/* 🌌 Premium Eye-Calming Dark Theme Variables */
 html.dark {
-  --color-primary: 240 230 210;    /* beige — headings/text on dark background */
-  --color-accent: 98 129 65;       /* #628141 — buttons in dark mode */
-  --color-secondary: 40 47 37;     /* slightly lighter than bg, for cards */
-  --color-background: 27 33 26;    /* #1B211A */
-  --color-muted: 168 176 150;      /* muted beige-green for secondary text */
+  --color-background: 10 17 14;    /* #0A110E — Deep matte canvas background */
+  --color-secondary: 18 30 26;     /* #121E1A — Rich forest-charcoal surface */
+  --color-input: 26 42 36;         /* #1A2A24 — Smooth, deep background for inputs */
+  --color-border: 35 57 49;        /* #233931 — Ultra-low contrast divider line */
+  --color-primary: 226 234 230;    /* #E2EAE6 — Soft cream main text */
+  --color-muted: 138 163 153;      /* #8AA399 — Soothing matte gray-green */
+  --color-accent: 98 129 65;       /* #628141 — Subdued glowing accent */
 }
 
 html {
@@ -26,7 +31,7 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: rgb(var(--color-background));
   color: rgb(var(--color-primary));
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1, h2, h3, h4 {
@@ -40,7 +45,7 @@ h1, h2, h3, h4 {
   background: rgb(var(--color-secondary));
 }
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--color-primary));
+  background: rgb(var(--color-muted));
   border-radius: 999px;
 }
 
@@ -49,7 +54,72 @@ h1, h2, h3, h4 {
 }
 
 /* ============================================================
-   Backhaul route animation (existing)
+   👑 AUTOMATIC GLOBAL DARK MODE UTILITY HIJACK
+   ============================================================ */
+html.dark {
+  /* Fix backgrounds */
+  .bg-white, 
+  [class*="bg-white"],
+  .bg-slate-50, 
+  .bg-gray-50, 
+  .bg-gray-100 {
+    background-color: #121E1A !important;
+  }
+
+  /* Form & Interactive elements */
+  input, 
+  select, 
+  textarea,
+  [type='text'],
+  [type='email'],
+  [type='password'] {
+    background-color: #1A2A24 !important;
+    color: #E2EAE6 !important;
+    border-color: #233931 !important;
+  }
+
+  ::placeholder,
+  .placeholder-gray-400::placeholder {
+    color: rgba(138, 163, 153, 0.4) !important;
+  }
+
+  /* Structural Dividers */
+  .border-gray-100, 
+  .border-gray-200, 
+  .border-slate-200, 
+  .border-neutral-200,
+  .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #233931 !important;
+  }
+
+  /* Text elements */
+  .text-gray-900, 
+  .text-slate-900, 
+  .text-neutral-900, 
+  .text-black,
+  h1, h2, h3, h4 {
+    color: #E2EAE6 !important;
+  }
+
+  .text-gray-500, 
+  .text-gray-400, 
+  .text-slate-500, 
+  .text-neutral-500,
+  .text-gray-600 {
+    color: #8AA399 !important;
+  }
+
+  /* Standalone Buttons */
+  button.bg-white,
+  .bg-white button {
+    background-color: #1A2A24 !important;
+    border-color: #233931 !important;
+    color: #E2EAE6 !important;
+  }
+}
+
+/* ============================================================
+   Backhaul route animation (kept clean and unmodified)
    ============================================================ */
 @keyframes draw-route {
   0%, 100% { stroke-dashoffset: 240; }
@@ -72,72 +142,4 @@ h1, h2, h3, h4 {
 }
 .route-return-truck {
   animation: drive-return-leg 6s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .route-return-truck {
-    animation: none;
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .route-return-leg {
-    animation: none;
-    stroke: #00E676;
-    stroke-dashoffset: 0;
-  }
-}
-
-/* ============================================================
-   CRT screen effect — supporting classes
-   The `crt-scanline`, `crt-static-noise`, `crt-turn-on`, and
-   `crt-flicker` keyframes/animation names live in tailwind.config.js.
-   These classes give them an actual pattern to animate against.
-   ============================================================ */
-
-/* Repeating horizontal scanlines. Pair with `animate-crt-scanline`. */
-.crt-scanlines {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.15) 0px,
-    rgba(0, 0, 0, 0.15) 1px,
-    transparent 1px,
-    transparent 4px
-  );
-  background-size: 100% 4px;
-  pointer-events: none;
-}
-
-/* Faint grainy static texture. Pair with `animate-crt-static-noise`. */
-.crt-noise {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 3px 3px;
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-/* Darkened edges to sell the "old monitor" look. Layer this behind/above content as needed. */
-.crt-vignette {
-  background: radial-gradient(
-    ellipse at center,
-    transparent 60%,
-    rgba(0, 0, 0, 0.35) 100%
-  );
-  pointer-events: none;
-}
-
-/* Slight barrel-curve illusion + glow, applied to the CRT screen's outer container. */
-.crt-screen {
-  border-radius: 12px;
-  box-shadow:
-    inset 0 0 60px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(98, 129, 65, 0.25);
-  overflow: hidden;
-  position: relative;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .crt-scanlines,
-  .crt-noise {
-    animation: none !important;
-  }
 }
