@@ -5,7 +5,7 @@ import EmptyState from '../components/common/EmptyState';
 import LoadCard from '../components/common/LoadCard';
 import StarRating from '../components/common/StarRating';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const StatField = ({ label, value }) => (
   <div className="rounded-xl border border-primary/10 bg-secondary/20 px-5 py-4">
