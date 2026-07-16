@@ -1,104 +1,209 @@
-import React, { useState } from 'react';
-import DashboardLayout from '../components/common/DashboardLayout';
+import React, { useState } from "react";
+import DashboardLayout from "../../components/common/DashboardLayout";
+import { useTheme } from "../../context/ThemeContext"; // 2 steps back to reach src/context
 
 export default function DriverSettings() {
-  const [settings, setSettings] = useState({
-    newLoadAlerts: true,
-    tripUpdates: true,
-    walletAlerts: true,
-    smsNotif: true,
-    twoFactor: false,
-    darkMode: false,
+  // 1. Link to your global theme engine (stays synced with Landing, Buyer, & Agency)
+  const { isDark, toggleTheme } = useTheme();
+
+  // 2. Interactive state management for on-road logistics
+  const [duty, setDuty] = useState({
+    onDuty: true,         // Active Status (Accepting bookings)
+    audioAlerts: true,    // Sound notifications for new loads
+    autoNavigate: false,  // Auto-open map on accept
+  });
+
+  const [security, setSecurity] = useState({
+    locationSharing: true, // GPS ping frequency
   });
 
   const [preferences, setPreferences] = useState({
-    language: 'English',
-    navigationApp: 'Google Maps',
+    distanceUnit: "KM",   // KM or Miles
+    language: "English",
   });
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-
-  const handleToggle = (key) => setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-  const handleSelectChange = (e) => setPreferences(prev => ({ ...prev, [e.target.name]: e.target.value }));
-
-  const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    }, 1000);
+  const handleDutyToggle = (key) => {
+    setDuty((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const ToggleSwitch = ({ label, isChecked, onChange }) => (
-    <div className="flex items-center justify-between py-3.5">
-      <span className="text-[15px] font-semibold text-primary">{label}</span>
+  const handleSecurityToggle = (key) => {
+    setSecurity((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handlePreferenceChange = (e) => {
+    setPreferences((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSaveSettings = () => {
+    alert("Driver profile configurations saved successfully!");
+  };
+
+  // ==========================================
+  // Premium Reusable Animated Toggle Switch
+  // ==========================================
+  const ToggleSwitch = ({ checked, onChange, ariaLabel }) => {
+    return (
       <button
         type="button"
         onClick={onChange}
-        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
-          isChecked ? 'bg-primary' : 'bg-gray-200'
+        aria-label={ariaLabel}
+        className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${
+          checked 
+            ? "bg-[#00E676] shadow-[0_0_10px_rgba(0,230,118,0.25)]" 
+            : "bg-primary/10 border border-primary/10"
         }`}
       >
-        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${isChecked ? 'translate-x-6' : 'translate-x-1'}`} />
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow-md transition duration-300 ease-in-out ${
+            checked 
+              ? "translate-x-6 bg-[#0A110E]" // Matte dark knob when active
+              : "translate-x-0 bg-[#8AA399]"  // Grey knob when inactive
+          }`}
+        />
       </button>
-    </div>
-  );
+    );
+  };
 
   return (
-    <DashboardLayout title="Settings" subtitle="Manage your driver app preferences.">
-      <div className="max-w-4xl pb-10 relative">
-        {showToast && (
-          <div className="fixed bottom-10 right-10 z-50 bg-primary text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
-            <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-            <p className="text-sm font-bold tracking-wide">Settings saved successfully!</p>
-          </div>
-        )}
-
-        <div className="space-y-6">
-          <div className="bg-secondary/10 rounded-xl border border-primary/10 p-8 shadow-sm">
-            <h2 className="text-lg font-bold text-primary mb-4">Notification Preferences</h2>
-            <div className="flex flex-col divide-y divide-primary/10">
-              <ToggleSwitch label="New Load Alerts" isChecked={settings.newLoadAlerts} onChange={() => handleToggle('newLoadAlerts')} />
-              <ToggleSwitch label="Trip Status Updates" isChecked={settings.tripUpdates} onChange={() => handleToggle('tripUpdates')} />
-              <ToggleSwitch label="Payment & Wallet Alerts" isChecked={settings.walletAlerts} onChange={() => handleToggle('walletAlerts')} />
-              <ToggleSwitch label="SMS Notifications" isChecked={settings.smsNotif} onChange={() => handleToggle('smsNotif')} />
-            </div>
-          </div>
-
-          <div className="bg-secondary/10 rounded-xl border border-primary/10 p-8 shadow-sm">
-            <h2 className="text-lg font-bold text-primary mb-6">App Preferences</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+    <DashboardLayout
+      title="Driver Settings"
+      subtitle="Control your duty status, custom map navigation units, and road alerts."
+    >
+      <div className="max-w-4xl mx-auto space-y-8 px-4 pb-12">
+        
+        {/* ==========================================
+            SECTION 1: DUTY & ALERTS
+            ========================================== */}
+        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
+          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
+            On-Duty & Route Settings
+          </h3>
+          
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-[13px] font-semibold text-primary mb-2">Display Language</label>
-                <select name="language" value={preferences.language} onChange={handleSelectChange} className="w-full px-4 py-2.5 text-sm rounded-lg border border-primary/10 focus:outline-none focus:border-accent bg-background text-primary">
-                  <option value="English">English</option>
-                  <option value="Hindi">Hindi</option>
-                  <option value="Tamil">Tamil</option>
-                  <option value="Telugu">Telugu</option>
-                  <option value="Kannada">Kannada</option>
-                </select>
+                <p className="text-sm font-bold text-primary">Active Duty Status</p>
+                <p className="text-xs text-[#8AA399]">Toggle on to appear online and accept backhaul cargo matches.</p>
               </div>
-              <div>
-                <label className="block text-[13px] font-semibold text-primary mb-2">Default Navigation App</label>
-                <select name="navigationApp" value={preferences.navigationApp} onChange={handleSelectChange} className="w-full px-4 py-2.5 text-sm rounded-lg border border-primary/10 focus:outline-none focus:border-accent bg-background text-primary">
-                  <option value="Google Maps">Google Maps</option>
-                  <option value="In-App Navigation">In-App Navigation</option>
-                </select>
-              </div>
+              <ToggleSwitch
+                checked={duty.onDuty}
+                onChange={() => handleDutyToggle("onDuty")}
+                ariaLabel="Toggle Active Duty Status"
+              />
             </div>
-            <div className="pt-2 border-t border-primary/10">
-              <ToggleSwitch label="Dark Mode" isChecked={settings.darkMode} onChange={() => handleToggle('darkMode')} />
-            </div>
-          </div>
 
-          <div className="flex justify-end pt-4">
-            <button onClick={handleSave} disabled={isSaving} className="px-8 py-3 bg-primary hover:bg-primary/95 text-secondary text-sm font-bold rounded-lg transition-all shadow-sm">
-              {isSaving ? 'Saving...' : 'Save Settings'}
-            </button>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-primary">Audio Load Alerts</p>
+                <p className="text-xs text-[#8AA399]">Play a loud ringtone whenever a high-match route is offered.</p>
+              </div>
+              <ToggleSwitch
+                checked={duty.audioAlerts}
+                onChange={() => handleDutyToggle("audioAlerts")}
+                ariaLabel="Toggle Audio Alerts"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-primary">Auto-Start Navigation</p>
+                <p className="text-xs text-[#8AA399]">Instantly pull up maps right after accepting a cargo load.</p>
+              </div>
+              <ToggleSwitch
+                checked={duty.autoNavigate}
+                onChange={() => handleDutyToggle("autoNavigate")}
+                ariaLabel="Toggle Auto-Start Navigation"
+              />
+            </div>
           </div>
         </div>
+
+        {/* ==========================================
+            SECTION 2: TRACKING PRIVACY
+            ========================================== */}
+        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
+          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
+            Location & Tracking
+          </h3>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-primary">Real-Time GPS Sync</p>
+              <p className="text-xs text-[#8AA399]">Allow dispatchers and buyers to track your truck location during a job.</p>
+            </div>
+            <ToggleSwitch
+              checked={security.locationSharing}
+              onChange={() => handleSecurityToggle("locationSharing")}
+              ariaLabel="Toggle Location Sharing"
+            />
+          </div>
+        </div>
+
+        {/* ==========================================
+            SECTION 3: UNITS & APP THEME
+            ========================================== */}
+        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
+          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
+            System & Display Preferences
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-xs font-bold text-[#8AA399] uppercase tracking-wider mb-2">
+                Distance Metrics
+              </label>
+              <select
+                name="distanceUnit"
+                value={preferences.distanceUnit}
+                onChange={handlePreferenceChange}
+                className="w-full rounded-lg border border-primary/10 bg-[#0c1411] px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none text-primary cursor-pointer"
+              >
+                <option value="KM">Kilometers (km)</option>
+                <option value="Miles">Miles (mi)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#8AA399] uppercase tracking-wider mb-2">
+                System Language
+              </label>
+              <select
+                name="language"
+                value={preferences.language}
+                onChange={handlePreferenceChange}
+                className="w-full rounded-lg border border-primary/10 bg-[#0c1411] px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none text-primary cursor-pointer"
+              >
+                <option value="English">English</option>
+                <option value="Hindi">हिन्दी (Hindi)</option>
+                <option value="Tamil">தமிழ் (Tamil)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t border-primary/10">
+            <div>
+              <p className="text-sm font-bold text-primary">Night Mode</p>
+              <p className="text-xs text-[#8AA399]">Switch to a dark-charcoal UI to prevent eye fatigue while driving at night.</p>
+            </div>
+            {/* 🟢 FULLY INTEGRATED DARK THEME TOGGLE */}
+            <ToggleSwitch
+              checked={isDark}
+              onChange={toggleTheme}
+              ariaLabel="Toggle Dark Theme"
+            />
+          </div>
+        </div>
+
+        {/* Action Button Container */}
+        <div className="flex justify-end pt-2">
+          <button
+            onClick={handleSaveSettings}
+            className="rounded-lg bg-[#00E676] px-8 py-3 text-xs font-bold text-[#0A110E] shadow-lg shadow-[#00E676]/10 hover:bg-[#34D399] hover:shadow-[0_0_15px_rgba(0,230,118,0.4)] transition-all duration-200"
+          >
+            Save Settings
+          </button>
+        </div>
+
       </div>
     </DashboardLayout>
   );
