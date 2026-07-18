@@ -14,11 +14,21 @@ const {
   bulkVerifyDrivers,
   bulkVerifyVehicles,
   bulkReviewDocuments,
+  getUsers,
+  suspendUser,
+  createBroadcast,
+  getBroadcasts,
 } = require('../controllers/adminController');
 
 const router = express.Router();
 
 router.use(protect, authorize('admin'));
+
+router.get('/users', getUsers);
+router.patch('/users/:id/suspend', suspendUser);
+
+router.post('/notifications', createBroadcast);
+router.get('/notifications', getBroadcasts);
 
 router.get('/drivers', getDrivers);
 router.patch('/drivers/:id/verify', verifyDriver);

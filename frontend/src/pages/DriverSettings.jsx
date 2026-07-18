@@ -8,7 +8,7 @@ export default function DriverSettings() {
 
   // 2. Interactive state management for on-road logistics
   const [duty, setDuty] = useState({
-    onDuty: true,         // Active Status (Accepting bookings)
+    onDuty: true,        // Active Status (Accepting bookings)
     audioAlerts: true,    // Sound notifications for new loads
     autoNavigate: false,  // Auto-open map on accept
   });
@@ -156,10 +156,12 @@ export default function DriverSettings() {
                 name="distanceUnit"
                 value={preferences.distanceUnit}
                 onChange={handlePreferenceChange}
-                className="w-full rounded-lg border border-primary/10 bg-[#0c1411] px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none text-primary cursor-pointer"
+                className={`w-full rounded-lg border border-primary/10 px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none transition-colors duration-200 text-primary cursor-pointer ${
+                  isDark ? "bg-[#0c1411]" : "bg-white"
+                }`}
               >
-                <option value="KM">Kilometers (km)</option>
-                <option value="Miles">Miles (mi)</option>
+                <option value="KM" className={isDark ? "bg-[#0c1411]" : "bg-white"}>Kilometers (km)</option>
+                <option value="Miles" className={isDark ? "bg-[#0c1411]" : "bg-white"}>Miles (mi)</option>
               </select>
             </div>
 
@@ -171,11 +173,13 @@ export default function DriverSettings() {
                 name="language"
                 value={preferences.language}
                 onChange={handlePreferenceChange}
-                className="w-full rounded-lg border border-primary/10 bg-[#0c1411] px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none text-primary cursor-pointer"
+                className={`w-full rounded-lg border border-primary/10 px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none transition-colors duration-200 text-primary cursor-pointer ${
+                  isDark ? "bg-[#0c1411]" : "bg-white"
+                }`}
               >
-                <option value="English">English</option>
-                <option value="Hindi">हिन्दी (Hindi)</option>
-                <option value="Tamil">தமிழ் (Tamil)</option>
+                <option value="English" className={isDark ? "bg-[#0c1411]" : "bg-white"}>English</option>
+                <option value="Hindi" className={isDark ? "bg-[#0c1411]" : "bg-white"}>हिन्दी (Hindi)</option>
+                <option value="Tamil" className={isDark ? "bg-[#0c1411]" : "bg-white"}>தமிழ் (Tamil)</option>
               </select>
             </div>
           </div>

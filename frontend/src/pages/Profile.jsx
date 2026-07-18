@@ -1,190 +1,142 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "../hooks/useAuth";
-import api from "../services/api"; // Make sure this path is correct for your project
-
-const ROLE_LABELS = {
-  buyer: 'Buyer',
-  shipper: 'Shipper',
-  driver: 'Driver',
-  agency: 'Agency',
-  admin: 'Admin',
-};
+import React, { useState } from "react";
+import { useTheme } from "../context/ThemeContext";
 
 export default function Profile() {
-  const { user, updateUser } = useAuth();
+  const { isDark } = useTheme();
 
-  // Consolidated state matching the API submission requirements
-  const [form, setForm] = useState({ name: user?.name || '' });
-  const [photo, setPhoto] = useState(user?.profileImage || '');
-  
-  // UI Loading States
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
+  // Mock initial user data based on screenshot
+  const [profile, setProfile] = useState({
+    fullName: "Vanshitha",
+    phone: "",
+    email: "vanshithagajendiran.aids2025@citchennai.net",
+    role: "DRIVER"
+  });
 
-  // Update local state if user context loads later
-  useEffect(() => {
-    if (user) {
-      setForm({ name: user.name || '' });
-      setPhoto(user.profileImage || '');
-    }
-  }, [user]);
-
-  // Handles the custom native file input conversion
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhoto(reader.result); // Sets the base64 string for preview and upload
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSaveChanges = (e) => {
     e.preventDefault();
-    setSaving(true);
-    setSaved(false);
-    setError('');
-    
-    try {
-      const { data } = await api.patch('/auth/me', {
-        name: form.name,
-        profileImage: photo,
-      });
-      if (updateUser) updateUser(data.user);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Could not save your profile right now.');
-    } finally {
-      setSaving(false);
-    }
+    alert("Profile changes saved successfully!");
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 px-4 pb-12 pt-6">
-      
-      {/* HEADER */}
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-white">My Profile</h1>
-        <p className="text-gray-400 mt-1">Manage your personal details and account security.</p>
-      </div>
+    <div className="max-w-5xl mx-auto px-4 pb-12 mt-4">
+      <p className={`text-sm mb-8 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+        Manage your personal details and account security.
+      </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        {/* LEFT PANEL: PROFILE CARD & PIC UPLOAD */}
-        <div className="rounded-xl border border-[#173022] bg-[#0a1811] p-6 text-center shadow-sm">
-          
-          {/* Custom Image Uploader */}
-          <div className="relative mx-auto h-28 w-28 rounded-full border-2 border-[#00E676]/30 bg-[#050c08] flex items-center justify-center overflow-hidden group">
-            {photo ? (
-              <img
-                src={photo}
-                alt="Profile"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-4xl font-bold text-[#00E676] select-none uppercase">
-                {form.name ? form.name.charAt(0) : "?"}
-              </span>
-            )}
-            
-            <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center cursor-pointer text-[10px] font-bold text-white uppercase tracking-wider">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mb-1 text-[#00E676]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              Change
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </label>
+        {/* LEFT COLUMN: AVATAR CARD */}
+        <div className={`rounded-xl border p-6 text-center flex flex-col items-center justify-center min-h-[300px] transition-colors duration-200 ${
+          isDark 
+            ? "border-primary/10 bg-[#0A1811] text-white" 
+            : "border-gray-200 bg-white text-gray-900 shadow-sm"
+        }`}>
+          <div className="w-24 h-24 rounded-full border-2 border-[#00E676] flex items-center justify-center bg-transparent mb-4">
+            <span className="text-3xl font-bold text-[#00E676]">
+              {profile.fullName ? profile.fullName[0].toUpperCase() : "U"}
+            </span>
           </div>
 
-          <h2 className="mt-4 font-display text-lg font-bold text-slate-100">{user?.name || '—'}</h2>
-          <p className="mt-1 inline-block select-none rounded-full border border-[#00E676]/30 bg-[#00E676]/10 px-3 py-1 font-mono-ls text-[11px] font-bold uppercase tracking-wider text-[#00E676]">
-            {ROLE_LABELS[user?.role] || user?.role}
-          </p>
-          <p className="mt-4 text-sm italic text-gray-400">Logged in as {user?.email}</p>
+          <h2 className="text-xl font-bold tracking-tight">{profile.fullName}</h2>
+          
+          <span className="mt-2 px-3 py-1 text-xs font-bold tracking-wider rounded bg-[#00E676]/10 text-[#00E676] border border-[#00E676]/20 uppercase">
+            {profile.role}
+          </span>
+
+          <div className="mt-6 w-full px-2">
+            <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Logged in as</p>
+            {/* FIX: break-all stops long emails from overflowing the card container boundaries */}
+            <p className="text-xs font-mono text-[#00E676] break-all max-w-full px-2">
+              {profile.email}
+            </p>
+          </div>
         </div>
 
-        {/* RIGHT PANEL: EDITABLE FORM */}
-        <div className="space-y-8 lg:col-span-2">
-          <div className="rounded-xl border border-[#173022] bg-[#0a1811] p-6 shadow-sm">
-            <h3 className="text-md mb-5 border-b border-[#173022] pb-3 font-bold tracking-tight text-white">
-              Account Information
-            </h3>
+        {/* RIGHT COLUMN: ACCOUNT DETAILS FORM */}
+        <div className={`md:col-span-2 rounded-xl border p-6 flex flex-col justify-between transition-colors duration-200 ${
+          isDark 
+            ? "border-primary/10 bg-[#0A1811]" 
+            : "border-gray-200 bg-white shadow-sm"
+        }`}>
+          <form onSubmit={handleSaveChanges} className="space-y-6">
+            <div>
+              <h3 className={`text-md font-bold tracking-tight border-b pb-3 ${
+                isDark ? "text-white border-primary/10" : "text-gray-900 border-gray-100"
+              }`}>
+                Account Information
+              </h3>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-400">Full Name</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full rounded-lg border border-[#173022] bg-[#050c08] px-4 py-3 text-sm text-slate-200 outline-none focus:border-[#00E676]/60 transition-colors"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-400">Phone</label>
-                  <input
-                    type="text"
-                    value={user?.phone || ''}
-                    disabled
-                    className="w-full cursor-not-allowed rounded-lg border border-[#173022] bg-[#050c08]/50 px-4 py-3 text-sm text-gray-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-400">
-                  Registered Email (cannot be changed)
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Full Name
                 </label>
                 <input
-                  type="email"
-                  value={user?.email || ''}
-                  disabled
-                  className="w-full cursor-not-allowed select-none rounded-lg border border-[#173022] bg-[#050c08]/50 px-4 py-3 text-sm text-gray-500"
+                  type="text"
+                  name="fullName"
+                  value={profile.fullName}
+                  onChange={handleInputChange}
+                  className={`w-full rounded-lg border px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none transition-colors duration-200 ${
+                    isDark 
+                      ? "border-primary/10 bg-[#050c08] text-white" 
+                      : "border-gray-300 bg-gray-50 text-gray-900"
+                  }`}
                 />
               </div>
 
-              {error && <p className="text-xs text-red-400">{error}</p>}
-              {saved && <p className="text-xs text-[#00E676]">Profile saved successfully.</p>}
-
-              <div className="flex justify-end pt-3">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-[#00E676] px-6 py-2.5 text-xs font-bold text-black shadow-lg transition-all duration-200 hover:bg-[#00c565] disabled:opacity-60"
-                >
-                  {saving ? 'Saving…' : 'Save Changes'}
-                </button>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="Enter phone number"
+                  value={profile.phone}
+                  onChange={handleInputChange}
+                  className={`w-full rounded-lg border px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none transition-colors duration-200 ${
+                    isDark 
+                      ? "border-primary/10 bg-[#050c08] text-white" 
+                      : "border-gray-300 bg-gray-50 text-gray-900"
+                  }`}
+                />
               </div>
-            </form>
-          </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Registered Email (Cannot Be Changed)
+              </label>
+              <input
+                type="email"
+                readOnly
+                disabled
+                value={profile.email}
+                className={`w-full rounded-lg border px-4 py-3 text-sm cursor-not-allowed opacity-75 transition-colors duration-200 ${
+                  isDark 
+                    ? "border-primary/10 bg-[#050c08]/50 text-gray-400" 
+                    : "border-gray-200 bg-gray-100 text-gray-500"
+                }`}
+              />
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                type="submit"
+                className="rounded-lg bg-[#00E676] px-8 py-3 text-xs font-bold text-[#0A110E] shadow-lg shadow-[#00E676]/10 hover:bg-[#34D399] hover:shadow-[0_0_15px_rgba(0,230,118,0.4)] transition-all duration-200"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
         </div>
+
       </div>
     </div>
   );

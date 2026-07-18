@@ -3,11 +3,10 @@ import React, { useState, useRef } from 'react';
 const ShipperProfile = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
-  const [profileImage, setProfileImage] = useState(null); // Holds the uploaded image URI
+  const [profileImage, setProfileImage] = useState(null); 
   
   const fileInputRef = useRef(null);
 
-  // Sample State for Shipper Data
   const [profileData, setProfileData] = useState({
     firstName: 'John',
     lastName: 'Doe',
@@ -25,7 +24,6 @@ const ShipperProfile = () => {
     country: 'United States'
   });
 
-  // Sample State for Settings
   const [settings, setSettings] = useState({
     emailNotifications: true,
     smsAlerts: false,
@@ -56,12 +54,10 @@ const ShipperProfile = () => {
     alert('Profile updated successfully!');
   };
 
-  // Triggers the hidden file input
   const handleAvatarClick = () => {
     fileInputRef.current.click();
   };
 
-  // Converts uploaded photo to displayable Data URI
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -75,18 +71,17 @@ const ShipperProfile = () => {
 
   return (
     <div className="shipper-profile-container">
-      {/* EMBEDDED COMPONENT STYLES */}
       <style>{`
         .shipper-profile-container {
-          --primary-color: #1e293b;
-          --accent-color: #0284c7;
-          --accent-hover: #0369a1;
-          --bg-main: #f8fafc;
-          --bg-card: #ffffff;
-          --border-color: #e2e8f0;
-          --text-main: #0f172a;
-          --text-muted: #64748b;
-          --success-color: #16a34a;
+          --primary-color: #ffffff;
+          --accent-color: #00E676;
+          --accent-hover: #00c565;
+          --bg-main: #050c08;
+          --bg-card: #0a1811;
+          --border-color: #173022;
+          --text-main: #f8fafc;
+          --text-muted: #9ca3af;
+          --success-color: #00E676;
 
           max-width: 1000px;
           margin: 30px auto;
@@ -95,7 +90,6 @@ const ShipperProfile = () => {
           color: var(--text-main);
         }
 
-        /* HERO SNAPSHOT CARD */
         .profile-hero-card {
           background: var(--bg-card);
           border: 1px solid var(--border-color);
@@ -106,7 +100,7 @@ const ShipperProfile = () => {
           align-items: center;
           flex-wrap: wrap;
           gap: 20px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
         .profile-hero-main {
@@ -125,7 +119,7 @@ const ShipperProfile = () => {
         .avatar-placeholder {
           width: 80px;
           height: 80px;
-          background-color: var(--primary-color);
+          background-color: #173022;
           color: #ffffff;
           font-size: 28px;
           font-weight: 700;
@@ -137,6 +131,7 @@ const ShipperProfile = () => {
           position: relative;
           cursor: pointer;
           overflow: hidden;
+          border: 2px solid var(--border-color);
         }
 
         .avatar-img {
@@ -145,14 +140,13 @@ const ShipperProfile = () => {
           object-fit: cover;
         }
 
-        /* Hover Overlay for Changing Image */
         .avatar-overlay {
           position: absolute;
           top: 0;
           left: 0;
           width: 100%;
           height: 100%;
-          background-color: rgba(15, 23, 42, 0.65);
+          background-color: rgba(5, 12, 8, 0.8);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -161,7 +155,7 @@ const ShipperProfile = () => {
         }
 
         .avatar-overlay span {
-          color: #ffffff;
+          color: var(--accent-color);
           font-size: 11px;
           font-weight: 600;
           letter-spacing: 0.5px;
@@ -174,11 +168,12 @@ const ShipperProfile = () => {
 
         .badge-verified {
           font-size: 11px;
-          background-color: #e2f5ea;
+          background-color: rgba(0, 230, 118, 0.1);
           color: var(--success-color);
           padding: 3px 8px;
           border-radius: 20px;
           font-weight: 600;
+          border: 1px solid rgba(0, 230, 118, 0.2);
         }
 
         .hero-info h2 {
@@ -201,20 +196,21 @@ const ShipperProfile = () => {
 
         .mono {
           font-family: monospace;
-          background: var(--border-color);
+          background: var(--bg-main);
+          border: 1px solid var(--border-color);
           padding: 2px 6px;
           border-radius: 4px;
-          color: var(--text-main);
+          color: var(--accent-color);
         }
 
-        /* QUICK STATS */
         .profile-stats-grid {
           display: flex;
           gap: 16px;
         }
 
         .stat-card {
-          background: #f1f5f9;
+          background: var(--bg-main);
+          border: 1px solid var(--border-color);
           padding: 16px 20px;
           border-radius: 8px;
           min-width: 110px;
@@ -240,7 +236,6 @@ const ShipperProfile = () => {
           color: var(--success-color);
         }
 
-        /* TABS NAVIGATION */
         .profile-tabs-nav {
           display: flex;
           border-bottom: 2px solid var(--border-color);
@@ -270,17 +265,15 @@ const ShipperProfile = () => {
           border-bottom: 2px solid var(--accent-color);
         }
 
-        /* TAB WRAPPER CONTENT */
         .tab-content-wrapper {
           background: var(--bg-card);
           border: 1px solid var(--border-color);
           border-top: none;
           border-radius: 0 0 12px 12px;
           padding: 30px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
-        /* FORMS LAYOUT */
         .form-header {
           display: flex;
           justify-content: space-between;
@@ -331,7 +324,7 @@ const ShipperProfile = () => {
           border: 1px solid var(--border-color);
           border-radius: 6px;
           font-size: 14px;
-          background-color: #ffffff;
+          background-color: var(--bg-main);
           color: var(--text-main);
           transition: border-color 0.15s ease;
         }
@@ -342,9 +335,10 @@ const ShipperProfile = () => {
         }
 
         .form-group input:disabled, .form-group select:disabled {
-          background-color: #f1f5f9;
+          background-color: rgba(23, 48, 34, 0.3);
           color: var(--text-muted);
           cursor: not-allowed;
+          border-color: rgba(23, 48, 34, 0.5);
         }
 
         .divider {
@@ -354,14 +348,13 @@ const ShipperProfile = () => {
           margin: 30px 0;
         }
 
-        /* BUTTONS */
         .btn-primary {
           background-color: var(--accent-color);
-          color: white;
+          color: #050c08;
           border: none;
           padding: 10px 20px;
           font-size: 14px;
-          font-weight: 600;
+          font-weight: 700;
           border-radius: 6px;
           cursor: pointer;
           transition: background-color 0.2s ease;
@@ -372,18 +365,20 @@ const ShipperProfile = () => {
         }
 
         .btn-secondary {
-          background-color: #ffffff;
-          color: var(--primary-color);
+          background-color: transparent;
+          color: var(--text-main);
           border: 1px solid var(--border-color);
           padding: 10px 20px;
           font-size: 14px;
           font-weight: 600;
           border-radius: 6px;
           cursor: pointer;
+          transition: all 0.2s;
         }
 
         .btn-secondary:hover {
-          background-color: #f8fafc;
+          background-color: var(--bg-main);
+          border-color: var(--accent-color);
         }
 
         .btn-text {
@@ -395,13 +390,16 @@ const ShipperProfile = () => {
           padding: 10px;
         }
 
+        .btn-text:hover {
+          color: var(--primary-color);
+        }
+
         .form-actions-top {
           display: flex;
           gap: 10px;
           align-items: center;
         }
 
-        /* CUSTOM TOGGLE SWITCHES */
         .toggle-control-group {
           display: flex;
           flex-direction: column;
@@ -434,7 +432,7 @@ const ShipperProfile = () => {
           -webkit-appearance: none;
           width: 44px;
           height: 24px;
-          background-color: #cbd5e1;
+          background-color: #173022;
           border-radius: 12px;
           position: relative;
           cursor: pointer;
@@ -457,14 +455,13 @@ const ShipperProfile = () => {
           left: 2px;
           background-color: #ffffff;
           transition: transform 0.2s ease;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
         input[type="checkbox"].switch:checked::before {
           transform: translateX(20px);
         }
 
-        /* SECURITY SESSIONS TABLE */
         .session-table-container {
           overflow-x: auto;
         }
@@ -490,19 +487,21 @@ const ShipperProfile = () => {
 
         .badge-active {
           color: var(--success-color);
-          background: #e2f5ea;
+          background: rgba(0, 230, 118, 0.1);
           padding: 2px 8px;
           font-size: 12px;
           border-radius: 4px;
           font-weight: 600;
+          border: 1px solid rgba(0, 230, 118, 0.2);
         }
 
         .badge-offline {
           color: var(--text-muted);
-          background: #f1f5f9;
+          background: var(--bg-main);
           padding: 2px 8px;
           font-size: 12px;
           border-radius: 4px;
+          border: 1px solid var(--border-color);
         }
 
         @media (max-width: 768px) {
@@ -520,24 +519,20 @@ const ShipperProfile = () => {
         }
       `}</style>
 
-      {/* HEADER HERO SECTION */}
       <div className="profile-hero-card">
         <div className="profile-hero-main">
           <div className="avatar-container">
-            {/* Interactive Avatar Base Container */}
             <div className="avatar-placeholder" onClick={handleAvatarClick} title="Click to upload profile image">
               {profileImage ? (
                 <img src={profileImage} alt="Profile" className="avatar-img" />
               ) : (
                 <>{profileData.firstName[0]}{profileData.lastName[0]}</>
               )}
-              {/* Overlay styling for dynamic interaction feedback */}
               <div className="avatar-overlay">
                 <span>Change</span>
               </div>
             </div>
             
-            {/* Native Hidden File Input Controller */}
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -556,7 +551,6 @@ const ShipperProfile = () => {
           </div>
         </div>
 
-        {/* SHIPPER QUICK METRICS */}
         <div className="profile-stats-grid">
           <div className="stat-card">
             <span className="stat-label">Active Shipments</span>
@@ -573,7 +567,6 @@ const ShipperProfile = () => {
         </div>
       </div>
 
-      {/* INTERNAL NAVIGATION TABS */}
       <div className="profile-tabs-nav">
         <button 
           className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
@@ -595,10 +588,8 @@ const ShipperProfile = () => {
         </button>
       </div>
 
-      {/* TAB CONTENT AREA */}
       <div className="tab-content-wrapper">
         
-        {/* TAB 1: PROFILE & COMPANY INFO */}
         {activeTab === 'profile' && (
           <form onSubmit={saveProfile} className="profile-form">
             <div className="form-header">
@@ -682,7 +673,6 @@ const ShipperProfile = () => {
           </form>
         )}
 
-        {/* TAB 2: SETTINGS & PREFERENCES */}
         {activeTab === 'settings' && (
           <div className="settings-panel">
             <div className="settings-section">
@@ -754,7 +744,6 @@ const ShipperProfile = () => {
           </div>
         )}
 
-        {/* TAB 3: SECURITY & ACCESS */}
         {activeTab === 'security' && (
           <div className="security-panel">
             <div className="settings-section">

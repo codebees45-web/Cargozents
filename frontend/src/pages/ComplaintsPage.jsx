@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DashboardLayout from '../components/common/DashboardLayout';
 import ComplaintForm from '../components/complaints/ComplaintForm';
 import MyComplaints from '../components/complaints/MyComplaints';
 
@@ -7,33 +8,37 @@ export default function ComplaintsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-slate-900">Complaints</h1>
+    <DashboardLayout title="Complaints" subtitle="File a complaint or track the ones you've already raised.">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-6 flex gap-2 border-b border-primary/10">
+          <button
+            onClick={() => setTab('submit')}
+            className={`px-4 py-2 text-sm font-semibold transition ${
+              tab === 'submit' ? 'border-b-2 border-[#00E676] text-primary' : 'text-[#5B7A70] hover:text-primary'
+            }`}
+          >
+            File a complaint
+          </button>
+          <button
+            onClick={() => setTab('mine')}
+            className={`px-4 py-2 text-sm font-semibold transition ${
+              tab === 'mine' ? 'border-b-2 border-[#00E676] text-primary' : 'text-[#5B7A70] hover:text-primary'
+            }`}
+          >
+            My complaints
+          </button>
+        </div>
 
-      <div className="mb-6 flex gap-2 border-b border-slate-200">
-        <button
-          onClick={() => setTab('submit')}
-          className={`px-4 py-2 text-sm font-semibold ${tab === 'submit' ? 'border-b-2 border-amber-500 text-slate-900' : 'text-slate-500'}`}
-        >
-          File a complaint
-        </button>
-        <button
-          onClick={() => setTab('mine')}
-          className={`px-4 py-2 text-sm font-semibold ${tab === 'mine' ? 'border-b-2 border-amber-500 text-slate-900' : 'text-slate-500'}`}
-        >
-          My complaints
-        </button>
+        {tab === 'submit' && (
+          <ComplaintForm
+            onCreated={() => {
+              setRefreshKey((k) => k + 1);
+              setTab('mine');
+            }}
+          />
+        )}
+        {tab === 'mine' && <MyComplaints key={refreshKey} />}
       </div>
-
-      {tab === 'submit' && (
-        <ComplaintForm
-          onCreated={() => {
-            setRefreshKey((k) => k + 1);
-            setTab('mine');
-          }}
-        />
-      )}
-      {tab === 'mine' && <MyComplaints key={refreshKey} />}
-    </div>
+    </DashboardLayout>
   );
 }

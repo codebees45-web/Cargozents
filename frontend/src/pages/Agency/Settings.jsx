@@ -1,7 +1,37 @@
 import React, { useState } from "react";
+import ThemeToggle from '../../components/common/ThemeToggle';
 import { useTheme } from "../../context/ThemeContext";
 
-export default function AgencySupport() {
+// 1. Inline ToggleSwitch Component (since the file is missing from your folders)
+const ToggleSwitch = ({ checked, onChange, ariaLabel }) => (
+  <label className="relative inline-flex items-center cursor-pointer">
+    <input 
+      type="checkbox" 
+      className="sr-only peer" 
+      checked={checked} 
+      onChange={onChange} 
+      aria-label={ariaLabel} 
+    />
+    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00E676]"></div>
+  </label>
+);
+
+// 2. Renamed component from AgencySupport to AgencySettings
+export default function AgencySettings() {
+  // --- ADDED: Missing state for your settings toggles ---
+  const [operations, setOperations] = useState({
+    autoAssign: false,
+  });
+
+  // --- ADDED: Missing handler for the toggle switch ---
+  const handleOperationToggle = (key) => {
+    setOperations((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  // Support Form State (Kept from your original code)
   const [form, setForm] = useState({
     subject: '',
     category: 'General Inquiry',
@@ -33,12 +63,15 @@ export default function AgencySupport() {
           Manage configurations, automatic assignments, dispatch rules, and preferences.
         </p>
       </div>
+
       <div className="max-w-4xl mx-auto space-y-8 px-4 pb-12">
         <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
           <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
             Dispatch & Operations
           </h3>
           <div className="space-y-6">
+            
+            {/* Toggle Switch Section */}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-primary">Auto-Assign Drivers</p>
@@ -51,6 +84,7 @@ export default function AgencySupport() {
               />
             </div>
 
+            {/* Support Form Section */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Category</label>
               <div className="relative">
@@ -88,7 +122,8 @@ export default function AgencySupport() {
 
             <div className="flex justify-end pt-2">
               <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="px-8 py-3 bg-primary hover:opacity-90 text-white text-xs font-bold rounded-lg transition-all shadow-glow disabled:opacity-50"
               >

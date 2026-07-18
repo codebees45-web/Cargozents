@@ -126,8 +126,8 @@ const AgencyDashboard = () => {
         {/* TOP STATUS HEADER BAR */}
         <header className="flex justify-between items-start px-10 pt-8 pb-6 border-b border-gray-100 bg-white shrink-0">
           <div>
-            <h1 className="text-xl font-bold text-[#133C2C] tracking-tight">
-              Welcome back, {user?.name || "Yaswanth"}
+            <h1 className="text-xl font-bold text-[#00E676] drop-shadow-sm">
+             Welcome back, {user?.name || 'NAGARAJ K'}
             </h1>
             <p className="text-xs text-gray-400 mt-0.5 font-medium">
               Managing agency logistics and active vehicle tracking.

@@ -26,6 +26,9 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import Industries from './pages/Industries';
 import AdminComplaints from './pages/AdminComplaints';
 import AdminReports from './pages/AdminReports';
+import AdminSettings from './pages/AdminSettings';
+import AdminUsers from './pages/AdminUsers';
+import AdminNotifications from './pages/AdminNotifications';
 import ComplaintsPage from './pages/ComplaintsPage';
 import Profile from './pages/Profile'; 
 import DashboardLayout from './components/common/DashboardLayout';
@@ -49,6 +52,7 @@ import ShipperSubscription from './pages/ShipperSubscription';
 import ShipperSupport from './pages/ShipperSupport';       
 import ShipperSettings from './pages/ShipperSettings'; 
 import ShipperNotifications from './pages/ShipperNotifications';
+import ShipperProfile from './pages/ShipperProfile'; // Added ShipperProfile import
 
 // --- AGENCY IMPORTS ---
 import AgencyDashboard from './pages/AgencyDashboard';
@@ -286,6 +290,20 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              {/* Added Shipper Profile Route */}
+              <Route
+                path="/shipper/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['shipper']}>
+                    <DashboardLayout
+                      title="My Profile"
+                      subtitle="Manage your company settings and preferences."
+                    >
+                      <ShipperProfile />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Driver Routes */}
               <Route
@@ -391,6 +409,30 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <AdminReports />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminUsers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminNotifications />
                   </ProtectedRoute>
                 }
               />

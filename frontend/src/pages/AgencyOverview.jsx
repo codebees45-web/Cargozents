@@ -57,60 +57,61 @@ const AgencyOverview = () => {
     switch (normalizedStatus) {
       case 'pending':
       case 'placed':
-        return 'bg-warning/10 text-warning border-warning/20';
+        return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
       case 'confirmed':
       case 'confirmed_by_shipper':
       case 'on going':
       case 'ongoing':
-        return 'bg-primary/10 text-primary border-primary/20';
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       case 'delivered':
       case 'completed':
-        return 'bg-success/10 text-success border-success/20';
+        return 'bg-[#00E676]/10 text-[#00E676] border-[#00E676]/20';
       case 'cancelled':
-        return 'bg-danger/10 text-danger border-danger/20';
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
       default:
-        return 'bg-secondary text-muted border-primary/10';
+        return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
     }
   };
 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="font-display text-2xl font-bold text-primary">Agency Overview</h2>
+        <h2 className="font-display text-2xl font-bold text-slate-100">Agency Overview</h2>
       </div>
 
+      {/* Top Stat Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
-          <p className="mb-1 text-sm font-semibold text-muted">Total Orders</p>
-          <p className="text-3xl font-bold text-primary">{isLoading || error ? '…' : recentOrders.length}</p>
+        <div className="rounded-xl border border-[#173022] bg-[#0a1811] p-6 shadow-sm">
+          <p className="mb-1 text-sm font-semibold text-[#8AA399]">Total Orders</p>
+          <p className="text-3xl font-bold text-slate-100">{isLoading || error ? '…' : recentOrders.length}</p>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-xs">
-          <p className="text-sm font-semibold text-gray-500 mb-1">Active Trucks</p>
-          <p className="text-3xl font-bold text-[#249B74]">
+        <div className="rounded-xl border border-[#173022] bg-[#0a1811] p-6 shadow-sm">
+          <p className="text-sm font-semibold text-[#8AA399] mb-1">Active Trucks</p>
+          <p className="text-3xl font-bold text-[#00E676]">
             {fleetSummary ? `${fleetSummary.activeTrucks} / ${fleetSummary.fleetSize}` : fleetError ? '—' : '...'}
           </p>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-xs">
-          <p className="text-sm font-semibold text-gray-500 mb-1">Fleet Revenue (delivered)</p>
-          <p className="text-3xl font-bold text-[#249B74]">
+        <div className="rounded-xl border border-[#173022] bg-[#0a1811] p-6 shadow-sm">
+          <p className="text-sm font-semibold text-[#8AA399] mb-1">Fleet Revenue (delivered)</p>
+          <p className="text-3xl font-bold text-[#00E676]">
             {fleetSummary ? currency(fleetSummary.totalRevenue) : fleetError ? '—' : '...'}
           </p>
         </div>
       </div>
 
-      {/* Fleet Performance */}
-      <div className="bg-white border border-gray-100 rounded-xl shadow-xs overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
+      {/* Fleet Performance Table */}
+      <div className="rounded-xl border border-[#173022] bg-[#0a1811] shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-[#173022] flex justify-between items-center bg-[#0a1811]">
           <div>
-            <h3 className="text-lg font-bold text-[#133C2C]">Fleet Performance</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <h3 className="text-lg font-bold text-slate-100">Fleet Performance</h3>
+            <p className="text-xs text-[#8AA399] mt-0.5">
               Trips and earnings per truck, plus utilization relative to your busiest vehicle.
             </p>
           </div>
           {fleetSummary && (
-            <span className="text-xs font-semibold text-[#249B74] bg-[#249B74]/10 border border-[#249B74]/20 rounded-full px-3 py-1.5">
+            <span className="text-xs font-semibold text-[#00E676] bg-[#00E676]/10 border border-[#00E676]/20 rounded-full px-3 py-1.5">
               {fleetSummary.avgUtilization}% avg utilization
             </span>
           )}
@@ -118,8 +119,8 @@ const AgencyOverview = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
+            <thead className="bg-[#0a1811] border-b border-[#173022] text-[11px] font-bold tracking-wider text-[#8AA399] uppercase">
+              <tr>
                 <th className="px-6 py-4">Truck</th>
                 <th className="px-6 py-4">Type</th>
                 <th className="px-6 py-4">Trips</th>
@@ -127,10 +128,10 @@ const AgencyOverview = () => {
                 <th className="px-6 py-4">Utilization</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[#173022]">
               {fleetError ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-10 text-center text-xs font-semibold text-red-500 bg-red-50/30">
+                  <td colSpan="5" className="px-6 py-10 text-center text-xs font-semibold text-red-400 bg-red-500/10">
                     ⚠️ {fleetError}
                   </td>
                 </tr>
@@ -138,38 +139,38 @@ const AgencyOverview = () => {
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                      <div className="w-6 h-6 border-2 border-[#249B74]/20 border-t-[#249B74] rounded-full animate-spin"></div>
-                      <p className="text-xs text-gray-400 font-medium">Loading fleet performance...</p>
+                      <div className="w-6 h-6 border-2 border-[#00E676]/20 border-t-[#00E676] rounded-full animate-spin"></div>
+                      <p className="text-xs text-[#8AA399] font-medium">Loading fleet performance...</p>
                     </div>
                   </td>
                 </tr>
               ) : trucks.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-400 font-medium">
+                  <td colSpan="5" className="px-6 py-10 text-center text-sm text-[#8AA399] font-medium">
                     No trucks registered to your fleet yet.
                   </td>
                 </tr>
               ) : (
                 trucks.map((t) => (
-                  <tr key={t._id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                  <tr key={t._id} className="hover:bg-[#173022]/30 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-200">
                       {t.registrationNumber}
                       {!t.isVerified && (
-                        <span className="ml-2 text-[10px] font-bold text-amber-600 uppercase">Unverified</span>
+                        <span className="ml-2 text-[10px] font-bold text-amber-500 uppercase">Unverified</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{t.type?.replace('_', ' ')}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{t.trips}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{currency(t.revenue)}</td>
+                    <td className="px-6 py-4 text-sm text-slate-300">{t.type?.replace('_', ' ')}</td>
+                    <td className="px-6 py-4 text-sm text-slate-300">{t.trips}</td>
+                    <td className="px-6 py-4 text-sm text-slate-300">{currency(t.revenue)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-100">
+                        <div className="h-2 w-24 overflow-hidden rounded-full bg-[#173022]">
                           <div
-                            className="h-full rounded-full bg-[#249B74]"
+                            className="h-full rounded-full bg-[#00E676]"
                             style={{ width: `${t.utilization}%` }}
                           />
                         </div>
-                        <span className="text-xs font-semibold text-gray-500">{t.utilization}%</span>
+                        <span className="text-xs font-semibold text-[#8AA399]">{t.utilization}%</span>
                       </div>
                     </td>
                   </tr>
@@ -180,16 +181,17 @@ const AgencyOverview = () => {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl shadow-xs overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
+      {/* Order Status Tracking Table */}
+      <div className="rounded-xl border border-[#173022] bg-[#0a1811] shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-[#173022] flex justify-between items-center bg-[#0a1811]">
           <div>
-            <h3 className="font-display text-lg font-bold text-primary">Order Status Tracking</h3>
-            <p className="mt-0.5 text-xs text-muted">Live updates on recent client orders and dispatch statuses.</p>
+            <h3 className="font-display text-lg font-bold text-slate-100">Order Status Tracking</h3>
+            <p className="mt-0.5 text-xs text-[#8AA399]">Live updates on recent client orders and dispatch statuses.</p>
           </div>
           {error && (
             <button
               onClick={fetchOverviewOrders}
-              className="rounded-md bg-secondary px-3 py-1.5 text-xs font-medium text-primary transition-all hover:bg-secondary/70"
+              className="rounded-md bg-[#173022] px-3 py-1.5 text-xs font-medium text-slate-200 transition-all hover:bg-[#173022]/70"
             >
               Retry Connection
             </button>
@@ -198,33 +200,33 @@ const AgencyOverview = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-b border-primary/10 bg-secondary/20 font-mono-ls text-[11px] uppercase tracking-wider text-muted">
+            <thead className="bg-[#0a1811] border-b border-[#173022] font-mono-ls text-[11px] uppercase tracking-wider text-[#8AA399]">
+              <tr>
                 <th className="px-6 py-4">Order ID</th>
                 <th className="px-6 py-4">Buyer</th>
                 <th className="px-6 py-4">Total</th>
                 <th className="px-6 py-4">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-primary/5">
+            <tbody className="divide-y divide-[#173022]">
               {isLoading ? (
                 <tr>
                   <td colSpan="4" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
-                      <p className="text-xs font-medium text-muted">Loading recent activity…</p>
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#00E676]/20 border-t-[#00E676]" />
+                      <p className="text-xs font-medium text-[#8AA399]">Loading recent activity…</p>
                     </div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan="4" className="bg-danger/5 px-6 py-10 text-center text-xs font-semibold text-danger">
+                  <td colSpan="4" className="bg-red-500/5 px-6 py-10 text-center text-xs font-semibold text-red-400">
                     ⚠️ {error}
                   </td>
                 </tr>
               ) : recentOrders.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-10 text-center text-sm font-medium text-muted">
+                  <td colSpan="4" className="px-6 py-10 text-center text-sm font-medium text-[#8AA399]">
                     No orders received yet.
                   </td>
                 </tr>
@@ -236,12 +238,12 @@ const AgencyOverview = () => {
                   const currentStatus = order.status || 'Pending';
 
                   return (
-                    <tr key={orderId} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                    <tr key={orderId} className="hover:bg-[#173022]/30 transition-colors">
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-200">
                         {orderId.length > 8 ? `${orderId.substring(0, 8).toUpperCase()}...` : orderId.toUpperCase()}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{clientName}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{routeInfo}</td>
+                      <td className="px-6 py-4 text-sm text-slate-300">{clientName}</td>
+                      <td className="px-6 py-4 text-sm text-slate-300">{routeInfo}</td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-bold border ${getStatusStyle(currentStatus)}`}
