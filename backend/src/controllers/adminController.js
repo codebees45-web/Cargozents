@@ -13,7 +13,7 @@ const getDrivers = async (req, res, next) => {
       filter.isApproved = approved === 'true';
     }
 
-    const drivers = await User.find(filter).select('-password -otp').sort({ createdAt: -1 });
+    const drivers = await User.find(filter).select('-password').sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, drivers });
   } catch (err) {
@@ -29,7 +29,7 @@ const verifyDriver = async (req, res, next) => {
       { _id: req.params.id, role: 'driver' },
       { isApproved: !!isApproved },
       { new: true }
-    ).select('-password -otp');
+    ).select('-password');
 
     if (!driver) {
       return res.status(404).json({ success: false, message: 'Driver not found' });
@@ -48,7 +48,7 @@ const suspendDriver = async (req, res, next) => {
       req.params.id,
       { isSuspended: !!isSuspended },
       { new: true }
-    ).select('-password -otp');
+    ).select('-password');
 
     if (!driver) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -280,7 +280,7 @@ const bulkVerifyDrivers = async (req, res, next) => {
     }
 
     await User.updateMany({ _id: { $in: ids }, role: 'driver' }, { isApproved: !!isApproved });
-    const drivers = await User.find({ _id: { $in: ids }, role: 'driver' }).select('-password -otp');
+    const drivers = await User.find({ _id: { $in: ids }, role: 'driver' }).select('-password');
 
     res.status(200).json({ success: true, drivers });
   } catch (err) {
@@ -342,7 +342,7 @@ const getUsers = async (req, res, next) => {
       filter.$or = [{ name: re }, { email: re }, { phone: re }];
     }
 
-    const users = await User.find(filter).select('-password -otp').sort({ createdAt: -1 });
+    const users = await User.find(filter).select('-password').sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, users });
   } catch (err) {
