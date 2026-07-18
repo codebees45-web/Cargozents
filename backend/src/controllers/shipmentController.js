@@ -358,6 +358,7 @@ const getShipmentTracking = async (req, res, next) => {
           : null,
         vehicle: shipment.assignedVehicle
           ? {
+              id: shipment.assignedVehicle._id,
               registrationNumber: shipment.assignedVehicle.registrationNumber,
               type: shipment.assignedVehicle.type,
               currentLocation: shipment.assignedVehicle.currentLocation,

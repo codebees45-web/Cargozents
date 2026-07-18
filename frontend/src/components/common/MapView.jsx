@@ -31,6 +31,19 @@ const RecenterMap = ({ center }) => {
   return null;
 };
 
+// When there's more than one marker and the caller didn't pin an explicit
+// center, fit the viewport to all of them instead of just zooming in on
+// the first — otherwise a pickup->drop pair that's far apart would render
+// with one end off-screen.
+const FitToMarkers = ({ points }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (points.length < 2) return;
+    map.fitBounds(L.latLngBounds(points), { padding: [32, 32] });
+  }, [JSON.stringify(points), map]);
+  return null;
+};
+
 /**
  * Shared map component used across truck tracking, order tracking,
  * nearby-shippers browse, and the address picker.
@@ -69,6 +82,7 @@ const MapView = ({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <RecenterMap center={center} />
+        {!center && <FitToMarkers points={markers.map((m) => [m.lat, m.lng])} />}
         <ClickHandler />
 
         {markers.map((m) => (

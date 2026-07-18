@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import EmptyState from '../components/common/EmptyState';
 import AddTruckModal from '../components/common/AddTruckModal';
+import MapView from '../components/common/MapView';
 import { getAgencyTrucks, addAgencyTruck, updateAgencyTruck, deleteAgencyTruck } from '../services/agencyService';
+
+const isRealPoint = (coords) =>
+  Array.isArray(coords) && coords.length === 2 && !(coords[0] === 0 && coords[1] === 0);
 
 const TYPE_LABELS = {
   mini_truck: 'Mini Truck',
@@ -74,6 +79,48 @@ const AvailableTrucks = () => {
           + Add New Truck
         </button>
       </div>
+
+      {/* Fleet overview map */}
+      {trucks && trucks.length > 0 && (
+        <div className="mb-6 rounded-xl border border-primary/10 bg-secondary/10 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-mono-ls text-[11px] tracking-wide text-primary">FLEET MAP</h2>
+            <Link
+              to="/agency/fleet-locations"
+              className="font-mono-ls text-[10px] text-primary/70 hover:text-primary hover:underline"
+            >
+              SET TRUCK LOCATIONS →
+            </Link>
+          </div>
+          {(() => {
+            const located = trucks.filter((t) => isRealPoint(t.currentLocation?.coordinates));
+            if (located.length === 0) {
+              return (
+                <p className="mt-3 text-sm text-[#5B7A70]">
+                  None of your trucks have a location set yet — use "Set truck locations" above to place them on the map.
+                </p>
+              );
+            }
+            return (
+              <>
+                <p className="mt-1 mb-3 text-xs text-[#5B7A70]">
+                  {located.length} of {trucks.length} truck{trucks.length === 1 ? '' : 's'} have a set location.
+                </p>
+                <MapView
+                  markers={located.map((t) => ({
+                    id: t._id,
+                    lat: t.currentLocation.coordinates[1],
+                    lng: t.currentLocation.coordinates[0],
+                    label: `${t.registrationNumber} · ${TYPE_LABELS[t.type] || t.type} · ${t.isActive ? 'Available' : 'Unavailable'}`,
+                    isVehicle: true,
+                  }))}
+                  height="320px"
+                />
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Grid and Empty States */}
       <div className="mt-6">

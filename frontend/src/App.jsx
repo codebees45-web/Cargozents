@@ -26,6 +26,7 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import Industries from './pages/Industries';
 import AdminComplaints from './pages/AdminComplaints';
 import AdminReports from './pages/AdminReports';
+import AdminLiveMap from './pages/AdminLiveMap';
 import AdminSettings from './pages/AdminSettings';
 import AdminUsers from './pages/AdminUsers';
 import AdminNotifications from './pages/AdminNotifications';
@@ -52,8 +53,6 @@ import ShipperSubscription from './pages/ShipperSubscription';
 import ShipperSupport from './pages/ShipperSupport';       
 import ShipperSettings from './pages/ShipperSettings'; 
 import ShipperNotifications from './pages/ShipperNotifications';
-import ShipperProfile from './pages/ShipperProfile'; // Added ShipperProfile import
-
 // --- AGENCY IMPORTS ---
 import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyOverview from './pages/AgencyOverview';
@@ -63,6 +62,7 @@ import TruckTracking from './pages/TruckTracking';
 import Onboarding from './pages/Onboarding';
 import AgencySupport from './pages/Agency/Support';
 import AgencyDrivers from './pages/Agency/Drivers'; 
+// 🟢 FIXED: Changed variable name here to match element usage below
 import AgencySettings from "./pages/Agency/Settings";
 
 // --- BUYER IMPORTS ---
@@ -79,6 +79,8 @@ import SavedAddresses from "./pages/buyer/SavedAddresses";
 import Support from "./pages/buyer/Support";
 import Settings from "./pages/buyer/Settings";
 import Invoices from "./pages/buyer/Invoices";
+
+import AgencyFleetTracking from './pages/AgencyFleetTracking';
 
 function App() {
   return (
@@ -216,7 +218,6 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-
               {/* Shipper Routes */}
               <Route
                 path="/shipper/dashboard"
@@ -287,20 +288,6 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['shipper']}>
                     <ShipperSettings />
-                  </ProtectedRoute>
-                }
-              />
-              {/* Added Shipper Profile Route */}
-              <Route
-                path="/shipper/profile"
-                element={
-                  <ProtectedRoute allowedRoles={['shipper']}>
-                    <DashboardLayout
-                      title="My Profile"
-                      subtitle="Manage your company settings and preferences."
-                    >
-                      <ShipperProfile />
-                    </DashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -413,6 +400,14 @@ function App() {
                 }
               />
               <Route
+                path="/admin/live-map"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminLiveMap />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/settings"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
@@ -490,6 +485,9 @@ function App() {
                 
                 <Route path="drivers" element={<AgencyDrivers />} /> 
                 <Route path="truck-tracking" element={<TruckTracking />} />
+                <Route path="drivers" element={<AgencyDrivers />} /> 
+                <Route path="truck-tracking" element={<TruckTracking />} />
+                <Route path="fleet-locations" element={<AgencyFleetTracking />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="support" element={<AgencySupport />} />
                 <Route path="settings" element={<AgencySettings />} /> 

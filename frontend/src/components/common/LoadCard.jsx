@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import api from '../../services/api';
+import DriverTripMap from './DriverTripMap';
+
+// Statuses where the driver is actively en route and should be able to
+// see the route map and share their live GPS position.
+const TRACKABLE_STATUSES = ['accepted', 'picked_up', 'in_transit'];
 
 const STATUS_LABEL = {
   assigned: 'Awaiting your response',
@@ -34,6 +39,8 @@ const getCoordinatesIfAvailable = () =>
 const LoadCard = ({ shipment, onUpdated }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [showMap, setShowMap] = useState(false);
+  const isTrackable = TRACKABLE_STATUSES.includes(shipment.status);
 
   const respond = async (accept) => {
     setBusy(true);
@@ -112,10 +119,22 @@ const LoadCard = ({ shipment, onUpdated }) => {
           {shipment.status === 'delivered' && (
             <span className="rounded-lg bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">Delivered</span>
           )}
+
+          {isTrackable && (
+            <button
+              type="button"
+              onClick={() => setShowMap((v) => !v)}
+              className="rounded-lg border border-primary/20 px-3 py-1.5 text-xs font-semibold text-primary transition hover:border-primary/40"
+            >
+              {showMap ? 'Hide map' : 'Route & GPS'}
+            </button>
+          )}
         </div>
       </div>
 
       {error && <p className="mt-3 text-xs text-danger">{error}</p>}
+
+      {isTrackable && showMap && <DriverTripMap shipmentId={shipment._id} />}
     </div>
   );
 };

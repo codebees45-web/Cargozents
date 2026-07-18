@@ -4,7 +4,6 @@ import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { fakeTracking } from '../../data/fakeMapData';
 
 // Vite bundles the default Leaflet marker PNGs under a hashed path that the
 // library's own CSS doesn't know about, so the default icon shows up broken
@@ -66,21 +65,23 @@ const FitBounds = ({ points }) => {
  * Renders pickup/drop markers plus the live vehicle position (if the
  * backend has one) for a single shipment's tracking data, as returned by
  * GET /api/shipments/:id/track.
+ *
+ * `tracking` must be real data or `null`/`undefined` — this component
+ * never fabricates a route. When there's nothing to plot yet, it shows a
+ * plain empty state instead (customize the copy via `emptyMessage`),
+ * since silently drawing a fake pickup/drop/truck on the map could be
+ * mistaken for a real shipment's location by whoever's looking at it.
  */
-const TrackingMap = ({ tracking, className = '' }) => {
-  const trackingData = tracking || fakeTracking;
-  const isDemo = !tracking;
-
-  const pickup = trackingData?.pickup?.location?.coordinates;
-  const drop = trackingData?.drop?.location?.coordinates;
-  const vehicleCoords = trackingData?.vehicle?.currentLocation?.coordinates;
+const TrackingMap = ({ tracking, className = '', emptyMessage }) => {
+  const pickup = tracking?.pickup?.location?.coordinates;
+  const drop = tracking?.drop?.location?.coordinates;
+  const vehicleCoords = tracking?.vehicle?.currentLocation?.coordinates;
 
   const pickupLatLng = isRealPoint(pickup) ? toLatLng(pickup) : null;
   const dropLatLng = isRealPoint(drop) ? toLatLng(drop) : null;
   const vehicleLatLng = isRealPoint(vehicleCoords) ? toLatLng(vehicleCoords) : null;
 
   const points = [pickupLatLng, dropLatLng, vehicleLatLng].filter(Boolean);
-  const fallbackCenter = [20.5937, 78.9629]; // India, used when no coords exist yet
 
   if (points.length === 0) {
     return (
@@ -88,7 +89,8 @@ const TrackingMap = ({ tracking, className = '' }) => {
         <div className="text-center px-6">
           <p className="font-medium text-gray-500">No location data yet</p>
           <p className="mt-1 text-sm text-gray-400">
-            Coordinates will appear once pickup/drop points are set and the driver's device starts sharing location.
+            {emptyMessage ||
+              "Coordinates will appear once pickup/drop points are set and the driver's device starts sharing location."}
           </p>
         </div>
       </div>
@@ -97,12 +99,7 @@ const TrackingMap = ({ tracking, className = '' }) => {
 
   return (
     <div className={`relative min-h-[400px] w-full rounded-lg overflow-hidden ${className}`}>
-      {isDemo && (
-        <div className="absolute right-4 top-4 z-10 rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-yellow-700 shadow-sm">
-          Demo tracking data
-        </div>
-      )}
-      <MapContainer center={points[0] || fallbackCenter} zoom={12} scrollWheelZoom className="h-full w-full">
+      <MapContainer center={points[0]} zoom={12} scrollWheelZoom className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -114,7 +111,7 @@ const TrackingMap = ({ tracking, className = '' }) => {
             <Popup>
               <strong>Pickup</strong>
               <br />
-              {trackingData.pickup.address}, {trackingData.pickup.city}
+              {tracking.pickup.address}, {tracking.pickup.city}
             </Popup>
           </Marker>
         )}
@@ -124,7 +121,7 @@ const TrackingMap = ({ tracking, className = '' }) => {
             <Popup>
               <strong>Drop</strong>
               <br />
-              {trackingData.drop.address}, {trackingData.drop.city}
+              {tracking.drop.address}, {tracking.drop.city}
             </Popup>
           </Marker>
         )}
@@ -136,11 +133,11 @@ const TrackingMap = ({ tracking, className = '' }) => {
         {vehicleLatLng && (
           <Marker position={vehicleLatLng} icon={truckIcon}>
             <Popup>
-              <strong>{trackingData.vehicle?.registrationNumber || 'Vehicle'}</strong>
+              <strong>{tracking.vehicle?.registrationNumber || 'Vehicle'}</strong>
               <br />
-              {trackingData.vehicle?.type}
+              {tracking.vehicle?.type}
               <br />
-              Status: {trackingData.status}
+              Status: {tracking.status}
             </Popup>
           </Marker>
         )}

@@ -5,6 +5,7 @@ import FormInput from '../components/common/FormInput';
 import FormSelect from '../components/common/FormSelect';
 import FormTextarea from '../components/common/FormTextarea';
 import GeoPointFields from '../components/common/GeoPointFields';
+import MapView from '../components/common/MapView';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
@@ -250,6 +251,25 @@ const PostShipment = () => {
 
         <GeoPointFields label="PICKUP" value={pickup} onChange={setPickup} onUseMyLocation={useMyLocationForPickup} locating={locating} />
         <GeoPointFields label="DROP" value={drop} onChange={setDrop} />
+
+        {validCoords(pickup) && validCoords(drop) && (
+          <section className="rounded-xl border border-primary/10 bg-secondary/10 p-5">
+            <h3 className="font-mono-ls text-[11px] tracking-wide text-primary">ROUTE PREVIEW</h3>
+            <div className="mt-4">
+              <MapView
+                markers={[
+                  { id: 'pickup', lat: pickup.coordinates[1], lng: pickup.coordinates[0], label: `Pickup: ${pickup.address}` },
+                  { id: 'drop', lat: drop.coordinates[1], lng: drop.coordinates[0], label: `Drop: ${drop.address}` },
+                ]}
+                route={[
+                  [pickup.coordinates[1], pickup.coordinates[0]],
+                  [drop.coordinates[1], drop.coordinates[0]],
+                ]}
+                height="320px"
+              />
+            </div>
+          </section>
+        )}
 
         <section className="grid gap-4 rounded-xl border border-primary/10 bg-secondary/10 p-5 sm:grid-cols-2">
           <FormSelect label="DELIVERY PAYMENT" name="deliveryPaidBy" value={form.deliveryPaidBy} onChange={setField('deliveryPaidBy')} options={PAID_BY_OPTIONS} />

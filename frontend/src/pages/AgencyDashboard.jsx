@@ -85,6 +85,14 @@ const AgencyDashboard = () => {
                 </>
               )}
             </NavLink>
+            <NavLink to="/agency/fleet-locations" className={getNavLinkClass}>
+              {({ isActive }) => (
+                <>
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />}
+                  FLEET LOCATIONS
+                </>
+              )}
+            </NavLink>
 
             <NavLink to="/agency/support" className={getNavLinkClass}>
               {({ isActive }) => (

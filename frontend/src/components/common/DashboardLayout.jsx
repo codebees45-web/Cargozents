@@ -14,7 +14,7 @@ const navByRole = {
     { label: "Notifications", href: "/buyer/notifications" },
     { label: "Support", href: "/buyer/support" },
     { label: "Settings", href: "/buyer/settings" },
-    { label: 'Profile', href: '/profile' },
+    { label: "Profile", href: "/driver/profile" },
   ],
   shipper: [
     { label: 'Overview', href: '/shipper/dashboard' },
@@ -22,9 +22,9 @@ const navByRole = {
     { label: 'Shipments', href: '/shipper/shipments' },
     { label: 'Orders received', href: '/shipper/orders' },
     { label: 'Subscription', href: '/shipper/subscription' },
-    { label: 'Support', href: '/shipper/support' },       
-    { label: 'Settings', href: '/shipper/settings' },     
-    { label: 'Profile', href: '/shipper/profile' },
+    { label: 'Support', href: '/shipper/support' },       // 🟢 Standardized to label/href
+    { label: 'Settings', href: '/shipper/settings' },     // 🟢 Standardized to label/href
+    { label: 'Profile', href: '/driver/profile' },
   ],
   driver: [
     { label: 'Overview', href: '/driver/dashboard' },
@@ -37,14 +37,12 @@ const navByRole = {
     { label: 'Profile', href: '/driver/profile' },
   ],
   agency: [
-    { label: 'Overview', href: '/agency/overview' },
-    { label: 'Orders Received', href: '/agency/orders' },
+    { label: 'Overview', href: '/agency/dashboard' },
     { label: 'Manage Fleet', href: '/agency/fleet' },
     { label: 'Drivers', href: '/agency/drivers' },
-    { label: 'Truck Tracking', href: '/agency/tracking' },
     { label: 'Support', href: '/agency/support' },
-    { label: 'Profile', href: '/agency/profile' },
     { label: 'Settings', href: '/agency/settings' }, 
+    { label: 'Profile', href: '/driver/profile' },
   ],
   admin: [
     { label: 'Overview', href: '/admin/dashboard' },
@@ -54,6 +52,7 @@ const navByRole = {
     { label: 'Complaints', href: '/admin/complaints' },
     { label: 'Notifications', href: '/admin/notifications' },
     { label: 'Reports', href: '/admin/reports' },
+    { label: 'Live map', href: '/admin/live-map' },
     { label: 'Settings', href: '/admin/settings' },
     { label: 'Profile', href: '/driver/profile' },
   ],
@@ -91,7 +90,7 @@ const DashboardLayout = ({ title, subtitle, children }) => {
                 {({ isActive }) => (
                   <>
                     {isActive && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
-                    {item.label?.toUpperCase() || ''} 
+                    {item.label?.toUpperCase() || ''} {/* 🟢 Added optional chaining guard */}
                   </>
                 )}
               </NavLink>
@@ -104,12 +103,9 @@ const DashboardLayout = ({ title, subtitle, children }) => {
       <div className="flex-1">
         <header className="flex items-center justify-between border-b border-primary/10 px-6 py-5 md:px-10">
           <div>
-  {/* Added an inline style to guarantee the neon green color applies */}
-  <h1 className="font-display text-xl font-bold drop-shadow-sm" style={{ color: '#00E676' }}>
-  {title}
-</h1>
-  {subtitle && <p className="mt-1 text-sm text-[#5B7A70]">{subtitle}</p>}
-</div>
+            <h1 className="font-display text-xl font-bold text-primary">{title}</h1>
+            {subtitle && <p className="mt-1 text-sm text-[#5B7A70]">{subtitle}</p>}
+          </div>
           <div className="flex items-center gap-4">
             {user?.role === 'buyer' && (
               <Link to="/buyer/checkout" className="relative rounded-lg p-2 text-primary/70 transition hover:bg-primary/5 hover:text-primary">

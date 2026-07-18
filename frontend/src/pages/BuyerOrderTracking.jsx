@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '../components/common/DashboardLayout';
 import TrackingMap from '../components/common/TrackingMap';
-import { fakeTracking } from '../data/fakeMapData';
 import { getOrderTracking } from '../services/orderService';
 import { formatLocationFreshness } from '../utils/locationFreshness';
 
@@ -46,7 +45,6 @@ const BuyerOrderTracking = () => {
   }, [load]);
 
   const freshness = tracking?.vehicle ? formatLocationFreshness(tracking.vehicle) : null;
-  const trackingData = tracking || fakeTracking;
 
   return (
     <DashboardLayout title="Track order" subtitle={order ? `Order #${order._id.slice(-6).toUpperCase()}` : ''}>
@@ -69,20 +67,18 @@ const BuyerOrderTracking = () => {
 
           {!tracking?.vehicle && (
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
-              The Shipper hasn't requested a truck for this order yet — the map below uses demo data to verify
-              the tracking integration until live data is available.
+              The Shipper hasn't requested a truck for this order yet, or the driver hasn't started sharing
+              location. The map will populate automatically once live tracking begins.
             </div>
           )}
 
           {order && (
             <>
-              <TrackingMap tracking={tracking?.vehicle ? tracking : fakeTracking} className="shadow border border-gray-200" />
-              {!tracking && (
-                <p className="mt-3 text-xs text-gray-500">
-                  Demo map data is shown for testing. When the shipment begins live tracking, real coordinates
-                  will replace this route.
-                </p>
-              )}
+              <TrackingMap
+                tracking={tracking}
+                className="shadow border border-gray-200"
+                emptyMessage="No live tracking yet — this will appear once a driver is assigned and starts sharing their location."
+              />
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-lg border border-gray-200 bg-white p-3">
                   <p className="text-[11px] uppercase text-gray-400">Shipment status</p>
@@ -93,7 +89,7 @@ const BuyerOrderTracking = () => {
                 <div className="rounded-lg border border-gray-200 bg-white p-3">
                   <p className="text-[11px] uppercase text-gray-400">Driver</p>
                   <p className="text-sm font-semibold text-gray-800">
-                    {tracking?.driver?.name || trackingData.driver?.name || 'Not yet assigned'}
+                    {tracking?.driver?.name || 'Not yet assigned'}
                   </p>
                   {tracking?.driver?.phone && <p className="text-xs text-gray-400">{tracking.driver.phone}</p>}
                 </div>
