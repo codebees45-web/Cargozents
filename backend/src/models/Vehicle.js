@@ -62,6 +62,16 @@ const vehicleSchema = new mongoose.Schema(
       type: { type: String, enum: ['Point'], default: 'Point' },
       coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
     },
+    // When this location was last written — powers the "Live / stale /
+    // set by agency" freshness badge (see frontend/utils/locationFreshness.js).
+    locationUpdatedAt: { type: Date, default: null },
+    // True only while the driver's own device has live GPS sharing turned
+    // on for a trip. False for manual agency-set pins and once sharing stops.
+    isSharingLocation: { type: Boolean, default: false },
+    // 'gps' = driver's own device via useLiveLocationSharing.
+    // 'manual' = agency staff clicked a position in for a driver with no
+    // smartphone (see AgencyFleetTracking.jsx).
+    locationSource: { type: String, enum: ['gps', 'manual'], default: 'gps' },
 
     // True from the moment a driver marks a delivery as "delivered" until
     // they either accept a new load or manually clear it. This is the flag

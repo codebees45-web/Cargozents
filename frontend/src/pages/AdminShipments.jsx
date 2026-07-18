@@ -29,6 +29,7 @@ const AdminShipments = () => {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('requested');
   const [expandedId, setExpandedId] = useState(null);
+  const [search, setSearch] = useState('');
 
   const loadShipments = () => {
     setShipments(null);
@@ -42,10 +43,23 @@ const AdminShipments = () => {
 
   const filtered = useMemo(() => {
     if (!shipments) return [];
-    if (filter === 'all') return shipments;
-    if (filter === 'active') return shipments.filter((s) => isActiveStatus(s.status));
-    return shipments.filter((s) => s.status === filter);
-  }, [shipments, filter]);
+    let list = shipments;
+    if (filter === 'active') list = list.filter((s) => isActiveStatus(s.status));
+    else if (filter !== 'all') list = list.filter((s) => s.status === filter);
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (s) =>
+          s.shipper?.name?.toLowerCase().includes(q) ||
+          s.pickup?.city?.toLowerCase().includes(q) ||
+          s.drop?.city?.toLowerCase().includes(q) ||
+          s.assignedDriver?.name?.toLowerCase().includes(q) ||
+          s.goodsType?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [shipments, filter, search]);
 
   const handleAssigned = (updatedShipment) => {
     setShipments((prev) => prev.map((s) => (s._id === updatedShipment._id ? { ...s, ...updatedShipment } : s)));
@@ -54,18 +68,26 @@ const AdminShipments = () => {
 
   return (
     <DashboardLayout title="Shipment requests" subtitle="Match posted shipments to a nearby verified truck.">
-      <div className="flex gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={`rounded-full border px-4 py-1.5 font-mono-ls text-[11px] tracking-wide transition ${
-              filter === f.value ? 'border-primary bg-primary text-white' : 'border-primary/15 text-[#5B7A70] hover:border-primary/40'
-            }`}
-          >
-            {f.label.toUpperCase()}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2">
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`rounded-full border px-4 py-1.5 font-mono-ls text-[11px] tracking-wide transition ${
+                filter === f.value ? 'border-primary bg-primary text-white' : 'border-primary/15 text-[#5B7A70] hover:border-primary/40'
+              }`}
+            >
+              {f.label.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search shipper, city, driver, goods…"
+          className="w-72 rounded-lg border border-primary/15 bg-secondary/40 px-3 py-2 text-sm text-primary outline-none focus:border-primary/60"
+        />
       </div>
 
       <div className="mt-6">
@@ -74,7 +96,10 @@ const AdminShipments = () => {
         ) : error ? (
           <p className="text-sm text-danger">{error}</p>
         ) : filtered.length === 0 ? (
-          <EmptyState title="Nothing here" body="Shipments matching this filter will show up here." />
+          <EmptyState
+            title="Nothing here"
+            body={search ? 'No shipments match your search.' : 'Shipments matching this filter will show up here.'}
+          />
         ) : (
           <div className="space-y-3">
             {filtered.map((s) => (

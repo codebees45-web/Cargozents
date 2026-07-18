@@ -85,6 +85,20 @@ export const confirmOrder = async (orderId) => {
 };
 
 /**
+ * Reject Order (shipper/agency declines a newly placed order)
+ */
+export const rejectOrder = async (orderId, reason) => {
+  return api.patch(`/orders/${orderId}/reject`, reason ? { reason } : {}); // full axios response
+};
+
+/**
+ * Assign Truck (shipper/agency assigns one of their own verified vehicles)
+ */
+export const assignTruck = async (orderId, vehicleId) => {
+  return api.patch(`/orders/${orderId}/assign-truck`, { vehicleId }); // full axios response
+};
+
+/**
  * Default export (keeps old code working)
  */
 const orderService = {
@@ -98,6 +112,8 @@ const orderService = {
   generateOTP,
   getReceivedOrders,
   confirmOrder,
+  rejectOrder,
+  assignTruck,
 };
 
 export default orderService;

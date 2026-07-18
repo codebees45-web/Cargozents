@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Doughnut } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut, Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import DashboardLayout from '../components/common/DashboardLayout';
 import TruckLoader from '../components/common/TruckLoader';
 import { getShipmentAnalytics, getShipmentAnalyticsSummary } from '../services/analyticsService';
 import api from '../services/api';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 // Tailwind classes for UI elements
 const STATUS_TW_COLORS = {
@@ -77,6 +85,10 @@ const AdminReports = () => {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsError, setAnalyticsError] = useState('');
 
+  // Trend State (revenue & deliveries over the last 14 days)
+  const [trend, setTrend] = useState(null);
+  const [trendError, setTrendError] = useState('');
+
   // Fetch Version 1 Summary
   useEffect(() => {
     getShipmentAnalyticsSummary()
@@ -107,6 +119,18 @@ const AdminReports = () => {
     };
   }, []);
 
+  // Fetch revenue/delivery trend
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get('/admin/analytics/trend?days=14')
+      .then((res) => !cancelled && setTrend(res.data.trend || []))
+      .catch(() => !cancelled && setTrendError('Could not load the revenue trend.'));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setPage(1);
@@ -117,6 +141,28 @@ const AdminReports = () => {
   const maxStatusRevenue = summary?.byStatus?.length
     ? Math.max(...summary.byStatus.map((s) => s.revenue))
     : 0;
+
+  const trendChartData = {
+    labels: (trend || []).map((t) =>
+      new Date(t.day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+    ),
+    datasets: [
+      {
+        label: 'Revenue (₹)',
+        data: (trend || []).map((t) => t.revenue),
+        backgroundColor: '#34D399',
+        borderRadius: 4,
+        yAxisID: 'y',
+      },
+      {
+        label: 'Deliveries',
+        data: (trend || []).map((t) => t.delivered),
+        backgroundColor: '#60A5FA',
+        borderRadius: 4,
+        yAxisID: 'y1',
+      },
+    ],
+  };
 
   const statusEntries = analytics ? Object.entries(analytics.statusBreakdown) : [];
   const chartData = {
@@ -283,6 +329,44 @@ const AdminReports = () => {
           </div>
         </section>
       </div>
+
+      {/* Revenue & Delivery Trend (last 14 days) */}
+      <section className="mt-8">
+        <h2 className="font-display text-lg font-semibold text-primary">Revenue & delivery trend (14 days)</h2>
+        <div className="mt-4 h-[300px] rounded-xl border border-primary/10 bg-secondary/10 p-6">
+          {trendError ? (
+            <p className="text-sm text-danger">{trendError}</p>
+          ) : trend === null ? (
+            <TruckLoader fullScreen={false} />
+          ) : trend.length === 0 ? (
+            <p className="text-sm text-[#5B7A70]">No shipment activity in this window yet.</p>
+          ) : (
+            <Bar
+              data={trendChartData}
+              options={{
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                  legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                },
+                scales: {
+                  y: {
+                    type: 'linear',
+                    position: 'left',
+                    title: { display: true, text: 'Revenue (₹)', font: { size: 10 } },
+                  },
+                  y1: {
+                    type: 'linear',
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Deliveries', font: { size: 10 } },
+                  },
+                },
+              }}
+            />
+          )}
+        </div>
+      </section>
 
       {/* Shipment Records Data Table (V1) */}
       <section className="mt-12">

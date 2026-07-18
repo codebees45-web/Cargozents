@@ -186,7 +186,237 @@ exports.getMyOrders = async (req, res) => {
 };
 
 /**
- * Get Order By ID
+ * Get Orders Received (shipper's product-catalog orders)
+ * Any product order whose items belong to the logged-in shipper.
+ */
+exports.getReceivedOrders = async (req, res) => {
+  try {
+    const filter = { shipper: req.user._id, orderType: "product" };
+
+    const orders = await Order.find(filter)
+      .populate("buyer", "name email phone")
+      .populate("items.product")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: orders.length,
+      orders,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * Confirm Order (shipper confirms a newly placed product order)
+ */
+exports.confirmOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (!order.shipper || !order.shipper.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to confirm this order",
+      });
+    }
+
+    if (order.status !== "placed") {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be confirmed from status "${order.status}"`,
+      });
+    }
+
+    order.status = "confirmed_by_shipper";
+    order.tracking.timeline.push({
+      status: "Confirmed",
+      message: "Order confirmed by shipper",
+      createdAt: new Date(),
+    });
+    await order.save();
+
+    const populatedOrder = await Order.findById(order._id)
+      .populate("buyer", "name email phone")
+      .populate("items.product");
+
+    res.json({
+      success: true,
+      message: "Order confirmed",
+      order: populatedOrder,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * Reject Order (shipper/agency declines a newly placed product order)
+ */
+exports.rejectOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (!order.shipper || !order.shipper.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to reject this order",
+      });
+    }
+
+    if (order.status !== "placed") {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be rejected from status "${order.status}"`,
+      });
+    }
+
+    order.status = "cancelled";
+    order.tracking.timeline.push({
+      status: "Cancelled",
+      message: req.body?.reason
+        ? `Rejected by shipper: ${req.body.reason}`
+        : "Rejected by shipper",
+      createdAt: new Date(),
+    });
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: "Order rejected",
+      order,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * Assign Truck (shipper/agency assigns one of their own vehicles, from the
+ * Vehicle collection, to a confirmed order). Mirrors assignDriver below but
+ * scoped to the requesting shipper's own fleet, and also copies the
+ * driver riding that truck (if any) onto the order in one step.
+ */
+exports.assignTruck = async (req, res) => {
+  try {
+    const { vehicleId } = req.body;
+
+    if (!vehicleId) {
+      return res.status(400).json({
+        success: false,
+        message: "vehicleId is required",
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (!order.shipper || !order.shipper.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to assign a truck to this order",
+      });
+    }
+
+    if (!["confirmed_by_shipper", "awaiting_shipment"].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `A truck cannot be assigned while the order is "${order.status}". Confirm the order first.`,
+      });
+    }
+
+    const Vehicle = require("../models/Vehicle");
+    const vehicle = await Vehicle.findOne({ _id: vehicleId, agency: req.user._id });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Truck not found in your fleet",
+      });
+    }
+
+    if (!vehicle.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "This truck is not yet admin-verified and cannot be assigned",
+      });
+    }
+
+    order.vehicle = {
+      type: vehicle.type,
+      capacity: vehicle.capacityWeight,
+      registrationNumber: vehicle.registrationNumber,
+    };
+
+    if (vehicle.driver) {
+      order.driver = vehicle.driver;
+    }
+
+    order.status = "awaiting_shipment";
+    order.tracking.currentStatus = "Driver Assigned";
+    order.tracking.timeline.push({
+      status: "Driver Assigned",
+      message: `Truck ${vehicle.registrationNumber} assigned`,
+      createdAt: new Date(),
+    });
+
+    await order.save();
+
+    const populatedOrder = await Order.findById(order._id)
+      .populate("buyer", "name email phone")
+      .populate("driver", "name phone")
+      .populate("items.product");
+
+    res.json({
+      success: true,
+      message: "Truck assigned",
+      order: populatedOrder,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * Get Order By ID (kept below the more specific routes above)
  */
 exports.getOrderById = async (req, res) => {
   try {
@@ -203,9 +433,91 @@ exports.getOrderById = async (req, res) => {
       });
     }
 
+    const isBuyer = order.buyer && order.buyer._id?.equals(req.user._id);
+    const isShipper = order.shipper && order.shipper._id?.equals(req.user._id);
+    const isDriver = order.driver && order.driver._id?.equals(req.user._id);
+    const isAdmin = req.user.role === "admin";
+
+    if (!isBuyer && !isShipper && !isDriver && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view this order",
+      });
+    }
+
     res.json({
       success: true,
       order,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * Order Tracking — status timeline plus, if a truck has been assigned,
+ * that vehicle's live position (mirrors shipmentController.getShipmentTracking's
+ * shape/auth pattern so the two map components can share logic later).
+ */
+exports.getOrderTracking = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("buyer", "name")
+      .populate("driver", "name phone");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    const isBuyer = order.buyer && order.buyer._id?.equals(req.user._id);
+    const isShipper = order.shipper && order.shipper.equals(req.user._id);
+    const isDriver = order.driver && order.driver._id?.equals(req.user._id);
+    const isAdmin = req.user.role === "admin";
+
+    if (!isBuyer && !isShipper && !isDriver && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to track this order",
+      });
+    }
+
+    // order.vehicle is a static snapshot copied in at assign-truck time
+    // (registrationNumber/type/capacity) — it has no live position. Look
+    // the real Vehicle doc up by registration number to get its current
+    // currentLocation/locationUpdatedAt/isSharingLocation for the map.
+    let vehicle = null;
+    if (order.vehicle?.registrationNumber) {
+      const Vehicle = require("../models/Vehicle");
+      const liveVehicle = await Vehicle.findOne({
+        registrationNumber: order.vehicle.registrationNumber,
+      }).select("registrationNumber type currentLocation locationUpdatedAt isSharingLocation");
+
+      vehicle = {
+        registrationNumber: order.vehicle.registrationNumber,
+        type: order.vehicle.type,
+        currentLocation: liveVehicle?.currentLocation || null,
+        locationUpdatedAt: liveVehicle?.locationUpdatedAt || null,
+        isSharingLocation: liveVehicle?.isSharingLocation || false,
+      };
+    }
+
+    const currentStatus = order.orderType === "product" ? order.status : order.tracking?.currentStatus;
+
+    res.json({
+      success: true,
+      order,
+      tracking: {
+        status: currentStatus,
+        driver: order.driver ? { name: order.driver.name, phone: order.driver.phone } : null,
+        vehicle,
+        timeline: order.tracking?.timeline || [],
+      },
     });
   } catch (err) {
     res.status(500).json({
@@ -271,6 +583,32 @@ exports.cancelOrder = async (req, res) => {
 /**
  * Update Order Status (shipment orders — driver/admin/shipper actions)
  */
+const PRODUCT_ORDER_STATUSES = [
+  "placed",
+  "confirmed_by_shipper",
+  "awaiting_shipment",
+  "shipment_requested",
+  "out_for_delivery",
+  "delivered",
+  "cancelled",
+];
+
+const FREIGHT_ORDER_STATUSES = [
+  "Draft",
+  "Submitted",
+  "Admin Review",
+  "Approved",
+  "Driver Assigned",
+  "Driver Accepted",
+  "Pickup Started",
+  "Picked Up",
+  "In Transit",
+  "Reached Destination",
+  "Delivered",
+  "Completed",
+  "Cancelled",
+];
+
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -284,14 +622,44 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
+    const isShipper = order.shipper && order.shipper.equals(req.user._id);
+    const isDriver = order.driver && order.driver.equals(req.user._id);
+    const isAdmin = req.user.role === "admin";
+
+    if (!isShipper && !isDriver && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to update this order's status",
+      });
+    }
+
     if (order.orderType === "product") {
+      if (!PRODUCT_ORDER_STATUSES.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `"${status}" is not a valid status for this order type`,
+        });
+      }
       order.status = status;
+      order.tracking.timeline.push({
+        status,
+        message: `Status changed to ${status.replace(/_/g, " ")}`,
+        createdAt: new Date(),
+        updatedBy: req.user._id,
+      });
     } else {
+      if (!FREIGHT_ORDER_STATUSES.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `"${status}" is not a valid status for this order type`,
+        });
+      }
       order.tracking.currentStatus = status;
       order.tracking.timeline.push({
         status,
         message: `Status changed to ${status}`,
         createdAt: new Date(),
+        updatedBy: req.user._id,
       });
     }
 
