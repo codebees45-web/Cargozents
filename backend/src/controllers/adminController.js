@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Vehicle = require('../models/Vehicle');
 const Document = require('../models/Document');
 const Shipment = require('../models/Shipment');
+const Notification = require('../models/Notification');
 
 /** GET /api/admin/drivers?approved=false */
 const getDrivers = async (req, res, next) => {
@@ -329,6 +330,100 @@ const bulkReviewDocuments = async (req, res, next) => {
   }
 };
 
+/** GET /api/admin/users?role=buyer&suspended=false — general user directory (any role) */
+const getUsers = async (req, res, next) => {
+  try {
+    const { role, suspended, search } = req.query;
+    const filter = {};
+    if (role) filter.role = role;
+    if (suspended !== undefined) filter.isSuspended = suspended === 'true';
+    if (search) {
+      const re = new RegExp(search, 'i');
+      filter.$or = [{ name: re }, { email: re }, { phone: re }];
+    }
+
+    const users = await User.find(filter).select('-password -otp').sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, users });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** PATCH /api/admin/users/:id/suspend — Body: { isSuspended: boolean } — any non-admin role */
+const suspendUser = async (req, res, next) => {
+  try {
+    const { isSuspended } = req.body;
+
+    const target = await User.findById(req.params.id);
+    if (!target) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (target.role === 'admin') {
+      return res.status(403).json({ success: false, message: 'Admin accounts cannot be suspended from here' });
+    }
+
+    target.isSuspended = !!isSuspended;
+    await target.save();
+
+    const safeUser = target.toObject();
+    delete safeUser.password;
+    delete safeUser.otp;
+
+    res.status(200).json({ success: true, user: safeUser });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** POST /api/admin/notifications — Body: { title, message, audience } */
+const createBroadcast = async (req, res, next) => {
+  try {
+    const { title, message, audience } = req.body;
+
+    if (!title?.trim() || !message?.trim()) {
+      return res.status(400).json({ success: false, message: 'Title and message are required' });
+    }
+
+    const allowedAudiences = ['all', 'buyer', 'shipper', 'driver', 'agency'];
+    if (audience && !allowedAudiences.includes(audience)) {
+      return res.status(400).json({ success: false, message: `audience must be one of ${allowedAudiences.join(', ')}` });
+    }
+
+    const notification = await Notification.create({
+      title: title.trim(),
+      message: message.trim(),
+      audience: audience || 'all',
+      sentBy: req.user._id,
+    });
+
+    let recipientCount;
+    if (notification.audience === 'all') {
+      recipientCount = await User.countDocuments({ role: { $ne: 'admin' } });
+    } else {
+      recipientCount = await User.countDocuments({ role: notification.audience });
+    }
+
+    res.status(201).json({ success: true, notification, recipientCount });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** GET /api/admin/notifications — broadcasts sent so far, most recent first */
+const getBroadcasts = async (req, res, next) => {
+  try {
+    const notifications = await Notification.find()
+      .populate('sentBy', 'name')
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    res.status(200).json({ success: true, notifications });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getDrivers,
   verifyDriver,
@@ -343,4 +438,8 @@ module.exports = {
   bulkVerifyDrivers,
   bulkVerifyVehicles,
   bulkReviewDocuments,
+  getUsers,
+  suspendUser,
+  createBroadcast,
+  getBroadcasts,
 };

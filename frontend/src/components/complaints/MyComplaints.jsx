@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { getMyComplaints } from '../../services/complaintService';
+import TruckLoader from '../common/TruckLoader';
+import EmptyState from '../common/EmptyState';
 
 const STATUS_STYLES = {
-  open: 'bg-amber-100 text-amber-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  resolved: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
+  open: 'bg-primary/10 text-[#5B7A70]',
+  in_progress: 'bg-warning/10 text-warning',
+  resolved: 'bg-success/10 text-success',
+  rejected: 'bg-danger/10 text-danger',
 };
 
 export default function MyComplaints() {
@@ -22,26 +24,26 @@ export default function MyComplaints() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) return <p className="text-sm text-slate-500">Loading…</p>;
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (loading) return <TruckLoader fullScreen={false} label="Loading complaints…" />;
+  if (error) return <p className="text-sm text-danger">{error}</p>;
   if (complaints.length === 0)
-    return <p className="text-sm text-slate-500">No complaints filed yet.</p>;
+    return <EmptyState title="No complaints filed yet" body="Complaints you raise will show up here so you can track their status." />;
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {complaints.map((c) => (
-        <div key={c._id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div key={c._id} className="rounded-xl border border-primary/10 bg-secondary/10 p-4">
           <div className="mb-2 flex items-center justify-between">
-            <span className="font-mono text-xs text-slate-400">{c._id}</span>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[c.status]}`}>
+            <span className="font-mono-ls text-[11px] text-[#5B7A70]">{c._id}</span>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[c.status] || 'bg-primary/10 text-[#5B7A70]'}`}>
               {c.status.replace('_', ' ')}
             </span>
           </div>
-          <h3 className="font-semibold text-slate-900">{c.subject}</h3>
-          <p className="mt-1 text-sm text-slate-600">{c.description}</p>
+          <h3 className="text-sm font-semibold text-primary">{c.subject}</h3>
+          <p className="mt-1 text-sm text-[#8AA399]">{c.description}</p>
           {c.adminResponse && (
-            <p className="mt-2 rounded-md bg-blue-50 p-2 text-xs text-slate-700">
-              <span className="font-semibold">Team response: </span>
+            <p className="mt-2 rounded-lg bg-primary/5 p-2 text-xs text-[#5B7A70]">
+              <span className="font-semibold text-primary">Team response: </span>
               {c.adminResponse}
             </p>
           )}

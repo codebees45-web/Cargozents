@@ -48,8 +48,11 @@ const navByRole = {
     { label: 'Overview', href: '/admin/dashboard' },
     { label: 'Shipment requests', href: '/admin/shipments' },
     { label: 'Driver verification', href: '/admin/drivers' },
+    { label: 'Users', href: '/admin/users' },
     { label: 'Complaints', href: '/admin/complaints' },
+    { label: 'Notifications', href: '/admin/notifications' },
     { label: 'Reports', href: '/admin/reports' },
+    { label: 'Settings', href: '/admin/settings' },
     { label: 'Profile', href: '/driver/profile' },
   ],
 };

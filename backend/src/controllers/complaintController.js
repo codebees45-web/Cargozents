@@ -59,7 +59,7 @@ exports.getMyComplaints = async (req, res, next) => {
 
 // @desc    Get single complaint by ID
 // @route   GET /api/complaints/:id
-// @access  Private
+// @access  Private (owner or admin)
 exports.getComplaintById = async (req, res, next) => {
   try {
     const complaint = await Complaint.findById(req.params.id)
@@ -69,6 +69,11 @@ exports.getComplaintById = async (req, res, next) => {
 
     if (!complaint) {
       return res.status(404).json({ success: false, message: 'Complaint not found' });
+    }
+
+    const isOwner = complaint.user?._id?.toString() === req.user.id;
+    if (!isOwner && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this complaint' });
     }
 
     res.status(200).json({ success: true, data: complaint });
