@@ -67,7 +67,7 @@ const BuyerOrderTracking = () => {
             <span className="ml-auto text-xs text-gray-400">Auto-refreshes every {POLL_INTERVAL_MS / 1000}s</span>
           </div>
 
-          {!order.shipment && (
+          {!tracking?.vehicle && (
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
               The Shipper hasn't requested a truck for this order yet — the map below uses demo data to verify
               the tracking integration until live data is available.
@@ -76,7 +76,7 @@ const BuyerOrderTracking = () => {
 
           {order && (
             <>
-              <TrackingMap tracking={order.shipment ? tracking : fakeTracking} className="shadow border border-gray-200" />
+              <TrackingMap tracking={tracking?.vehicle ? tracking : fakeTracking} className="shadow border border-gray-200" />
               {!tracking && (
                 <p className="mt-3 text-xs text-gray-500">
                   Demo map data is shown for testing. When the shipment begins live tracking, real coordinates

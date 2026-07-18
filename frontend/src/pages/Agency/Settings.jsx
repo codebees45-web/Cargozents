@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function AgencySupport() {
   const [form, setForm] = useState({
@@ -25,35 +26,28 @@ export default function AgencySupport() {
   };
 
   return (
-    <div className="max-w-4xl pb-10 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Support Help Desk</h1>
-        <p className="text-xs text-[#8AA399] mt-1">Get assistance with your fleet loads, tracking updates, or account issues.</p>
+    <>
+      <div className="mb-8">
+        <h1 className="font-display text-xl font-bold text-primary">Agency Settings</h1>
+        <p className="mt-1 text-sm text-[#5B7A70]">
+          Manage configurations, automatic assignments, dispatch rules, and preferences.
+        </p>
       </div>
-
-      {showSuccess && (
-        <div className="p-4 rounded-xl bg-primary/10 border border-primary/30 text-[#00E676] text-xs font-semibold text-center animate-in fade-in duration-200 shadow-glow">
-          ✅ Support ticket submitted successfully! Our team will respond shortly.
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Contact Form Card */}
-        <div className="lg:col-span-2 bg-secondary/10 rounded-xl border border-primary/10 p-6 md:p-8 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-200 mb-6">Create a Support Ticket</h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Subject</label>
-              <input
-                type="text"
-                name="subject"
-                value={form.subject}
-                onChange={handleChange}
-                required
-                placeholder="Brief summary of the issue"
-                className="w-full px-4 py-2.5 text-sm rounded-lg border border-primary/20 text-slate-100 focus:outline-none focus:border-[#00E676] focus:ring-1 focus:ring-[#00E676]/30 transition bg-secondary/20"
+      <div className="max-w-4xl mx-auto space-y-8 px-4 pb-12">
+        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
+          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
+            Dispatch & Operations
+          </h3>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-primary">Auto-Assign Drivers</p>
+                <p className="text-xs text-[#8AA399]">Automatically match orders to the nearest free fleet vehicle.</p>
+              </div>
+              <ToggleSwitch
+                checked={operations.autoAssign}
+                onChange={() => handleOperationToggle("autoAssign")}
+                ariaLabel="Toggle Auto-Assign Drivers"
               />
             </div>
 
@@ -101,7 +95,7 @@ export default function AgencySupport() {
                 {isSubmitting ? 'Submitting...' : 'Submit Ticket'}
               </button>
             </div>
-          </form>
+          </div>
         </div>
 
         {/* Info Sidebar Cards */}
@@ -124,6 +118,6 @@ export default function AgencySupport() {
         </div>
 
       </div>
-    </div>
+    </>
   );
 }

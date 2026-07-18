@@ -41,6 +41,7 @@ const protect = async (req, res, next) => {
 
 /**
  * Restricts a route to specific roles.
+ * UPDATED: Now case-insensitive to prevent 403 Forbidden errors when casing mismatches.
  */
 const authorize = (...roles) => {
   return (req, res, next) => {
@@ -48,7 +49,11 @@ const authorize = (...roles) => {
       return res.status(403).json({ success: false, message: 'User role missing from token' });
     }
     
-    if (!roles.includes(req.user.role)) {
+    // Convert both the required roles and the user's role to lowercase for safe comparison
+    const allowedRoles = roles.map(role => role.toLowerCase());
+    const userRole = req.user.role.toLowerCase();
+    
+    if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: `Role '${req.user.role}' is not permitted to access this resource`,

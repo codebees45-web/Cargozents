@@ -1,21 +1,20 @@
-// 🚀 Switch out MongoDB imports for your Supabase/PostgreSQL query function
-const { query } = require('../config/db'); // Adjust path to wherever your pool.query client is exported
+const User = require('../models/User');
+const Vehicle = require('../models/Vehicle');
+const Document = require('../models/Document');
+const Shipment = require('../models/Shipment');
 
 /** GET /api/admin/drivers?approved=false */
 const getDrivers = async (req, res, next) => {
   try {
     const { approved } = req.query;
-    let sql = "SELECT id, id as _id, name, email, phone, status, is_approved as \"isApproved\", is_suspended as \"isSuspended\", created_at as \"createdAt\" FROM users WHERE role = 'driver'";
-    const params = [];
-
+    const filter = { role: 'driver' };
     if (approved !== undefined) {
-      params.push(approved === 'true');
-      sql += ` AND is_approved = $${params.length}`;
+      filter.isApproved = approved === 'true';
     }
-    sql += " ORDER BY created_at DESC";
 
-    const result = await query(sql, params);
-    res.status(200).json({ success: true, drivers: result.rows });
+    const drivers = await User.find(filter).select('-password -otp').sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, drivers });
   } catch (err) {
     next(err);
   }
@@ -25,18 +24,16 @@ const getDrivers = async (req, res, next) => {
 const verifyDriver = async (req, res, next) => {
   try {
     const { isApproved } = req.body;
-    const sql = `
-      UPDATE users 
-      SET is_approved = $1 
-      WHERE id = $2 AND role = 'driver' 
-      RETURNING id, id as _id, name, email, phone, is_approved as "isApproved"
-    `;
-    const result = await query(sql, [!!isApproved, req.params.id]);
+    const driver = await User.findOneAndUpdate(
+      { _id: req.params.id, role: 'driver' },
+      { isApproved: !!isApproved },
+      { new: true }
+    ).select('-password -otp');
 
-    if (result.rows.length === 0) {
+    if (!driver) {
       return res.status(404).json({ success: false, message: 'Driver not found' });
     }
-    res.status(200).json({ success: true, driver: result.rows[0] });
+    res.status(200).json({ success: true, driver });
   } catch (err) {
     next(err);
   }
@@ -46,18 +43,16 @@ const verifyDriver = async (req, res, next) => {
 const suspendDriver = async (req, res, next) => {
   try {
     const { isSuspended } = req.body;
-    const sql = `
-      UPDATE users 
-      SET is_suspended = $1 
-      WHERE id = $2
-      RETURNING id, id as _id, name, email, is_suspended as "isSuspended"
-    `;
-    const result = await query(sql, [!!isSuspended, req.params.id]);
+    const driver = await User.findByIdAndUpdate(
+      req.params.id,
+      { isSuspended: !!isSuspended },
+      { new: true }
+    ).select('-password -otp');
 
-    if (result.rows.length === 0) {
+    if (!driver) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.status(200).json({ success: true, driver: result.rows[0] });
+    res.status(200).json({ success: true, driver });
   } catch (err) {
     next(err);
   }
@@ -67,22 +62,17 @@ const suspendDriver = async (req, res, next) => {
 const getVehicles = async (req, res, next) => {
   try {
     const { verified } = req.query;
-    let sql = `
-      SELECT v.*, v.id as _id, v.is_verified as "isVerified",
-             json_build_object('name', u.name, 'phone', u.phone) as driver
-      FROM vehicles v
-      LEFT JOIN users u ON v.driver_id = u.id
-    `;
-    const params = [];
-
+    const filter = {};
     if (verified !== undefined) {
-      params.push(verified === 'true');
-      sql += ` WHERE v.is_verified = $${params.length}`;
+      filter.isVerified = verified === 'true';
     }
-    sql += " ORDER BY v.created_at DESC";
 
-    const result = await query(sql, params);
-    res.status(200).json({ success: true, vehicles: result.rows });
+    const vehicles = await Vehicle.find(filter)
+      .populate('driver', 'name phone')
+      .populate('agency', 'name phone')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, vehicles });
   } catch (err) {
     next(err);
   }
@@ -92,18 +82,16 @@ const getVehicles = async (req, res, next) => {
 const verifyVehicle = async (req, res, next) => {
   try {
     const { isVerified } = req.body;
-    const sql = `
-      UPDATE vehicles 
-      SET is_verified = $1 
-      WHERE id = $2 
-      RETURNING *, id as _id, is_verified as "isVerified"
-    `;
-    const result = await query(sql, [!!isVerified, req.params.id]);
+    const vehicle = await Vehicle.findByIdAndUpdate(
+      req.params.id,
+      { isVerified: !!isVerified },
+      { new: true }
+    ).populate('driver', 'name phone').populate('agency', 'name phone');
 
-    if (result.rows.length === 0) {
+    if (!vehicle) {
       return res.status(404).json({ success: false, message: 'Vehicle not found' });
     }
-    res.status(200).json({ success: true, vehicle: result.rows[0] });
+    res.status(200).json({ success: true, vehicle });
   } catch (err) {
     next(err);
   }
@@ -113,24 +101,15 @@ const verifyVehicle = async (req, res, next) => {
 const getDocuments = async (req, res, next) => {
   try {
     const { status } = req.query;
-    let sql = `
-      SELECT d.*, d.id as _id,
-             json_build_object('name', u.name, 'phone', u.phone, 'role', u.role) as owner,
-             json_build_object('registrationNumber', v.registration_number, 'type', v.type) as vehicle
-      FROM documents d
-      LEFT JOIN users u ON d.owner_id = u.id
-      LEFT JOIN vehicles v ON d.vehicle_id = v.id
-    `;
-    const params = [];
+    const filter = {};
+    if (status) filter.status = status;
 
-    if (status) {
-      params.push(status);
-      sql += ` WHERE d.status = $1`;
-    }
-    sql += " ORDER BY d.created_at DESC";
+    const documents = await Document.find(filter)
+      .populate('owner', 'name phone role')
+      .populate('vehicle', 'registrationNumber type')
+      .sort({ createdAt: -1 });
 
-    const result = await query(sql, params);
-    res.status(200).json({ success: true, documents: result.rows });
+    res.status(200).json({ success: true, documents });
   } catch (err) {
     next(err);
   }
@@ -144,26 +123,23 @@ const reviewDocument = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "status must be 'approved' or 'rejected'" });
     }
 
-    const sql = `
-      UPDATE documents 
-      SET status = $1, 
-          rejection_reason = $2, 
-          reviewed_by = $3, 
-          reviewed_at = NOW() 
-      WHERE id = $4 
-      RETURNING *, id as _id
-    `;
-    const result = await query(sql, [
-      status, 
-      status === 'rejected' ? rejectionReason || '' : '', 
-      req.user?.id || null, 
-      req.params.id
-    ]);
+    const document = await Document.findByIdAndUpdate(
+      req.params.id,
+      {
+        status,
+        rejectionReason: status === 'rejected' ? rejectionReason || '' : '',
+        reviewedBy: req.user?._id || null,
+        reviewedAt: new Date(),
+      },
+      { new: true }
+    )
+      .populate('owner', 'name phone role')
+      .populate('vehicle', 'registrationNumber type');
 
-    if (result.rows.length === 0) {
+    if (!document) {
       return res.status(404).json({ success: false, message: 'Document not found' });
     }
-    res.status(200).json({ success: true, document: result.rows[0] });
+    res.status(200).json({ success: true, document });
   } catch (err) {
     next(err);
   }
@@ -173,24 +149,15 @@ const reviewDocument = async (req, res, next) => {
 const getShipments = async (req, res, next) => {
   try {
     const { status } = req.query;
-    let sql = `
-      SELECT s.*, s.id as _id,
-             json_build_object('name', shipper.name, 'phone', shipper.phone) as shipper,
-             json_build_object('name', driver.name, 'phone', driver.phone) as "assignedDriver"
-      FROM shipments s
-      LEFT JOIN users shipper ON s.shipper_id = shipper.id
-      LEFT JOIN users driver ON s.assigned_driver_id = driver.id
-    `;
-    const params = [];
+    const filter = {};
+    if (status) filter.status = status;
 
-    if (status) {
-      params.push(status);
-      sql += ` WHERE s.status = $1`;
-    }
-    sql += " ORDER BY s.created_at DESC";
+    const shipments = await Shipment.find(filter)
+      .populate('shipper', 'name phone')
+      .populate('assignedDriver', 'name phone')
+      .sort({ createdAt: -1 });
 
-    const result = await query(sql, params);
-    res.status(200).json({ success: true, shipments: result.rows });
+    res.status(200).json({ success: true, shipments });
   } catch (err) {
     next(err);
   }
@@ -199,7 +166,6 @@ const getShipments = async (req, res, next) => {
 /** GET /api/admin/analytics/overview */
 const getAnalyticsOverview = async (req, res, next) => {
   try {
-    // Elegant fallback object ensuring your clean UI elements render metrics instantly
     const metrics = {
       todaysRevenue: 0,
       totalRevenue: 0,
@@ -208,26 +174,156 @@ const getAnalyticsOverview = async (req, res, next) => {
       backhaulMatchesDelivered: 0,
       totalDelivered: 0,
       backhaulMatchRate: 0,
-      statusBreakdown: { requested: 0, assigned: 0, in_transit: 0, delivered: 0 }
+      statusBreakdown: { requested: 0, assigned: 0, in_transit: 0, delivered: 0 },
     };
 
     try {
-      const revenueRes = await query("SELECT COALESCE(SUM(final_price), 0) as total FROM shipments WHERE status = 'delivered'");
-      metrics.totalRevenue = Number(revenueRes.rows[0]?.total || 0);
-      
-      const activeRes = await query("SELECT COUNT(*) as count FROM shipments WHERE status IN ('assigned', 'accepted', 'picked_up', 'in_transit')");
-      metrics.activeShipments = Number(activeRes.rows[0]?.count || 0);
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
 
-      const docsRes = await query("SELECT COUNT(*) as count FROM documents WHERE status = 'pending'");
-      metrics.pendingVerifications = Number(docsRes.rows[0]?.count || 0);
+      const [
+        totalRevenueAgg,
+        todaysRevenueAgg,
+        activeShipments,
+        pendingVerifications,
+        totalDelivered,
+        backhaulDelivered,
+        statusCounts,
+      ] = await Promise.all([
+        Shipment.aggregate([
+          { $match: { status: 'delivered' } },
+          { $group: { _id: null, total: { $sum: { $ifNull: ['$finalPrice', 0] } } } },
+        ]),
+        Shipment.aggregate([
+          { $match: { status: 'delivered', updatedAt: { $gte: startOfToday } } },
+          { $group: { _id: null, total: { $sum: { $ifNull: ['$finalPrice', 0] } } } },
+        ]),
+        Shipment.countDocuments({ status: { $in: ['assigned', 'accepted', 'picked_up', 'in_transit'] } }),
+        Document.countDocuments({ status: 'pending' }),
+        Shipment.countDocuments({ status: 'delivered' }),
+        Shipment.countDocuments({ status: 'delivered', isBackhaulMatch: true }),
+        Shipment.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      ]);
+
+      metrics.totalRevenue = totalRevenueAgg[0]?.total || 0;
+      metrics.todaysRevenue = todaysRevenueAgg[0]?.total || 0;
+      metrics.activeShipments = activeShipments;
+      metrics.pendingVerifications = pendingVerifications;
+      metrics.totalDelivered = totalDelivered;
+      metrics.backhaulMatchesDelivered = backhaulDelivered;
+      metrics.backhaulMatchRate = totalDelivered > 0 ? Number(((backhaulDelivered / totalDelivered) * 100).toFixed(1)) : 0;
+
+      statusCounts.forEach(({ _id, count }) => {
+        if (_id in metrics.statusBreakdown) {
+          metrics.statusBreakdown[_id] = count;
+        }
+      });
     } catch (dbErr) {
-      console.log("Analytics aggregation query notice — using interface defaults:", dbErr.message);
+      console.log('Analytics aggregation query notice — using interface defaults:', dbErr.message);
     }
 
-    res.status(200).json({
-      success: true,
-      analytics: metrics
-    });
+    res.status(200).json({ success: true, analytics: metrics });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** GET /api/admin/analytics/trend?days=14 — daily revenue & delivery counts for charting */
+const getAnalyticsTrend = async (req, res, next) => {
+  try {
+    const days = Math.min(Math.max(parseInt(req.query.days, 10) || 14, 1), 90);
+
+    let trend = [];
+    try {
+      const since = new Date();
+      since.setDate(since.getDate() - days);
+      since.setHours(0, 0, 0, 0);
+
+      const result = await Shipment.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            delivered: { $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] } },
+            revenue: {
+              $sum: {
+                $cond: [{ $eq: ['$status', 'delivered'] }, { $ifNull: ['$finalPrice', 0] }, 0],
+              },
+            },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]);
+
+      trend = result.map((r) => ({
+        day: r._id,
+        delivered: r.delivered || 0,
+        revenue: r.revenue || 0,
+      }));
+    } catch (dbErr) {
+      console.log('Analytics trend query notice — returning empty trend:', dbErr.message);
+    }
+
+    res.status(200).json({ success: true, trend });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** PATCH /api/admin/drivers/bulk-verify — Body: { ids: string[], isApproved: boolean } */
+const bulkVerifyDrivers = async (req, res, next) => {
+  try {
+    const { ids, isApproved } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'ids must be a non-empty array' });
+    }
+
+    await User.updateMany({ _id: { $in: ids }, role: 'driver' }, { isApproved: !!isApproved });
+    const drivers = await User.find({ _id: { $in: ids }, role: 'driver' }).select('-password -otp');
+
+    res.status(200).json({ success: true, drivers });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** PATCH /api/admin/vehicles/bulk-verify — Body: { ids: string[], isVerified: boolean } */
+const bulkVerifyVehicles = async (req, res, next) => {
+  try {
+    const { ids, isVerified } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'ids must be a non-empty array' });
+    }
+
+    await Vehicle.updateMany({ _id: { $in: ids } }, { isVerified: !!isVerified });
+    const vehicles = await Vehicle.find({ _id: { $in: ids } })
+      .populate('driver', 'name phone')
+      .populate('agency', 'name phone');
+
+    res.status(200).json({ success: true, vehicles });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** PATCH /api/admin/documents/bulk-review — Body: { ids: string[], status: 'approved'|'rejected' } */
+const bulkReviewDocuments = async (req, res, next) => {
+  try {
+    const { ids, status } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'ids must be a non-empty array' });
+    }
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: "status must be 'approved' or 'rejected'" });
+    }
+
+    await Document.updateMany(
+      { _id: { $in: ids } },
+      { status, reviewedBy: req.user?._id || null, reviewedAt: new Date() }
+    );
+    const documents = await Document.find({ _id: { $in: ids } }).select('_id status');
+
+    res.status(200).json({ success: true, documents });
   } catch (err) {
     next(err);
   }
@@ -243,4 +339,8 @@ module.exports = {
   reviewDocument,
   getShipments,
   getAnalyticsOverview,
+  getAnalyticsTrend,
+  bulkVerifyDrivers,
+  bulkVerifyVehicles,
+  bulkReviewDocuments,
 };

@@ -1,6 +1,5 @@
 const express = require('express');
 const { protect, authorize } = require('../middleware/auth');
-const { getAllComplaints, resolveComplaint } = require('../controllers/complaintController');
 const {
   getDrivers,
   verifyDriver,
@@ -11,6 +10,10 @@ const {
   reviewDocument,
   getShipments,
   getAnalyticsOverview,
+  getAnalyticsTrend,
+  bulkVerifyDrivers,
+  bulkVerifyVehicles,
+  bulkReviewDocuments,
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -20,15 +23,19 @@ router.use(protect, authorize('admin'));
 router.get('/drivers', getDrivers);
 router.patch('/drivers/:id/verify', verifyDriver);
 router.patch('/drivers/:id/suspend', suspendDriver);
+router.patch('/drivers/bulk-verify', bulkVerifyDrivers);
 
 router.get('/vehicles', getVehicles);
 router.patch('/vehicles/:id/verify', verifyVehicle);
+router.patch('/vehicles/bulk-verify', bulkVerifyVehicles);
 
 router.get('/documents', getDocuments);
 router.patch('/documents/:id/review', reviewDocument);
+router.patch('/documents/bulk-review', bulkReviewDocuments);
 
 router.get('/shipments', getShipments);
 
 router.get('/analytics/overview', getAnalyticsOverview);
+router.get('/analytics/trend', getAnalyticsTrend);
 
 module.exports = router;

@@ -41,12 +41,52 @@ const PAYMENT_STYLES = {
   refunded: 'text-[#5B7A70]',
 };
 
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'total_desc', label: 'Total: high to low' },
+  { value: 'total_asc', label: 'Total: low to high' },
+];
+
+const toCsv = (rows) => {
+  if (!rows?.length) return '';
+  const headers = ['Order ID', 'Buyer', 'Items', 'Total', 'Payment Status', 'Order Status', 'Created At'];
+  const lines = rows.map((o) =>
+    [
+      o._id,
+      o.buyer?.name || '',
+      o.items?.length ?? 0,
+      o.productTotal ?? '',
+      o.productPaymentStatus || '',
+      o.status || '',
+      o.createdAt || '',
+    ]
+      .map((val) => `"${String(val).replace(/"/g, '""')}"`)
+      .join(',')
+  );
+  return [headers.join(','), ...lines].join('\n');
+};
+
+const downloadCsv = (csv, filename) => {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
 const ShipperOrders = () => {
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => {
     let cancelled = false;
@@ -64,10 +104,30 @@ const ShipperOrders = () => {
 
   const filtered = useMemo(() => {
     if (!orders) return [];
-    if (filter === 'all') return orders;
-    if (filter === 'processing') return orders.filter((o) => isProcessing(o.status));
-    return orders.filter((o) => o.status === filter);
-  }, [orders, filter]);
+    let result = filter === 'all' ? orders : filter === 'processing' ? orders.filter((o) => isProcessing(o.status)) : orders.filter((o) => o.status === filter);
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      result = result.filter((o) =>
+        [o._id, o.buyer?.name, o.status]
+          .filter(Boolean)
+          .some((field) => String(field).toLowerCase().includes(q))
+      );
+    }
+
+    const sorted = [...result];
+    if (sortBy === 'newest') sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    else if (sortBy === 'oldest') sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    else if (sortBy === 'total_desc') sorted.sort((a, b) => (b.productTotal ?? 0) - (a.productTotal ?? 0));
+    else if (sortBy === 'total_asc') sorted.sort((a, b) => (a.productTotal ?? 0) - (b.productTotal ?? 0));
+    return sorted;
+  }, [orders, filter, search, sortBy]);
+
+  const handleExport = () => {
+    const csv = toCsv(filtered);
+    if (!csv) return;
+    downloadCsv(csv, `orders-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
 
   const handleConfirm = async (order) => {
     setBusyId(order._id);
@@ -83,8 +143,8 @@ const ShipperOrders = () => {
 
   return (
     <DashboardLayout title="Orders received" subtitle="Buyer orders placed against your catalog.">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button
               key={f.value}
@@ -99,6 +159,34 @@ const ShipperOrders = () => {
             </button>
           ))}
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search order, buyer, status…"
+            className="rounded-lg border border-primary/15 bg-transparent px-3 py-1.5 text-xs text-primary placeholder:text-[#5B7A70] focus:border-accent focus:outline-none"
+          />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-lg border border-primary/15 bg-transparent px-3 py-1.5 text-xs text-primary focus:border-accent focus:outline-none"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value} className="bg-background text-primary">
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={!filtered.length}
+            className="rounded-lg border border-primary/15 px-3 py-1.5 text-xs font-medium text-primary/70 transition hover:border-primary/40 hover:text-primary disabled:opacity-40"
+          >
+            Export CSV
+          </button>
+        </div>
       </div>
 
       <div className="mt-6">
@@ -107,12 +195,16 @@ const ShipperOrders = () => {
         ) : error && !orders.length ? (
           <p className="text-sm text-danger">{error}</p>
         ) : filtered.length === 0 ? (
+          orders.length > 0 ? (
+            <p className="text-sm text-[#5B7A70]">No orders match your search or filter.</p>
+          ) : (
           <EmptyState
             title="No orders here"
             body="Orders buyers place against your catalog will show up here, ready to confirm and ship."
             actionLabel="Manage products"
             onAction={() => (window.location.href = '/shipper/products')}
           />
+          )
         ) : (
           <div className="overflow-hidden rounded-xl border border-primary/10">
             <table className="w-full text-left text-sm">

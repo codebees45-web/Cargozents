@@ -26,12 +26,52 @@ const FILTERS = [
 
 const isActiveStatus = (status) => ['assigned', 'accepted', 'picked_up', 'in_transit'].includes(status);
 
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'price_desc', label: 'Price: high to low' },
+  { value: 'price_asc', label: 'Price: low to high' },
+];
+
+const toCsv = (rows) => {
+  if (!rows?.length) return '';
+  const headers = ['Pickup City', 'Drop City', 'Vehicle', 'Driver', 'Price', 'Scheduled Date', 'Status'];
+  const lines = rows.map((s) =>
+    [
+      s.pickup?.city || '',
+      s.drop?.city || '',
+      s.vehicleRequired || '',
+      s.assignedDriver?.name || '',
+      s.finalPrice || s.estimatedPrice || '',
+      s.scheduledDate || '',
+      s.status || '',
+    ]
+      .map((val) => `"${String(val).replace(/"/g, '""')}"`)
+      .join(',')
+  );
+  return [headers.join(','), ...lines].join('\n');
+};
+
+const downloadCsv = (csv, filename) => {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
 const ShipperShipments = () => {
   const navigate = useNavigate();
   const [shipments, setShipments] = useState(null);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
   const [reviewTarget, setReviewTarget] = useState(null); // shipment being rated, or null
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
 
   const markReviewed = (shipmentId) => {
     setShipments((prev) => prev.map((s) => (s._id === shipmentId ? { ...s, hasReview: true } : s)));
@@ -54,15 +94,35 @@ const ShipperShipments = () => {
 
   const filtered = useMemo(() => {
     if (!shipments) return [];
-    if (filter === 'all') return shipments;
-    if (filter === 'active') return shipments.filter((s) => isActiveStatus(s.status));
-    return shipments.filter((s) => s.status === filter);
-  }, [shipments, filter]);
+    let result = filter === 'all' ? shipments : filter === 'active' ? shipments.filter((s) => isActiveStatus(s.status)) : shipments.filter((s) => s.status === filter);
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      result = result.filter((s) =>
+        [s.pickup?.city, s.drop?.city, s.assignedDriver?.name, s.status]
+          .filter(Boolean)
+          .some((field) => String(field).toLowerCase().includes(q))
+      );
+    }
+
+    const sorted = [...result];
+    if (sortBy === 'newest') sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    else if (sortBy === 'oldest') sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    else if (sortBy === 'price_desc') sorted.sort((a, b) => (b.finalPrice || b.estimatedPrice || 0) - (a.finalPrice || a.estimatedPrice || 0));
+    else if (sortBy === 'price_asc') sorted.sort((a, b) => (a.finalPrice || a.estimatedPrice || 0) - (b.finalPrice || b.estimatedPrice || 0));
+    return sorted;
+  }, [shipments, filter, search, sortBy]);
+
+  const handleExport = () => {
+    const csv = toCsv(filtered);
+    if (!csv) return;
+    downloadCsv(csv, `shipments-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
 
   return (
     <DashboardLayout title="Shipments" subtitle="Everything you've posted, from request to delivery.">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button
               key={f.value}
@@ -77,13 +137,41 @@ const ShipperShipments = () => {
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={() => navigate('/shipper/post-shipment')}
-          className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-primary transition hover:shadow-glow"
-        >
-          + Post a shipment
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search route, driver, status…"
+            className="rounded-lg border border-primary/15 bg-transparent px-3 py-1.5 text-xs text-primary placeholder:text-[#5B7A70] focus:border-accent focus:outline-none"
+          />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-lg border border-primary/15 bg-transparent px-3 py-1.5 text-xs text-primary focus:border-accent focus:outline-none"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value} className="bg-background text-primary">
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={!filtered.length}
+            className="rounded-lg border border-primary/15 px-3 py-1.5 text-xs font-medium text-primary/70 transition hover:border-primary/40 hover:text-primary disabled:opacity-40"
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/shipper/post-shipment')}
+            className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-primary transition hover:shadow-glow"
+          >
+            + Post a shipment
+          </button>
+        </div>
       </div>
 
       <div className="mt-6">
@@ -92,12 +180,16 @@ const ShipperShipments = () => {
         ) : error ? (
           <p className="text-sm text-danger">{error}</p>
         ) : filtered.length === 0 ? (
+          shipments.length > 0 ? (
+            <p className="text-sm text-[#5B7A70]">No shipments match your search or filter.</p>
+          ) : (
           <EmptyState
             title="Nothing here yet"
             body="Shipments matching this filter will show up here once you post one."
             actionLabel="Post a shipment"
             onAction={() => navigate('/shipper/post-shipment')}
           />
+          )
         ) : (
           <div className="overflow-hidden rounded-xl border border-primary/10">
             <table className="w-full text-left text-sm">

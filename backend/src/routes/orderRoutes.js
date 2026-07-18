@@ -37,6 +37,49 @@ router.get(
   orderController.getMyOrders
 );
 
+/*
+|--------------------------------------------------------------------------
+| Shipper Routes
+|--------------------------------------------------------------------------
+| Registered before the generic "/:id" route below so that "/received"
+| isn't swallowed by it (Express matches routes in declaration order).
+*/
+
+// Get Orders Received (product orders placed against this shipper's catalog)
+router.get(
+  "/received",
+  protect,
+  orderController.getReceivedOrders
+);
+
+// Confirm Order (shipper confirms a newly placed product order)
+router.patch(
+  "/:id/confirm",
+  protect,
+  orderController.confirmOrder
+);
+
+// Reject Order (shipper/agency declines a newly placed product order)
+router.patch(
+  "/:id/reject",
+  protect,
+  orderController.rejectOrder
+);
+
+// Assign Truck (shipper/agency assigns one of their own vehicles)
+router.patch(
+  "/:id/assign-truck",
+  protect,
+  orderController.assignTruck
+);
+
+// Order Tracking (status timeline + live vehicle position if assigned)
+router.get(
+  "/:id/tracking",
+  protect,
+  orderController.getOrderTracking
+);
+
 // Get Single Order
 router.get(
   "/:id",
