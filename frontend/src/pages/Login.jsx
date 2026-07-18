@@ -8,7 +8,7 @@ const roleRedirect = {
   buyer: '/buyer/dashboard',
   shipper: '/shipper/dashboard',
   driver: '/driver/dashboard',
-  agency: '/agency',
+  agency: '/agency/dashboard', // 🟢 Updated to match your routing architecture
   admin: '/admin/dashboard',
 };
 
@@ -22,25 +22,53 @@ const Login = () => {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const user = await login(form.email, form.password);
-      navigate(roleRedirect[user.role] || '/');
-    } catch (err) {
-      const data = err.response?.data;
-      if (err.response?.status === 403 && data?.userId) {
-        navigate('/verify-otp', {
-          state: { userId: data.userId, email: data.email, phone: data.phone },
-        });
-        return;
-      }
-      setError(data?.message || 'Login failed. Check your details and try again.');
-    } finally {
-      setLoading(false);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+  
+  try {
+    const responseData = await login(form.email, form.password);
+    
+    // Extract the raw role string
+    const extractedRole = responseData?.role || responseData?.user?.role || responseData?.data?.user?.role;
+    
+    // 🟢 DEBUGLOG: Open F12 in your browser to see exactly what prints here!
+    console.log("--- CARGOZENTS AUTH DEBUGGER ---");
+    console.log("1. Raw response from backend:", responseData);
+    console.log("2. Extracted role string:", extractedRole);
+
+    if (!extractedRole) {
+      console.error("Login succeeded, but no role found in response payload:", responseData);
+      setError("Routing error: User role could not be verified.");
+      return;
     }
-  };
+
+    const normalizedRole = String(extractedRole).toLowerCase().trim();
+    console.log("3. Normalized role for lookup:", normalizedRole);
+
+    const redirectPath = roleRedirect[normalizedRole] || roleRedirect[extractedRole];
+    console.log("4. Attempting redirection to path:", redirectPath);
+
+    if (redirectPath) {
+      navigate(redirectPath);
+    } else {
+      console.warn(`No explicit route mapping found for role: "${extractedRole}". Defaulting to fallback.`);
+      navigate('/dashboard'); 
+    }
+
+  } catch (err) {
+    const data = err.response?.data;
+    if (err.response?.status === 403 && data?.userId) {
+      navigate('/verify-otp', {
+        state: { userId: data.userId, email: data.email, phone: data.phone },
+      });
+      return;
+    }
+    setError(data?.message || 'Login failed. Check your details and try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
       <AuthLayout

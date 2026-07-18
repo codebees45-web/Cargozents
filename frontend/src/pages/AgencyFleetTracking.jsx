@@ -22,7 +22,6 @@ const INDIA_CENTER = [20.5937, 78.9629];
 const isRealPoint = (c) => Array.isArray(c) && c.length === 2 && !(c[0] === 0 && c[1] === 0);
 const toLatLng = (c) => (isRealPoint(c) ? [c[1], c[0]] : null);
 
-// Captures a click anywhere on the map as the pin the agency wants to set.
 const ClickToPlace = ({ onPick }) => {
   useMapEvents({
     click(e) {
@@ -32,17 +31,6 @@ const ClickToPlace = ({ onPick }) => {
   return null;
 };
 
-/**
- * Manual GPS fallback for agency-managed drivers who have no smartphone
- * and therefore can never run the browser-geolocation flow themselves
- * (see frontend/hooks/useLiveLocationSharing.js — that requires the
- * driver's own device). Instead, agency office staff — who'd normally be
- * on the phone with that driver anyway — click the truck's approximate
- * current position on a map and save it. It's written to the backend
- * with locationSource: 'manual' (backend/src/models/Vehicle.js) so every
- * tracking view shows "Updated by agency" rather than pretending it's
- * live GPS.
- */
 const AgencyFleetTracking = () => {
   const [vehicles, setVehicles] = useState(null);
   const [error, setError] = useState('');
@@ -72,7 +60,6 @@ const AgencyFleetTracking = () => {
     setSaving(true);
     setSaveError('');
     try {
-      // Backend/GeoJSON expects [lng, lat]; Leaflet gives us [lat, lng].
       const coordinates = [pickedLatLng[1], pickedLatLng[0]];
       await setVehicleLocation(selected._id, coordinates);
       setSelectedId(null);
@@ -85,30 +72,32 @@ const AgencyFleetTracking = () => {
   };
 
   return (
-    <div className="w-full">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Fleet Locations</h1>
-        <span className="text-xs text-gray-400">For drivers without a smartphone, set their position by hand.</span>
+    <div className="w-full space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Fleet Locations</h1>
+          <p className="text-xs text-[#8AA399] mt-1">For drivers without a smartphone, set their position by hand.</p>
+        </div>
       </div>
 
-      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
-      {vehicles === null && !error && <p className="text-sm text-gray-400">Loading fleet…</p>}
+      {error && <p className="text-sm text-red-400 font-semibold">⚠️ {error}</p>}
+      {vehicles === null && !error && <p className="text-sm text-gray-400 animate-pulse">Loading fleet…</p>}
       {vehicles?.length === 0 && <p className="text-sm text-gray-400">No vehicles registered in your fleet yet.</p>}
 
       <div className="grid gap-3">
         {vehicles?.map((v) => {
           const freshness = formatLocationFreshness(v);
           return (
-            <div key={v._id} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+            <div key={v._id} className="flex items-center justify-between rounded-xl border border-primary/10 bg-secondary/10 p-4 transition-all hover:border-primary/20">
               <div>
-                <p className="font-semibold text-gray-800">{v.registrationNumber} · <span className="capitalize">{v.type}</span></p>
-                <p className="text-xs text-gray-500">{v.driver?.name} · {v.driver?.phone}</p>
-                <p className={`mt-1 text-xs ${freshness.tone}`}>{freshness.text}</p>
+                <p className="font-bold text-slate-200">{v.registrationNumber} · <span className="capitalize text-[#00E676] text-xs font-mono">{v.type}</span></p>
+                <p className="text-xs text-gray-400 mt-0.5">{v.driver?.name} · {v.driver?.phone}</p>
+                <p className={`mt-1.5 text-[11px] font-medium ${freshness.tone}`}>{freshness.text}</p>
               </div>
               <button
                 type="button"
                 onClick={() => openPicker(v)}
-                className="rounded-lg border border-primary/20 px-3 py-1.5 text-xs font-semibold text-primary hover:border-primary/40"
+                className="rounded-lg bg-primary/10 border border-primary/30 px-4 py-2 text-xs font-bold text-[#00E676] hover:bg-primary/20 transition-all shadow-sm"
               >
                 Set location
               </button>
@@ -118,34 +107,36 @@ const AgencyFleetTracking = () => {
       </div>
 
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-xl bg-white p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-800">
-                Set location for {selected.registrationNumber}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-xl border border-primary/10 bg-[#0C1412] p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="mb-4 flex items-center justify-between border-b border-primary/10 pb-3">
+              <h2 className="font-bold text-slate-100 text-lg">
+                Set location for <span className="text-[#00E676]">{selected.registrationNumber}</span>
               </h2>
-              <button type="button" onClick={() => setSelectedId(null)} className="text-sm text-gray-400 hover:text-gray-700">
-                Close
+              <button type="button" onClick={() => setSelectedId(null)} className="text-sm text-gray-400 hover:text-slate-200 transition-colors">
+                ✕ Close
               </button>
             </div>
-            <p className="mb-3 text-xs text-gray-500">Click on the map where the vehicle currently is, then save.</p>
+            <p className="mb-4 text-xs text-[#8AA399]">Click on the map where the vehicle currently is, then click save.</p>
 
-            <MapContainer center={pickedLatLng || INDIA_CENTER} zoom={pickedLatLng ? 12 : 5} className="h-[400px] w-full rounded-lg">
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <ClickToPlace onPick={setPickedLatLng} />
-              {pickedLatLng && <Marker position={pickedLatLng} />}
-            </MapContainer>
+            <div className="overflow-hidden rounded-lg border border-[#173022] shadow-inner">
+              <MapContainer center={pickedLatLng || INDIA_CENTER} zoom={pickedLatLng ? 12 : 5} className="h-[380px] w-full bg-[#050c08]">
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <ClickToPlace onPick={setPickedLatLng} />
+                {pickedLatLng && <Marker position={pickedLatLng} />}
+              </MapContainer>
+            </div>
 
-            {saveError && <p className="mt-2 text-xs text-danger">{saveError}</p>}
+            {saveError && <p className="mt-3 text-xs text-red-400 font-semibold">⚠️ {saveError}</p>}
 
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-5 flex justify-end gap-3 border-t border-[#173022] pt-4">
               <button
                 type="button"
                 onClick={() => setSelectedId(null)}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600"
+                className="rounded-lg border border-[#173022] bg-[#0a1811] px-4 py-2 text-xs font-semibold text-gray-400 hover:text-slate-200 transition-colors"
               >
                 Cancel
               </button>
@@ -153,9 +144,9 @@ const AgencyFleetTracking = () => {
                 type="button"
                 onClick={save}
                 disabled={!pickedLatLng || saving}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="rounded-lg bg-[#00E676] px-5 py-2 text-xs font-bold text-black shadow-glow transition-all disabled:opacity-40"
               >
-                {saving ? 'Saving…' : 'Save location'}
+                {saving ? 'Saving…' : 'Save position'}
               </button>
             </div>
           </div>

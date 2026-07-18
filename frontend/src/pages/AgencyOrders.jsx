@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import api from '../services/api'; 
+import { getAgencyTrucks } from '../services/agencyService'; 
 
 const AgencyOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -9,61 +11,29 @@ const AgencyOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [availableTrucks, setAvailableTrucks] = useState([]);
   const [isLoadingTrucks, setIsLoadingTrucks] = useState(false);
+  const [assignError, setAssignError] = useState('');
 
   useEffect(() => {
-    fetchRealOrders();
+    fetchOrders();
   }, []);
 
-  const fetchRealOrders = async () => {
+  const fetchOrders = async () => {
     setIsLoadingOrders(true);
     setError(null);
     try {
-      let token = localStorage.getItem('loadshare_token');
-      
-      if (!token) {
-        throw new Error('No authentication token found. Please try logging in again.');
-      }
-
-      token = token.replace(/^"|"$/g, '');
-
-      const response = await fetch('http://localhost:5000/api/orders/received', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        }
-      });
-      
-      if (response.status === 401) {
-        throw new Error('401 Unauthorized: Session invalid or expired. Please re-login.');
-      }
-      
-      if (response.status === 403) {
-        throw new Error('403 Forbidden: Your backend route does not authorize the "agency" role yet.');
-      }
-
-      if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const { data } = await api.get('/orders/received');
       setOrders(data.orders || []);
-      
     } catch (err) {
-      console.error("Error fetching orders:", err);
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Could not load orders right now.');
     } finally {
       setIsLoadingOrders(false);
     }
   };
 
-  const handleDecline = async (orderId) => {
-    setOrders(orders.filter((order) => (order._id || order.id) !== orderId));
-  };
-
   const handleAccept = (order) => {
     setSelectedOrder(order);
     setIsModalOpen(true);
+    setAssignError('');
     fetchAvailableTrucks();
   };
 
@@ -71,171 +41,153 @@ const AgencyOrders = () => {
     setIsModalOpen(false);
     setSelectedOrder(null);
     setAvailableTrucks([]);
+    setAssignError('');
   };
 
   const fetchAvailableTrucks = async () => {
     setIsLoadingTrucks(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      setAvailableTrucks([
-        { id: 'TRK-901', registration: 'TN-01-AB-1234', capacity: '20 Tons', type: 'Container' },
-        { id: 'TRK-902', registration: 'MH-04-XY-9876', capacity: '15 Tons', type: 'Open Half Body' },
-      ]);
-    } catch (error) {
-      console.error("Error fetching trucks:", error);
+      const { data } = await getAgencyTrucks();
+      setAvailableTrucks((data.trucks || []).filter((t) => t.isActive));
+    } catch (err) {
+      setAssignError('Could not load your fleet right now.');
     } finally {
       setIsLoadingTrucks(false);
     }
   };
 
+  const handleAssign = (truck) => {
+    setAssignError(
+      `Assigning "${truck.registrationNumber}" isn't wired to the backend yet — no endpoint exists to save this assignment.`
+    );
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-[#133C2C] tracking-tight">Orders Received</h2>
-          <p className="text-xs text-gray-400 mt-1 font-medium">Review and confirm client shipment requests.</p>
+          <h2 className="font-display text-2xl font-bold text-slate-100 tracking-tight">Orders Received</h2>
+          <p className="mt-1 text-xs text-[#8AA399]">Review and confirm client shipment requests.</p>
         </div>
         {error && (
-          <button 
-            onClick={fetchRealOrders}
-            className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md font-medium transition-all"
+          <button
+            onClick={fetchOrders}
+            className="rounded-md bg-secondary/40 border border-primary/20 px-3 py-1.5 text-xs font-bold text-[#00E676] transition-all hover:bg-secondary/70"
           >
             Retry Connection
           </button>
         )}
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl shadow-xs overflow-hidden">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-hidden rounded-xl border border-primary/10 bg-secondary/10 shadow-sm">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-gray-50/50 border-b border-gray-100 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
+            <tr className="border-b border-primary/10 bg-secondary/20 font-mono-ls text-[11px] uppercase tracking-wider text-muted">
               <th className="px-6 py-4">Order ID</th>
-              <th className="px-6 py-4">Client</th>
-              <th className="px-6 py-4">Route</th>
-              <th className="px-6 py-4">Confirmation</th>
+              <th className="px-6 py-4">Buyer</th>
+              <th className="px-6 py-4">Total</th>
+              <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-primary/5">
             {isLoadingOrders ? (
               <tr>
-                <td colSpan="4" className="px-6 py-12 text-center">
+                <td colSpan="5" className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
-                    <div className="w-8 h-8 border-4 border-[#249B74]/20 border-t-[#249B74] rounded-full animate-spin"></div>
-                    <p className="text-xs font-medium text-gray-400">Loading incoming orders...</p>
+                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+                    <p className="text-xs font-medium text-muted">Loading incoming orders…</p>
                   </div>
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="4" className="px-6 py-10 text-center text-xs font-semibold text-red-500 bg-red-50/30">
-                  ⚠️ Error loading orders: {error}
+                <td colSpan="5" className="bg-danger/5 px-6 py-10 text-center text-xs font-semibold text-danger">
+                  ⚠️ {error}
                 </td>
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan="4" className="px-6 py-16 text-center">
-                  <div className="max-w-md mx-auto">
-                    <h3 className="text-lg font-bold text-[#133C2C] mb-2">No orders yet</h3>
-                    <p className="text-sm text-gray-400 font-medium mb-6">
-                      Waiting for shippers to place backhaul requests. When a new order matches your routes, it will appear here.
-                    </p>
-                  </div>
+                <td colSpan="5" className="px-6 py-16 text-center">
+                  <h3 className="mb-2 font-display text-lg font-bold text-slate-200">No orders yet</h3>
+                  <p className="mx-auto max-w-md text-xs font-medium text-muted">
+                    Waiting for shippers to place backhaul requests. When a new order comes in, it will appear here.
+                  </p>
                 </td>
               </tr>
             ) : (
-              orders.map((order) => {
-                const orderId = order._id || order.id || 'N/A';
-                const clientName = order.client?.name || order.client || 'Unknown Client';
-                const routeInfo = order.route || `${order.pickup || 'Origin'} to ${order.dropoff || 'Destination'}`;
-
-                return (
-                  <tr key={orderId} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                      {orderId.length > 8 ? `${orderId.substring(0, 8).toUpperCase()}...` : orderId.toUpperCase()}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{clientName}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{routeInfo}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleAccept(order)}
-                          className="bg-[#249B74] text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-opacity-90 transition-all shadow-sm"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleDecline(orderId)}
-                          className="bg-white border border-red-200 text-red-600 text-xs font-bold px-4 py-2 rounded-md hover:bg-red-50 hover:border-red-300 transition-all"
-                        >
-                          Decline
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
+              orders.map((order) => (
+                <tr key={order._id} className="transition-colors hover:bg-secondary/20">
+                  <td className="px-6 py-4 text-sm font-semibold text-[#00E676] font-mono">
+                    #{order._id.slice(-8).toUpperCase()}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-300">{order.buyer?.name || '—'}</td>
+                  <td className="px-6 py-4 text-sm text-slate-300 font-medium">₹{order.productTotal}</td>
+                  <td className="px-6 py-4 text-sm text-muted capitalize">{(order.status || '').replace(/_/g, ' ')}</td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleAccept(order)}
+                      className="rounded-md bg-accent px-4 py-2 text-xs font-bold text-primary shadow-sm transition-all hover:shadow-glow"
+                    >
+                      Assign truck
+                    </button>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/40 p-4 backdrop-blur-sm">
+          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-primary/10 bg-background shadow-xl">
+            <div className="flex items-center justify-between border-b border-primary/10 bg-secondary/20 px-6 py-4">
               <div>
-                <h3 className="text-lg font-bold text-[#133C2C]">Assign Truck</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Assigning a truck for this shipment request.
-                </p>
+                <h3 className="font-display text-lg font-bold text-slate-100">Assign Truck</h3>
+                <p className="mt-0.5 text-xs text-[#8AA399]">Assigning a truck for this shipment request.</p>
               </div>
-              <button 
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-700 transition-colors p-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+              <button onClick={closeModal} className="text-muted transition-colors hover:text-slate-200 text-sm">
+                ✕ Close
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto">
-              <h4 className="text-[11px] font-black tracking-wider text-gray-400 uppercase mb-4">
+            <div className="overflow-y-auto p-6">
+              <h4 className="mb-4 font-mono-ls text-[11px] font-black uppercase tracking-wider text-muted">
                 Available Fleet
               </h4>
 
+              {assignError && (
+                <div className="mb-4 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-xs text-warning leading-relaxed font-medium">
+                  ⚠️ {assignError}
+                </div>
+              )}
+
               {isLoadingTrucks ? (
-                <div className="flex flex-col items-center justify-center py-10 space-y-3">
-                  <div className="w-8 h-8 border-4 border-[#249B74]/20 border-t-[#249B74] rounded-full animate-spin"></div>
-                  <p className="text-xs font-medium text-gray-500">Querying database...</p>
+                <div className="flex flex-col items-center justify-center space-y-3 py-10">
+                  <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+                  <p className="text-xs font-medium text-muted">Loading your fleet…</p>
                 </div>
               ) : availableTrucks.length === 0 ? (
-                <div className="text-center py-8 text-sm text-gray-500">
-                  No trucks available in the database at the moment.
+                <div className="py-8 text-center text-xs text-muted">
+                  No active trucks in your fleet. Add one from Manage Fleet.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {availableTrucks.map((truck) => (
-                    <div 
-                      key={truck.id} 
-                      className="border border-gray-100 rounded-lg p-4 flex items-center justify-between hover:border-[#249B74]/30 hover:bg-green-50/30 transition-all"
+                    <div
+                      key={truck._id}
+                      className="flex items-center justify-between rounded-lg border border-primary/10 p-4 transition-all hover:border-primary/30 hover:bg-secondary/20"
                     >
                       <div>
-                        <p className="text-sm font-bold text-gray-900">{truck.registration}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {truck.type} • <span className="font-medium text-gray-700">{truck.capacity}</span>
+                        <p className="text-sm font-bold text-slate-200">{truck.registrationNumber}</p>
+                        <p className="mt-1 text-xs text-muted">
+                          {truck.type} • <span className="font-semibold text-[#00E676]">{truck.capacityWeight} Tons</span>
                         </p>
                       </div>
-                      <button 
-                        className="bg-[#1C4E3A] text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-opacity-90 transition-all"
-                        onClick={() => {
-                          const oId = selectedOrder._id || selectedOrder.id;
-                          alert(`Truck ${truck.registration} assigned!`);
-                          handleDecline(oId); 
-                          closeModal();
-                        }}
+                      <button
+                        className="rounded-md bg-primary px-4 py-2 text-xs font-bold text-white transition-all hover:opacity-90 shadow-sm"
+                        onClick={() => handleAssign(truck)}
                       >
                         Assign
                       </button>
@@ -244,7 +196,6 @@ const AgencyOrders = () => {
                 </div>
               )}
             </div>
-
           </div>
         </div>
       )}

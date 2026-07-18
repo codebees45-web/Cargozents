@@ -30,12 +30,12 @@ export default function AgencySupport() {
       
       {/* 🟢 CLEAN INTERIOR VIEW HEADING BLOCK */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#133C2C]">Support Help Desk</h1>
-        <p className="text-sm text-gray-500">Get assistance with your fleet loads, tracking updates, or account issues.</p>
+        <h1 className="text-2xl font-bold text-white">Support Help Desk</h1>
+        <p className="text-sm text-gray-400">Get assistance with your fleet loads, tracking updates, or account issues.</p>
       </div>
 
       {showSuccess && (
-        <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-semibold text-center animate-in fade-in duration-200">
+        <div className="mb-6 p-4 rounded-xl bg-[#00E676]/10 border border-[#00E676]/30 text-[#00E676] text-sm font-semibold text-center animate-in fade-in duration-200">
           ✅ Support ticket submitted successfully! Our team will respond shortly.
         </div>
       )}
@@ -43,12 +43,12 @@ export default function AgencySupport() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Contact Form Card */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-6 md:p-8 shadow-sm">
-          <h2 className="text-lg font-bold text-[#133C2C] mb-6">Create a Support Ticket</h2>
+        <div className="lg:col-span-2 bg-[#0a1811] rounded-xl border border-[#173022] p-6 md:p-8 shadow-sm">
+          <h2 className="text-lg font-bold text-white mb-6">Create a Support Ticket</h2>
           
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-[13px] font-semibold text-[#133C2C] mb-2">Subject</label>
+              <label className="block text-[13px] font-semibold text-gray-300 mb-2">Subject</label>
               <input
                 type="text"
                 name="subject"
@@ -56,18 +56,18 @@ export default function AgencySupport() {
                 onChange={handleChange}
                 required
                 placeholder="Brief summary of the issue"
-                className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#249B74]/20 focus:border-[#249B74] transition bg-white"
+                className="w-full px-4 py-2.5 text-sm rounded-lg border border-[#173022] text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#00E676]/20 focus:border-[#00E676] transition bg-[#050c08]"
               />
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-[#133C2C] mb-2">Category</label>
+              <label className="block text-[13px] font-semibold text-gray-300 mb-2">Category</label>
               <div className="relative">
                 <select
                   name="category"
                   value={form.category}
                   onChange={handleChange}
-                  className="w-full appearance-none px-4 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#249B74]/20 focus:border-[#249B74] transition bg-white"
+                  className="w-full appearance-none px-4 py-2.5 text-sm rounded-lg border border-[#173022] text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#00E676]/20 focus:border-[#00E676] transition bg-[#050c08]"
                 >
                   <option value="General Inquiry">General Inquiry</option>
                   <option value="Fleet Tracking">Fleet Tracking Issues</option>
@@ -83,7 +83,7 @@ export default function AgencySupport() {
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-[#133C2C] mb-2">Message / Details</label>
+              <label className="block text-[13px] font-semibold text-gray-300 mb-2">Message / Details</label>
               <textarea
                 name="message"
                 rows="5"
@@ -91,7 +91,7 @@ export default function AgencySupport() {
                 onChange={handleChange}
                 required
                 placeholder="Describe your problem in detail..."
-                className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#249B74]/20 focus:border-[#249B74] transition bg-white resize-none"
+                className="w-full px-4 py-2.5 text-sm rounded-lg border border-[#173022] text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#00E676]/20 focus:border-[#00E676] transition bg-[#050c08] resize-none"
               />
             </div>
 
@@ -99,7 +99,7 @@ export default function AgencySupport() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`px-8 py-3 bg-[#1C4E3A] hover:bg-[#133C2C] text-white text-sm font-bold rounded-lg transition-all shadow-sm flex items-center gap-2 ${
+                className={`px-8 py-3 bg-[#00E676] hover:bg-[#00c565] text-black text-sm font-bold rounded-lg transition-all shadow-sm flex items-center gap-2 ${
                   isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
                 }`}
               >
@@ -111,19 +111,19 @@ export default function AgencySupport() {
 
         {/* Info Sidebar Cards */}
         <div className="space-y-6">
-          <div className="bg-[#FAFDFB] rounded-xl border border-emerald-100/50 p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-[#133C2C] uppercase tracking-wider mb-3">Direct Contact</h3>
-            <p className="text-xs text-gray-600 mb-4">Need urgent operational tracking support regarding an active vehicle dispatch?</p>
-            <div className="text-sm font-semibold text-[#1C4E3A] space-y-1">
+          <div className="bg-[#0a1811] rounded-xl border border-[#173022] p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Direct Contact</h3>
+            <p className="text-xs text-gray-400 mb-4">Need urgent operational tracking support regarding an active vehicle dispatch?</p>
+            <div className="text-sm font-semibold text-[#00E676] space-y-1">
               <div>📞 +91 99401 79070</div>
               <div>✉️ support@cargozents.com</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-[#133C2C] uppercase tracking-wider mb-3">Response Time</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Standard operational tickets are assigned within <span className="font-semibold text-gray-700">15-30 minutes</span>. Urgent backhaul assignment updates are handled live via line dispatch.
+          <div className="bg-[#0a1811] rounded-xl border border-[#173022] p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Response Time</h3>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Standard operational tickets are assigned within <span className="font-semibold text-slate-200">15-30 minutes</span>. Urgent backhaul assignment updates are handled live via line dispatch.
             </p>
           </div>
         </div>

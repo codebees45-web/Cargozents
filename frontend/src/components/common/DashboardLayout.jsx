@@ -14,7 +14,7 @@ const navByRole = {
     { label: "Notifications", href: "/buyer/notifications" },
     { label: "Support", href: "/buyer/support" },
     { label: "Settings", href: "/buyer/settings" },
-    { label: "Profile", href: "/driver/profile" },
+    { label: 'Profile', href: '/profile' },
   ],
   shipper: [
     { label: 'Overview', href: '/shipper/dashboard' },
@@ -24,7 +24,7 @@ const navByRole = {
     { label: 'Subscription', href: '/shipper/subscription' },
     { label: 'Support', href: '/shipper/support' },       // 🟢 Standardized to label/href
     { label: 'Settings', href: '/shipper/settings' },     // 🟢 Standardized to label/href
-    { label: 'Profile', href: '/driver/profile' },
+    { label: 'Profile', href: '/shipper/profile' },
   ],
   driver: [
     { label: 'Overview', href: '/driver/dashboard' },
@@ -42,7 +42,7 @@ const navByRole = {
     { label: 'Drivers', href: '/agency/drivers' },
     { label: 'Support', href: '/agency/support' },
     { label: 'Settings', href: '/agency/settings' }, 
-    { label: 'Profile', href: '/driver/profile' },
+    { label: 'Profile', href: '/agency/profile' },
   ],
   admin: [
     { label: 'Overview', href: '/admin/dashboard' },
@@ -50,7 +50,7 @@ const navByRole = {
     { label: 'Driver verification', href: '/admin/drivers' },
     { label: 'Complaints', href: '/admin/complaints' },
     { label: 'Reports', href: '/admin/reports' },
-    { label: 'Profile', href: '/driver/profile' },
+    { label: 'Profile', href: '/profile' },
   ],
 };
 

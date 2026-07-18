@@ -44,4 +44,8 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
+
+// 🟢 FIX: Added the missing useAuth custom hook so other components can import it!
+export const useAuth = () => {
+  return useContext(AuthContext);
+};

@@ -1,186 +1,129 @@
-import React, { useState } from "react";
-import DashboardLayout from "../../components/common/DashboardLayout";
-import { useTheme } from "../../context/ThemeContext";
+import React, { useState } from 'react';
 
-export default function AgencySettings() {
-  const { isDark, toggleTheme } = useTheme();
-
-  const [operations, setOperations] = useState({
-    autoAssign: true,
-    driverSms: false,
-    clientEmail: true,
+export default function AgencySupport() {
+  const [form, setForm] = useState({
+    subject: '',
+    category: 'General Inquiry',
+    message: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const [security, setSecurity] = useState({
-    twoFactor: false,
-  });
-
-  const [preferences, setPreferences] = useState({
-    timezone: "IST",
-    currency: "INR",
-  });
-
-  const handleOperationToggle = (key) => {
-    setOperations((prev) => ({ ...prev, [key]: !prev[key] }));
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSecurityToggle = (key) => {
-    setSecurity((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handlePreferenceChange = (e) => {
-    setPreferences((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSaveSettings = () => {
-    alert("Agency configurations saved successfully!");
-  };
-
-  const ToggleSwitch = ({ checked, onChange, ariaLabel }) => {
-    return (
-      <button
-        type="button"
-        onClick={onChange}
-        aria-label={ariaLabel}
-        className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${
-          checked 
-            ? "bg-[#00E676] shadow-[0_0_10px_rgba(0,230,118,0.25)]" 
-            : "bg-primary/10 border border-primary/10"
-        }`}
-      >
-        <span
-          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow-md transition duration-300 ease-in-out ${
-            checked 
-              ? "translate-x-6 bg-[#0A110E]" 
-              : "translate-x-0 bg-[#8AA399]" 
-          }`}
-        />
-      </button>
-    );
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setShowSuccess(true);
+      setForm({ subject: '', category: 'General Inquiry', message: '' });
+    }, 1200);
   };
 
   return (
-    <DashboardLayout
-      title="Agency Settings"
-      subtitle="Manage configurations, automatic assignments, dispatch rules, and preferences."
-    >
-      <div className="max-w-4xl mx-auto space-y-8 px-4 pb-12">
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
-          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
-            Dispatch & Operations
-          </h3>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-primary">Auto-Assign Drivers</p>
-                <p className="text-xs text-[#8AA399]">Automatically match orders to the nearest free fleet vehicle.</p>
-              </div>
-              <ToggleSwitch
-                checked={operations.autoAssign}
-                onChange={() => handleOperationToggle("autoAssign")}
-                ariaLabel="Toggle Auto-Assign Drivers"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-primary">Driver SMS Notifications</p>
-                <p className="text-xs text-[#8AA399]">Send dynamic SMS dispatch links to drivers upon order acceptance.</p>
-              </div>
-              <ToggleSwitch
-                checked={operations.driverSms}
-                onChange={() => handleOperationToggle("driverSms")}
-                ariaLabel="Toggle Driver SMS"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-primary">Client Live Updates</p>
-                <p className="text-xs text-[#8AA399]">Ping buyers with automatic email alerts when drivers head transit.</p>
-              </div>
-              <ToggleSwitch
-                checked={operations.clientEmail}
-                onChange={() => handleOperationToggle("clientEmail")}
-                ariaLabel="Toggle Client Updates"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
-          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
-            Security & Gateways
-          </h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-primary">Two-Factor Authentication (2FA)</p>
-              <p className="text-xs text-[#8AA399]">Require secure secondary sign-ins for all dashboard staff profiles.</p>
-            </div>
-            <ToggleSwitch
-              checked={security.twoFactor}
-              onChange={() => handleSecurityToggle("twoFactor")}
-              ariaLabel="Toggle Two-Factor Authentication"
-            />
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
-          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
-            Regional Settings & Preferences
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-xs font-bold text-[#8AA399] uppercase tracking-wider mb-2">
-                Timezone
-              </label>
-              <select
-                name="timezone"
-                value={preferences.timezone}
-                onChange={handlePreferenceChange}
-                className="w-full rounded-lg border border-primary/10 bg-[#0c1411] px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none text-primary cursor-pointer"
-              >
-                <option value="IST">India Standard Time (IST - UTC +5:30)</option>
-                <option value="EST">Eastern Standard Time (EST - UTC -5:00)</option>
-                <option value="GMT">Greenwich Mean Time (GMT - UTC +0:00)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#8AA399] uppercase tracking-wider mb-2">
-                Operating Currency
-              </label>
-              <select
-                name="currency"
-                value={preferences.currency}
-                onChange={handlePreferenceChange}
-                className="w-full rounded-lg border border-primary/10 bg-[#0c1411] px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none text-primary cursor-pointer"
-              >
-                <option value="INR">INR (₹)</option>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center justify-between pt-4 border-t border-primary/10">
-            <div>
-              <p className="text-sm font-bold text-primary">Dark Mode</p>
-              <p className="text-xs text-[#8AA399]">Switch between bright daylight screen and dark-charcoal mode.</p>
-            </div>
-            <ToggleSwitch
-              checked={isDark}
-              onChange={toggleTheme}
-              ariaLabel="Toggle Dark Theme"
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <button
-            onClick={handleSaveSettings}
-            className="rounded-lg bg-[#00E676] px-8 py-3 text-xs font-bold text-[#0A110E] shadow-lg shadow-[#00E676]/10 hover:bg-[#34D399] hover:shadow-[0_0_15px_rgba(0,230,118,0.4)] transition-all duration-200"
-          >
-            Save Agency Settings
-          </button>
-        </div>
+    <div className="max-w-4xl pb-10 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Support Help Desk</h1>
+        <p className="text-xs text-[#8AA399] mt-1">Get assistance with your fleet loads, tracking updates, or account issues.</p>
       </div>
-    </DashboardLayout>
+
+      {showSuccess && (
+        <div className="p-4 rounded-xl bg-primary/10 border border-primary/30 text-[#00E676] text-xs font-semibold text-center animate-in fade-in duration-200 shadow-glow">
+          ✅ Support ticket submitted successfully! Our team will respond shortly.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Contact Form Card */}
+        <div className="lg:col-span-2 bg-secondary/10 rounded-xl border border-primary/10 p-6 md:p-8 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-200 mb-6">Create a Support Ticket</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Subject</label>
+              <input
+                type="text"
+                name="subject"
+                value={form.subject}
+                onChange={handleChange}
+                required
+                placeholder="Brief summary of the issue"
+                className="w-full px-4 py-2.5 text-sm rounded-lg border border-primary/20 text-slate-100 focus:outline-none focus:border-[#00E676] focus:ring-1 focus:ring-[#00E676]/30 transition bg-secondary/20"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Category</label>
+              <div className="relative">
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  className="w-full appearance-none px-4 py-2.5 text-sm rounded-lg border border-primary/20 text-slate-100 focus:outline-none focus:border-[#00E676] focus:ring-1 focus:ring-[#00E676]/30 transition bg-secondary/20"
+                >
+                  <option value="General Inquiry" className="bg-background text-slate-100">General Inquiry</option>
+                  <option value="Fleet Tracking" className="bg-background text-slate-100">Fleet Tracking Issues</option>
+                  <option value="Payments" className="bg-background text-slate-100">Payments & Billing</option>
+                  <option value="App Bug" className="bg-background text-slate-100">Report a Bug</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-muted">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Message / Details</label>
+              <textarea
+                name="message"
+                rows="5"
+                value={form.message}
+                onChange={handleChange}
+                required
+                placeholder="Describe your problem in detail..."
+                className="w-full px-4 py-2.5 text-sm rounded-lg border border-primary/20 text-slate-100 focus:outline-none focus:border-[#00E676] focus:ring-1 focus:ring-[#00E676]/30 transition bg-secondary/20 resize-none"
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-8 py-3 bg-primary hover:opacity-90 text-white text-xs font-bold rounded-lg transition-all shadow-glow disabled:opacity-50"
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Ticket'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Info Sidebar Cards */}
+        <div className="space-y-6">
+          <div className="bg-secondary/20 rounded-xl border border-primary/10 p-6 shadow-sm">
+            <h3 className="text-xs font-bold text-[#00E676] uppercase tracking-wider mb-3">Direct Contact</h3>
+            <p className="text-xs text-[#8AA399] leading-relaxed mb-4">Need urgent operational tracking support regarding an active vehicle dispatch?</p>
+            <div className="text-xs font-medium text-slate-200 space-y-2 font-mono">
+              <div className="flex items-center gap-2"><span>📞</span> +91 99401 79070</div>
+              <div className="flex items-center gap-2"><span>✉️</span> support@cargozents.com</div>
+            </div>
+          </div>
+
+          <div className="bg-secondary/10 rounded-xl border border-primary/5 p-6 shadow-sm">
+            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Response Time</h3>
+            <p className="text-xs text-[#8AA399] leading-relaxed">
+              Standard operational tickets are assigned within <span className="font-semibold text-slate-200">15-30 minutes</span>. Urgent backhaul assignment updates are handled live via line dispatch.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }

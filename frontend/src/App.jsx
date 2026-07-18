@@ -48,6 +48,7 @@ import ShipperSubscription from './pages/ShipperSubscription';
 import ShipperSupport from './pages/ShipperSupport';       
 import ShipperSettings from './pages/ShipperSettings'; 
 import ShipperNotifications from './pages/ShipperNotifications';
+
 // --- AGENCY IMPORTS ---
 import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyOverview from './pages/AgencyOverview';
@@ -57,7 +58,6 @@ import TruckTracking from './pages/TruckTracking';
 import Onboarding from './pages/Onboarding';
 import AgencySupport from './pages/Agency/Support';
 import AgencyDrivers from './pages/Agency/Drivers'; 
-// 🟢 FIXED: Changed variable name here to match element usage below
 import AgencySettings from "./pages/Agency/Settings";
 
 // --- BUYER IMPORTS ---
@@ -211,6 +211,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               {/* Shipper Routes */}
               <Route
                 path="/shipper/dashboard"

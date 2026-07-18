@@ -103,7 +103,7 @@ const AgencyDashboard = () => {
                 </>
               )}
             </NavLink>
-            <NavLink to="/agency/setting" className={getNavLinkClass}>
+            <NavLink to="/agency/settings" className={getNavLinkClass}>
               {({ isActive }) => (
                 <>
                   {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />}

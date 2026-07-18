@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import DashboardLayout from "../../components/common/DashboardLayout";
-import { useTheme } from "../../context/ThemeContext"; // 2 steps back to reach src/context
+import DashboardLayout from "../components/common/DashboardLayout"; // Fixed path: changed ../../ to ../
+import { useTheme } from "../context/ThemeContext"; // Fixed path: changed ../../ to ../
 
 export default function DriverSettings() {
   // 1. Link to your global theme engine (stays synced with Landing, Buyer, & Agency)
