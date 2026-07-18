@@ -86,7 +86,11 @@ const MapView = ({
         <ClickHandler />
 
         {markers.map((m) => (
-          <Marker key={m.id} position={[m.lat, m.lng]} icon={m.isVehicle ? truckIcon : undefined}>
+          <Marker
+            key={m.id}
+            position={[m.lat, m.lng]}
+            {...(m.isVehicle ? { icon: truckIcon } : {})}
+          >
             {m.label && <Popup>{m.label}</Popup>}
           </Marker>
         ))}

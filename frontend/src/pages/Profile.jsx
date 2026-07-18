@@ -1,16 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext"; // Pulling live user context[cite: 2]
 
 export default function Profile() {
   const { isDark } = useTheme();
+  const { user } = useAuth(); // Live logged-in user context object[cite: 2]
 
-  // Mock initial user data based on screenshot
+  // Initialize with empty strings so it stays clean before the context loads
   const [profile, setProfile] = useState({
-    fullName: "Vanshitha",
+    fullName: "",
     phone: "",
-    email: "vanshithagajendiran.aids2025@citchennai.net",
-    role: "DRIVER"
+    email: "",
+    role: "" 
   });
+
+  // Keep state perfectly synchronized with whoever logs in dynamically
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        fullName: user.name || user.fullName || "User",
+        phone: user.phone || "",
+        email: user.email || "",
+        // Dynamically extract the role from the token/session instead of hardcoding DRIVER
+        role: user.role ? user.role.toUpperCase() : "USER"
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -44,15 +59,17 @@ export default function Profile() {
 
           <h2 className="text-xl font-bold tracking-tight">{profile.fullName}</h2>
           
-          <span className="mt-2 px-3 py-1 text-xs font-bold tracking-wider rounded bg-[#00E676]/10 text-[#00E676] border border-[#00E676]/20 uppercase">
-            {profile.role}
-          </span>
+          {/* DYNAMIC ROLE BADGE */}
+          {profile.role && (
+            <span className="mt-2 px-3 py-1 text-xs font-bold tracking-wider rounded bg-[#00E676]/10 text-[#00E676] border border-[#00E676]/20 uppercase">
+              {profile.role}
+            </span>
+          )}
 
           <div className="mt-6 w-full px-2">
             <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Logged in as</p>
-            {/* FIX: break-all stops long emails from overflowing the card container boundaries */}
             <p className="text-xs font-mono text-[#00E676] break-all max-w-full px-2">
-              {profile.email}
+              {profile.email || "No email provided"}
             </p>
           </div>
         </div>

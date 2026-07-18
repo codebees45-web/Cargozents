@@ -1,41 +1,33 @@
 import React, { useState } from "react";
-import DashboardLayout from "../components/common/DashboardLayout";
+import DashboardLayout from "../components/common/DashboardLayout"; // Restored layout wrapper
 import { useTheme } from "../context/ThemeContext";
 
 export default function ShipperSettings() {
+  // 1. Hook into your shared application theme engine
   const { isDark, toggleTheme } = useTheme();
 
-  const [shipping, setShipping] = useState({
-    autoInsurance: false,
-    priorityMatching: true,
+  // 2. Interactive state management mirroring your dashboard modules
+  const [settings, setSettings] = useState({
     milestoneAlerts: true,
-  });
-
-  const [security, setSecurity] = useState({
-    apiAccess: false,
-  });
-
-  const [preferences, setPreferences] = useState({
-    weightUnit: "KG_CBM",
+    erpSync: false,
+    weightUnit: "Metric",
     currency: "INR",
   });
 
-  const handleShippingToggle = (key) => {
-    setShipping((prev) => ({ ...prev, [key]: !prev[key] }));
+  const handleToggle = (key) => {
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleSecurityToggle = (key) => {
-    setSecurity((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handlePreferenceChange = (e) => {
-    setPreferences((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setSettings((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSaveSettings = () => {
-    alert("Shipper account configurations saved successfully!");
+    alert("Shipper settings saved successfully!");
   };
 
+  // Premium Reusable Animated Toggle Switch
   const ToggleSwitch = ({ checked, onChange, ariaLabel }) => {
     return (
       <button
@@ -51,8 +43,8 @@ export default function ShipperSettings() {
         <span
           className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow-md transition duration-300 ease-in-out ${
             checked 
-              ? "translate-x-6 bg-[#0A110E]" 
-              : "translate-x-0 bg-[#8AA399]" 
+              ? "translate-x-6 bg-[#0A110E]" // Matte dark knob when active
+              : "translate-x-0 bg-[#8AA399]"  // Grey knob when inactive
           }`}
         />
       </button>
@@ -62,71 +54,74 @@ export default function ShipperSettings() {
   return (
     <DashboardLayout
       title="Shipper Settings"
-      subtitle="Configure shipment automation rules, carrier matching tiers, and cargo safety standards."
+      subtitle="Control your system preferences, API integrations, and display adjustments."
     >
       <div className="max-w-4xl mx-auto space-y-8 px-4 pb-12">
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
-          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
-            Shipping & Dispatch Policies
-          </h3>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-primary">Auto-Apply Cargo Insurance</p>
-                <p className="text-xs text-[#8AA399]">Automatically protect high-value cargo with standard transit coverage.</p>
-              </div>
-              <ToggleSwitch
-                checked={shipping.autoInsurance}
-                onChange={() => handleShippingToggle("autoInsurance")}
-                ariaLabel="Toggle Auto Cargo Insurance"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-primary">Priority Carrier Matching</p>
-                <p className="text-xs text-[#8AA399]">Limit fast bids to tier-1 vetted carriers with a 98%+ on-time rating.</p>
-              </div>
-              <ToggleSwitch
-                checked={shipping.priorityMatching}
-                onChange={() => handleShippingToggle("priorityMatching")}
-                ariaLabel="Toggle Priority Matching"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-primary">Milestone Alerts</p>
-                <p className="text-xs text-[#8AA399]">Send real-time alerts whenever custom checks, pickups, or deliveries happen.</p>
-              </div>
-              <ToggleSwitch
-                checked={shipping.milestoneAlerts}
-                onChange={() => handleShippingToggle("milestoneAlerts")}
-                ariaLabel="Toggle Milestone Alerts"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
-          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
-            Integration & Security
-          </h3>
+        
+        {/* ==========================================
+            SECTION 1: MILESTONE ALERTS
+            ========================================== */}
+        <div className={`rounded-xl border p-6 shadow-sm transition-colors duration-200 ${
+          isDark ? "border-primary/10 bg-[#0A1811]" : "border-gray-200 bg-white"
+        }`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-primary">External ERP API Sync</p>
-              <p className="text-xs text-[#8AA399]">Restrict third-party software from fetching invoice and tracking data logs.</p>
+              <p className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                Milestone Alerts
+              </p>
+              <p className="text-xs text-[#8AA399]">
+                Send real-time alerts whenever custom checks, pickups, or deliveries happen.
+              </p>
             </div>
             <ToggleSwitch
-              checked={security.apiAccess}
-              onChange={() => handleSecurityToggle("apiAccess")}
-              ariaLabel="Toggle API Access Restriction"
+              checked={settings.milestoneAlerts}
+              onChange={() => handleToggle("milestoneAlerts")}
+              ariaLabel="Toggle Milestone Alerts"
             />
           </div>
         </div>
 
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
-          <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
+        {/* ==========================================
+            SECTION 2: INTEGRATION & SECURITY
+            ========================================== */}
+        <div className={`rounded-xl border p-6 shadow-sm transition-colors duration-200 ${
+          isDark ? "border-primary/10 bg-[#0A1811]" : "border-gray-200 bg-white"
+        }`}>
+          <h3 className={`text-md font-bold mb-5 tracking-tight border-b pb-3 ${
+            isDark ? "text-white border-primary/10" : "text-gray-900 border-gray-100"
+          }`}>
+            Integration & Security
+          </h3>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                External ERP API Sync
+              </p>
+              <p className="text-xs text-[#8AA399]">
+                Restrict third-party software from fetching invoice and tracking data logs.
+              </p>
+            </div>
+            <ToggleSwitch
+              checked={settings.erpSync}
+              onChange={() => handleToggle("erpSync")}
+              ariaLabel="Toggle External ERP API Sync"
+            />
+          </div>
+        </div>
+
+        {/* ==========================================
+            SECTION 3: UNITS, CURRENCY & THEME
+            ========================================== */}
+        <div className={`rounded-xl border p-6 shadow-sm transition-colors duration-200 ${
+          isDark ? "border-primary/10 bg-[#0A1811]" : "border-gray-200 bg-white"
+        }`}>
+          <h3 className={`text-md font-bold mb-5 tracking-tight border-b pb-3 ${
+            isDark ? "text-white border-primary/10" : "text-gray-900 border-gray-100"
+          }`}>
             Platform Display Preferences
           </h3>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-xs font-bold text-[#8AA399] uppercase tracking-wider mb-2">
@@ -134,23 +129,32 @@ export default function ShipperSettings() {
               </label>
               <select
                 name="weightUnit"
-                value={preferences.weightUnit}
-                onChange={handlePreferenceChange}
-                className="w-full rounded-lg border border-primary/10 bg-[#0c1411] px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none text-primary cursor-pointer"
+                value={settings.weightUnit}
+                onChange={handleChange}
+                className={`w-full rounded-lg border px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none transition-colors duration-200 cursor-pointer ${
+                  isDark 
+                    ? "border-primary/10 bg-[#0c1411] text-white" 
+                    : "border-gray-300 bg-white text-gray-900"
+                }`}
               >
-                <option value="KG_CBM">Metric System (KG, Tons, m³)</option>
-                <option value="LBS_CFT">Imperial System (lbs, Short Tons, ft³)</option>
+                <option value="Metric">Metric System (KG, Tons, m³)</option>
+                <option value="Imperial">Imperial System (Lbs, Short Tons, ft³)</option>
               </select>
             </div>
+
             <div>
               <label className="block text-xs font-bold text-[#8AA399] uppercase tracking-wider mb-2">
                 Settlement Currency
               </label>
               <select
                 name="currency"
-                value={preferences.currency}
-                onChange={handlePreferenceChange}
-                className="w-full rounded-lg border border-primary/10 bg-[#0c1411] px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none text-primary cursor-pointer"
+                value={settings.currency}
+                onChange={handleChange}
+                className={`w-full rounded-lg border px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none transition-colors duration-200 cursor-pointer ${
+                  isDark 
+                    ? "border-primary/10 bg-[#0c1411] text-white" 
+                    : "border-gray-300 bg-white text-gray-900"
+                }`}
               >
                 <option value="INR">INR (₹)</option>
                 <option value="USD">USD ($)</option>
@@ -158,19 +162,27 @@ export default function ShipperSettings() {
               </select>
             </div>
           </div>
-          <div className="flex items-center justify-between pt-4 border-t border-primary/10">
+
+          <div className={`flex items-center justify-between pt-4 border-t ${
+            isDark ? "border-primary/10" : "border-gray-100"
+          }`}>
             <div>
-              <p className="text-sm font-bold text-primary">Dark Mode</p>
-              <p className="text-xs text-[#8AA399]">Switch between standard light screen and cozy dark-room dashboard mode.</p>
+              <p className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                Dark Mode
+              </p>
+              <p className="text-xs text-[#8AA399]">
+                Switch between standard light screen and cozy dark-room dashboard mode.
+              </p>
             </div>
             <ToggleSwitch
               checked={isDark}
               onChange={toggleTheme}
-              ariaLabel="Toggle Dark Theme"
+              ariaLabel="Toggle Dark Mode"
             />
           </div>
         </div>
 
+        {/* Action Button Container */}
         <div className="flex justify-end pt-2">
           <button
             onClick={handleSaveSettings}
@@ -179,6 +191,7 @@ export default function ShipperSettings() {
             Save Shipper Settings
           </button>
         </div>
+
       </div>
     </DashboardLayout>
   );
