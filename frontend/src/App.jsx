@@ -28,6 +28,7 @@ import AdminComplaints from './pages/AdminComplaints';
 import AdminReports from './pages/AdminReports';
 import ComplaintsPage from './pages/ComplaintsPage';
 import Profile from './pages/Profile'; 
+import DashboardLayout from './components/common/DashboardLayout';
 
 // --- DRIVER IMPORTS ---
 import DriverDashboard from './pages/DriverDashboard';
@@ -416,7 +417,12 @@ function App() {
                 path="/driver/profile"
                 element={
                   <ProtectedRoute allowedRoles={['buyer', 'shipper', 'driver', 'agency', 'admin']}>
-                    <Profile />
+                    <DashboardLayout
+                      title="My Profile"
+                      subtitle="Manage your personal details, company settings, and account security."
+                    >
+                      <Profile />
+                    </DashboardLayout>
                   </ProtectedRoute>
                 }
               />

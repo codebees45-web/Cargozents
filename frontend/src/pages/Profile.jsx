@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import DashboardLayout from "../components/common/DashboardLayout";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Profile() {
+  const { user } = useAuth();
+
   const [profile, setProfile] = useState({
-    fullName: "Yaswanth Raj",
-    email: "yaswanth.raj@cargozents.com",
-    phone: "+91 98765 43210",
-    role: "Buyer",
-    companyName: "CargoZents Logistics",
+    fullName: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    role: user?.role || "",
+    companyName: user?.companyName || "",
     profilePic: null, 
   });
 
@@ -28,10 +30,7 @@ export default function Profile() {
   };
 
   return (
-    <DashboardLayout
-      title="My Profile"
-      subtitle="Manage your personal details, company settings, and account security."
-    >
+    <>
       <div className="max-w-5xl mx-auto space-y-8 px-4 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
@@ -46,7 +45,7 @@ export default function Profile() {
                 />
               ) : (
                 <span className="text-4xl font-bold text-[#00E676] select-none">
-                  {profile.fullName.charAt(0)}
+                  {profile.fullName ? profile.fullName.charAt(0) : "?"}
                 </span>
               )}
               
@@ -176,6 +175,6 @@ export default function Profile() {
 
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

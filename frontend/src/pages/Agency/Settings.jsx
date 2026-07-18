@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import DashboardLayout from "../../components/common/DashboardLayout";
 import { useTheme } from "../../context/ThemeContext";
 
 export default function AgencySettings() {
@@ -60,10 +59,13 @@ export default function AgencySettings() {
   };
 
   return (
-    <DashboardLayout
-      title="Agency Settings"
-      subtitle="Manage configurations, automatic assignments, dispatch rules, and preferences."
-    >
+    <>
+      <div className="mb-8">
+        <h1 className="font-display text-xl font-bold text-primary">Agency Settings</h1>
+        <p className="mt-1 text-sm text-[#5B7A70]">
+          Manage configurations, automatic assignments, dispatch rules, and preferences.
+        </p>
+      </div>
       <div className="max-w-4xl mx-auto space-y-8 px-4 pb-12">
         <div className="rounded-xl border border-primary/10 bg-secondary/20 p-6 shadow-sm">
           <h3 className="text-md font-bold text-primary mb-5 tracking-tight border-b border-primary/10 pb-3">
@@ -181,6 +183,6 @@ export default function AgencySettings() {
           </button>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }
