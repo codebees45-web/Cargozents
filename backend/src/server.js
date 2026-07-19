@@ -17,7 +17,7 @@ const { initWhatsApp } = require("./utils/whatsappClient");
 
 // Route Imports
 const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes"); // 🟢 ADDED: Imports your user profile routes
+const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const shipmentRoutes = require("./routes/shipmentRoutes");
@@ -109,6 +109,23 @@ const listenOnPort = (port) =>
           io.to(payload.bookingId).emit("status-update", payload);
         });
 
+        // Live GPS tracking rooms. A tracking screen (buyer/shipper/admin/
+        // driver) joins `vehicle:<id>` for one vehicle's map, or the single
+        // shared `fleet` room for the network-wide admin map. The actual
+        // `location-update` / `location-stopped` events are emitted
+        // server-side from driverController once a fix is validated and
+        // persisted — nothing here trusts a client to broadcast its own
+        // position directly.
+        socket.on("join-tracking", ({ vehicleId, fleet } = {}) => {
+          if (vehicleId) socket.join(`vehicle:${vehicleId}`);
+          if (fleet) socket.join("fleet");
+        });
+
+        socket.on("leave-tracking", ({ vehicleId, fleet } = {}) => {
+          if (vehicleId) socket.leave(`vehicle:${vehicleId}`);
+          if (fleet) socket.leave("fleet");
+        });
+
         socket.on("disconnect", () => {
           logger.info(`Socket Disconnected: ${socket.id}`);
         });
@@ -155,6 +172,14 @@ const startServer = async () => {
   }
 };
 
+// Trust the first hop proxy (Render/Heroku/nginx/etc.) in production so
+// req.ip reflects the real client IP instead of the proxy's — this
+// matters for express-rate-limit below, otherwise every request appears
+// to come from the same address and shares one limit bucket.
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // Global Middleware
 app.use(helmet());
 
@@ -181,7 +206,7 @@ app.get("/api/health", (req, res) => {
 
 // App API Route Mounts
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes); // 🟢 ADDED: Mounts the profile endpoint underneath /api/users
+app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/shipments", shipmentRoutes);

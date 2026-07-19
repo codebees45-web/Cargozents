@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import TrackingMap from './TrackingMap';
 import LiveLocationToggle from './LiveLocationToggle';
 import { getShipmentTracking } from '../../services/shipmentService';
+import useLiveTracking from '../../hooks/useLiveTracking';
 
-const POLL_INTERVAL_MS = 15000;
+const POLL_INTERVAL_MS = 45000;
 
 /**
  * Drop this into a driver's view of a single active load (accepted /
@@ -32,6 +33,25 @@ const DriverTripMap = ({ shipmentId }) => {
     pollRef.current = setInterval(load, POLL_INTERVAL_MS);
     return () => clearInterval(pollRef.current);
   }, [load]);
+
+  useLiveTracking(tracking?.vehicle?.id, (payload) => {
+    setTracking((prev) => {
+      if (!prev?.vehicle) return prev;
+      return {
+        ...prev,
+        vehicle: {
+          ...prev.vehicle,
+          ...(payload.stopped
+            ? { isSharingLocation: false }
+            : {
+                currentLocation: { type: 'Point', coordinates: payload.coordinates },
+                locationUpdatedAt: payload.locationUpdatedAt,
+                isSharingLocation: true,
+              }),
+        },
+      };
+    });
+  });
 
   return (
     <div className="mt-4 space-y-3">

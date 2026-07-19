@@ -2,8 +2,9 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import TrackingMap from '../components/common/TrackingMap';
 import { getMyShipments, getAssignedShipments, getAgencyShipments, getShipmentTracking } from '../services/shipmentService';
+import useLiveTracking from '../hooks/useLiveTracking';
 
-const POLL_INTERVAL_MS = 15000;
+const POLL_INTERVAL_MS = 45000;
 
 const STATUS_STYLES = {
   requested: 'border-gray-200 bg-gray-50 text-gray-700',
@@ -83,12 +84,31 @@ const TruckTracking = () => {
     return () => clearInterval(pollRef.current);
   }, [selectedId, fetchTracking]);
 
+  useLiveTracking(tracking?.vehicle?.id, (payload) => {
+    setTracking((prev) => {
+      if (!prev?.vehicle) return prev;
+      return {
+        ...prev,
+        vehicle: {
+          ...prev.vehicle,
+          ...(payload.stopped
+            ? { isSharingLocation: false }
+            : {
+                currentLocation: { type: 'Point', coordinates: payload.coordinates },
+                locationUpdatedAt: payload.locationUpdatedAt,
+                isSharingLocation: true,
+              }),
+        },
+      };
+    });
+  });
+
   return (
     <div className="p-6 w-full">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Live Truck Tracking</h1>
         {tracking && (
-          <span className="text-xs text-gray-400">Auto-refreshes every {POLL_INTERVAL_MS / 1000}s</span>
+          <span className="text-xs text-gray-400">Live position · refreshes every {POLL_INTERVAL_MS / 1000}s</span>
         )}
       </div>
 

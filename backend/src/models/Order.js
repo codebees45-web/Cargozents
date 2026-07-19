@@ -119,6 +119,25 @@ const orderSchema = new mongoose.Schema(
       },
     ],
 
+    // productTotal is the final payable amount (after any coupon discount) —
+    // kept as-is so existing code that reads it as "amount charged" still
+    // works. productSubtotal/discountAmount/couponCode exist purely for
+    // itemised display (order confirmation, invoices, admin views).
+    productSubtotal: {
+      type: Number,
+      default: 0,
+    },
+
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    couponCode: {
+      type: String,
+      default: null,
+    },
+
     productTotal: {
       type: Number,
       default: 0,
@@ -129,6 +148,8 @@ const orderSchema = new mongoose.Schema(
       city: String,
       state: String,
       pincode: String,
+      contactName: String,
+      contactPhone: String,
       location: {
         type: {
           type: String,

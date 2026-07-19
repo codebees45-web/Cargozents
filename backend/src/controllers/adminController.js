@@ -4,6 +4,23 @@ const Document = require('../models/Document');
 const Shipment = require('../models/Shipment');
 const Notification = require('../models/Notification');
 
+/**
+ * Wraps a populate() chain so that a single bad/dangling reference in one
+ * document (e.g. a Vehicle.driver pointing at a deleted User) can't 500 the
+ * entire list. On populate failure we log which document/field failed and
+ * retry the same query WITHOUT populate, so the admin still sees the list —
+ * just with that one relation left as a raw ObjectId instead of a name.
+ */
+const safeFind = async (label, queryBuilder, fallbackBuilder) => {
+  try {
+    return await queryBuilder();
+  } catch (err) {
+    console.error(`[admin:${label}] populate failed, falling back to unpopulated list:`, err.message);
+    if (fallbackBuilder) return fallbackBuilder();
+    throw err;
+  }
+};
+
 /** GET /api/admin/drivers?approved=false */
 const getDrivers = async (req, res, next) => {
   try {
@@ -68,10 +85,15 @@ const getVehicles = async (req, res, next) => {
       filter.isVerified = verified === 'true';
     }
 
-    const vehicles = await Vehicle.find(filter)
-      .populate('driver', 'name phone')
-      .populate('agency', 'name phone')
-      .sort({ createdAt: -1 });
+    const vehicles = await safeFind(
+      'getVehicles',
+      () =>
+        Vehicle.find(filter)
+          .populate('driver', 'name phone')
+          .populate('agency', 'name phone')
+          .sort({ createdAt: -1 }),
+      () => Vehicle.find(filter).sort({ createdAt: -1 })
+    );
 
     res.status(200).json({ success: true, vehicles });
   } catch (err) {
@@ -105,10 +127,15 @@ const getDocuments = async (req, res, next) => {
     const filter = {};
     if (status) filter.status = status;
 
-    const documents = await Document.find(filter)
-      .populate('owner', 'name phone role')
-      .populate('vehicle', 'registrationNumber type')
-      .sort({ createdAt: -1 });
+    const documents = await safeFind(
+      'getDocuments',
+      () =>
+        Document.find(filter)
+          .populate('owner', 'name phone role')
+          .populate('vehicle', 'registrationNumber type')
+          .sort({ createdAt: -1 }),
+      () => Document.find(filter).sort({ createdAt: -1 })
+    );
 
     res.status(200).json({ success: true, documents });
   } catch (err) {

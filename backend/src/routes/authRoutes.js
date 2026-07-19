@@ -1,6 +1,12 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
 const {
+  loginLimiter,
+  registerLimiter,
+  otpLimiter,
+  passwordResetLimiter,
+} = require('../middleware/rateLimit');
+const {
   register,
   verifyOtp,
   resendOtp,
@@ -14,12 +20,12 @@ const {
 
 const router = express.Router();
 
-router.post('/register', register);
-router.post('/verify-otp', verifyOtp);
-router.post('/resend-otp', resendOtp);
-router.post('/login', login);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/register', registerLimiter, register);
+router.post('/verify-otp', otpLimiter, verifyOtp);
+router.post('/resend-otp', otpLimiter, resendOtp);
+router.post('/login', loginLimiter, login);
+router.post('/forgot-password', passwordResetLimiter, forgotPassword);
+router.post('/reset-password', passwordResetLimiter, resetPassword);
 
 router.get('/me', protect, getMe);
 router.patch('/me', protect, updateMe);

@@ -16,6 +16,7 @@ import orderService from "../../services/orderService";
 import pricingService from "../../services/pricingService";
 import mapsService from "../../services/mapsService";
 import ShipmentRouteMap from "../../components/buyer/ShipmentRouteMap";
+import AIPricePredictor from "../../components/common/AIPricePredictor";
 
 export default function BookShipment() {
   const navigate = useNavigate();
@@ -70,6 +71,14 @@ export default function BookShipment() {
 
     documents: [],
   });
+  const mapVehicleNameToBackendType = (name = "") => {
+    const n = name.toLowerCase();
+    if (n.includes("container")) return "container";
+    if (n.includes("light commercial")) return "tempo";
+    if (n.includes("pickup")) return "open_body";
+    if (n.includes("mini")) return "mini_truck";
+    return "mini_truck";
+  };
 
   const submitBooking = async () => {
         try {
@@ -111,7 +120,10 @@ export default function BookShipment() {
               pickupSchedule: formData.pickupSchedule,
             },
 
-            vehicle: selectedVehicle,
+            vehicle: {
+              type: mapBuyerVehicleToBackendType(selectedVehicle?.name),
+              capacity: selectedVehicle?.capacity,
+            },
 
             pricing: {
               totalAmount: estimatedPrice > 0 ? estimatedPrice : 1,
@@ -428,6 +440,18 @@ export default function BookShipment() {
               couponDiscount={formData.couponDiscount || 0}
               onContinue={step < TOTAL_STEPS ? nextStep : undefined}
             />
+            {selectedVehicle &&
+              formData.pickupLatitude &&
+              formData.deliveryLatitude && (
+                <AIPricePredictor
+                  pickupCoordinates={[Number(formData.pickupLongitude), Number(formData.pickupLatitude)]}
+                  dropCoordinates={[Number(formData.deliveryLongitude), Number(formData.deliveryLatitude)]}
+                  weight={Number(formData.weight)}
+                  vehicleType={mapVehicleNameToBackendType(selectedVehicle.name)}
+                  insuranceOpted={formData.insurance !== "None"}
+                  isBackhaulMatch={false}
+                />
+              )}
 
           </div>
 

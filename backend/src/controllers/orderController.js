@@ -1,5 +1,8 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const path = require("path");
+const fs = require("fs");
+const { resolveCoupon } = require("../config/coupons");
 
 /**
  * Create Order (freight / "Book Shipment" flow)
@@ -62,7 +65,7 @@ exports.createOrder = async (req, res) => {
  */
 exports.createProductOrder = async (req, res) => {
   try {
-    const { items, deliveryAddress, productPaymentMethod } = req.body;
+    const { items, deliveryAddress, productPaymentMethod, couponCode } = req.body;
 
     const productIds = items.map((i) => i.product);
     const products = await Product.find({ _id: { $in: productIds } });
@@ -113,6 +116,10 @@ exports.createProductOrder = async (req, res) => {
 
     const orderId = `CGZ-${Date.now()}`;
 
+    const applied = resolveCoupon(couponCode, productTotal);
+    const discountAmount = applied ? applied.discountAmount : 0;
+    const finalTotal = Math.max(productTotal - discountAmount, 0);
+
     const order = await Order.create({
       orderId,
       buyer: req.user._id,
@@ -120,7 +127,10 @@ exports.createProductOrder = async (req, res) => {
       orderType: "product",
 
       items: orderItems,
-      productTotal,
+      productSubtotal: productTotal,
+      discountAmount,
+      couponCode: applied ? applied.code : null,
+      productTotal: finalTotal,
       deliveryAddress,
       productPaymentMethod,
       productPaymentStatus: productPaymentMethod === "cod" ? "pending" : "pending",
@@ -408,6 +418,68 @@ exports.assignTruck = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+/**
+ * Download Order Invoice — streams the PDF generated at payment time.
+ * Invoices live outside the publicly-served uploads/ directory (see
+ * utils/invoiceService.js) specifically so this auth + ownership check
+ * is the only way to reach one; they're not guessable/public files.
+ * Reuses the same buyer/shipper/driver/admin check as getOrderById.
+ */
+exports.getOrderInvoice = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    const isBuyer = order.buyer && order.buyer.equals(req.user._id);
+    const isShipper = order.shipper && order.shipper.equals(req.user._id);
+    const isDriver = order.driver && order.driver.equals(req.user._id);
+    const isAdmin = req.user.role === "admin";
+
+    if (!isBuyer && !isShipper && !isDriver && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view this order's invoice",
+      });
+    }
+
+    // invoiceNumber is only ever set by utils/invoiceService.js (format
+    // "CZ-<timestamp>") and is never user-supplied, but this endpoint
+    // builds a filesystem path from it, so validate the shape defensively
+    // rather than trusting it blindly.
+    if (!order.payment.invoiceNumber || !/^[A-Za-z0-9_-]+$/.test(order.payment.invoiceNumber)) {
+      return res.status(404).json({
+        success: false,
+        message: "No invoice has been generated for this order yet",
+      });
+    }
+
+    const filePath = path.join(
+      __dirname,
+      "../../private/invoices",
+      `${order.payment.invoiceNumber}.pdf`
+    );
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: "Invoice file not found",
+      });
+    }
+
+    res.download(filePath, `${order.payment.invoiceNumber}.pdf`);
+  } catch (err) {
     res.status(500).json({
       success: false,
       message: err.message,
@@ -719,6 +791,74 @@ exports.assignDriver = async (req, res) => {
       success: true,
       message: "Driver assigned",
       order,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+exports.getOrderTracking = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("buyer", "name")
+      .populate("driver", "name phone");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    const isBuyer = order.buyer && order.buyer._id?.equals(req.user._id);
+    const isShipper = order.shipper && order.shipper.equals(req.user._id);
+    const isDriver = order.driver && order.driver._id?.equals(req.user._id);
+    const isAdmin = req.user.role === "admin";
+
+    if (!isBuyer && !isShipper && !isDriver && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to track this order",
+      });
+    }
+
+    // order.vehicle is a static snapshot copied in at assign-truck time
+    // (registrationNumber/type/capacity) — it has no live position. Look
+    // the real Vehicle doc up by registration number to get its current
+    // currentLocation/locationUpdatedAt/isSharingLocation for the map.
+    let vehicle = null;
+    if (order.vehicle?.registrationNumber) {
+      const Vehicle = require("../models/Vehicle");
+      const liveVehicle = await Vehicle.findOne({
+        registrationNumber: order.vehicle.registrationNumber,
+      }).select("registrationNumber type currentLocation locationUpdatedAt isSharingLocation");
+
+      vehicle = {
+        // Needed so the frontend can join this vehicle's `vehicle:<id>`
+        // Socket.IO room for live push updates — without it the map falls
+        // back to polling only.
+        id: liveVehicle?._id || null,
+        registrationNumber: order.vehicle.registrationNumber,
+        type: order.vehicle.type,
+        currentLocation: liveVehicle?.currentLocation || null,
+        locationUpdatedAt: liveVehicle?.locationUpdatedAt || null,
+        isSharingLocation: liveVehicle?.isSharingLocation || false,
+      };
+    }
+
+    const currentStatus = order.orderType === "product" ? order.status : order.tracking?.currentStatus;
+
+    res.json({
+      success: true,
+      order,
+      tracking: {
+        status: currentStatus,
+        driver: order.driver ? { name: order.driver.name, phone: order.driver.phone } : null,
+        vehicle,
+        timeline: order.tracking?.timeline || [],
+      },
     });
   } catch (err) {
     res.status(500).json({

@@ -7,6 +7,7 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import DashboardLayout from '../components/common/DashboardLayout';
 import api from '../services/api';
 import { formatLocationFreshness } from '../utils/locationFreshness';
+import { useFleetTracking } from '../hooks/useLiveTracking';
 
 const defaultIcon = L.icon({
   iconUrl: markerIcon,
@@ -32,7 +33,7 @@ const STALE_ICON = truckIcon('#FBBF24');
 const OFFLINE_ICON = truckIcon('#94A3B8');
 
 const INDIA_CENTER = [20.5937, 78.9629];
-const POLL_INTERVAL_MS = 20000;
+const POLL_INTERVAL_MS = 60000;
 
 const isRealPoint = (coords) =>
   Array.isArray(coords) && coords.length === 2 && !(coords[0] === 0 && coords[1] === 0);
@@ -73,6 +74,30 @@ const AdminLiveMap = () => {
     return () => clearInterval(pollRef.current);
   }, [load]);
 
+  // One shared 'fleet' room, rather than joining a room per vehicle —
+  // this screen can have dozens of vehicles on it at once. Only patches
+  // vehicles already in the loaded list; a newly-online vehicle shows up
+  // on the next poll.
+  useFleetTracking(true, (payload) => {
+    setVehicles((prev) => {
+      if (!prev) return prev;
+      const idx = prev.findIndex((v) => v._id === payload.vehicleId);
+      if (idx === -1) return prev;
+      const next = [...prev];
+      next[idx] = {
+        ...next[idx],
+        ...(payload.stopped
+          ? { isSharingLocation: false }
+          : {
+              currentLocation: { type: 'Point', coordinates: payload.coordinates },
+              locationUpdatedAt: payload.locationUpdatedAt,
+              isSharingLocation: true,
+            }),
+      };
+      return next;
+    });
+  });
+
   const located = (vehicles || []).filter((v) => isRealPoint(v.currentLocation?.coordinates));
   const points = located.map((v) => toLatLng(v.currentLocation.coordinates));
 
@@ -91,7 +116,7 @@ const AdminLiveMap = () => {
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-[#94A3B8]" /> Offline / stale
         </span>
         <span className="ml-auto">
-          {vehicles === null ? 'Loading…' : `${located.length} of ${vehicles.length} vehicles have a location`} · auto-refreshes every {POLL_INTERVAL_MS / 1000}s
+          {vehicles === null ? 'Loading…' : `${located.length} of ${vehicles.length} vehicles have a location`} · live, resyncs every {POLL_INTERVAL_MS / 1000}s
         </span>
       </div>
 

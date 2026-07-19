@@ -176,6 +176,20 @@ const updateLocation = async (req, res, next) => {
       }
     }
 
+    // Push this fix out over Socket.IO immediately instead of making
+    // every tracking screen wait for its next poll. Anyone who has
+    // joined the `vehicle:<id>` room (buyer/shipper/admin viewing this
+    // vehicle's map) gets it in real time; `fleet` is a single room the
+    // network-wide admin map listens to so it doesn't need to join one
+    // room per vehicle on screen.
+    const io = req.app.get('io');
+    if (io && vehicleId) {
+      const payload = { vehicleId, shipmentId: shipmentId || null, coordinates, accuracy: accuracy ?? null, locationUpdatedAt: now };
+      io.to(`vehicle:${vehicleId}`).emit('location-update', payload);
+      io.to('fleet').emit('location-update', payload);
+      if (shipmentId) io.to(`shipment:${shipmentId}`).emit('location-update', payload);
+    }
+
     res.status(200).json({ success: true, locationUpdatedAt: now });
   } catch (err) {
     next(err);
@@ -198,6 +212,15 @@ const stopSharingLocation = async (req, res, next) => {
         { _id: vehicleId, driver: req.user._id },
         { isSharingLocation: false }
       );
+
+      // Let live map viewers know sharing stopped right away, rather than
+      // them figuring it out only once the staleness timeout kicks in.
+      const io = req.app.get('io');
+      if (io) {
+        const payload = { vehicleId, stopped: true };
+        io.to(`vehicle:${vehicleId}`).emit('location-stopped', payload);
+        io.to('fleet').emit('location-stopped', payload);
+      }
     }
     res.status(200).json({ success: true });
   } catch (err) {

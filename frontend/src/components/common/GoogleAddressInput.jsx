@@ -13,6 +13,7 @@ export default function GoogleAddressInput({
   placeholder,
   value,
   onAddressSelect,
+  onChange,
 }) {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -68,6 +69,7 @@ export default function GoogleAddressInput({
   const handleInputChange = (e) => {
     const text = e.target.value;
     setQuery(text);
+    onChange?.(text);
     fetchSuggestions(text);
   };
 

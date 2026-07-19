@@ -4,8 +4,11 @@ import DashboardLayout from '../components/common/DashboardLayout';
 import TrackingMap from '../components/common/TrackingMap';
 import { getShipmentTracking } from '../services/shipmentService';
 import { formatLocationFreshness } from '../utils/locationFreshness';
+import useLiveTracking from '../hooks/useLiveTracking';
 
-const POLL_INTERVAL_MS = 15000;
+// Socket pushes now carry the live position; polling is just the slow
+// fallback for status/driver changes, so it can be spaced out further.
+const POLL_INTERVAL_MS = 45000;
 
 const formatStatus = (status) => (status || '').replace(/_/g, ' ');
 
@@ -41,6 +44,25 @@ const ShipperShipmentTracking = () => {
     return () => clearInterval(pollRef.current);
   }, [load]);
 
+  useLiveTracking(tracking?.vehicle?.id, (payload) => {
+    setTracking((prev) => {
+      if (!prev?.vehicle) return prev;
+      return {
+        ...prev,
+        vehicle: {
+          ...prev.vehicle,
+          ...(payload.stopped
+            ? { isSharingLocation: false }
+            : {
+                currentLocation: { type: 'Point', coordinates: payload.coordinates },
+                locationUpdatedAt: payload.locationUpdatedAt,
+                isSharingLocation: true,
+              }),
+        },
+      };
+    });
+  });
+
   const freshness = tracking?.vehicle ? formatLocationFreshness(tracking.vehicle) : null;
 
   return (
@@ -62,7 +84,7 @@ const ShipperShipmentTracking = () => {
               {formatStatus(tracking.status)}
             </span>
             {freshness && <span className={`text-xs ${freshness.tone}`}>{freshness.text}</span>}
-            <span className="ml-auto text-xs text-[#5B7A70]">Auto-refreshes every {POLL_INTERVAL_MS / 1000}s</span>
+            <span className="ml-auto text-xs text-[#5B7A70]">Live position · refreshes every {POLL_INTERVAL_MS / 1000}s</span>
           </div>
 
           <TrackingMap tracking={tracking} className="shadow border border-primary/10" />

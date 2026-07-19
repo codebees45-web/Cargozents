@@ -80,6 +80,8 @@ import Support from "./pages/buyer/Support";
 import Settings from "./pages/buyer/Settings";
 import Invoices from "./pages/buyer/Invoices";
 
+import AdminAIPricing from './pages/AdminAIPricing';
+
 import AgencyFleetTracking from './pages/AgencyFleetTracking';
 
 function App() {
@@ -412,6 +414,22 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <AdminSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminNotifications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/ai-pricing"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminAIPricing />
                   </ProtectedRoute>
                 }
               />
