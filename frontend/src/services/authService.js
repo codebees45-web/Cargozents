@@ -8,6 +8,10 @@ export const forgotPassword = (payload) => api.post('/auth/forgot-password', pay
 export const resetPassword = (payload) => api.post('/auth/reset-password', payload);
 export const completeProfile = (payload) => api.patch('/auth/complete-profile', payload);
 
+// Updates the logged-in user's own profile (name, profileImage, shipperMode, etc.)
+// Hits PATCH /auth/me, which is the route the backend's updateMe controller listens on.
+export const updateMe = (payload) => api.patch('/auth/me', payload);
+
 // Profile functions
 export const updateProfile = (userId, payload) => {
   return api.patch(`/auth/update-profile/${userId}`, payload);

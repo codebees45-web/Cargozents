@@ -530,76 +530,6 @@ exports.getOrderById = async (req, res) => {
 };
 
 /**
- * Order Tracking — status timeline plus, if a truck has been assigned,
- * that vehicle's live position (mirrors shipmentController.getShipmentTracking's
- * shape/auth pattern so the two map components can share logic later).
- */
-exports.getOrderTracking = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id)
-      .populate("buyer", "name")
-      .populate("driver", "name phone");
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
-    }
-
-    const isBuyer = order.buyer && order.buyer._id?.equals(req.user._id);
-    const isShipper = order.shipper && order.shipper.equals(req.user._id);
-    const isDriver = order.driver && order.driver._id?.equals(req.user._id);
-    const isAdmin = req.user.role === "admin";
-
-    if (!isBuyer && !isShipper && !isDriver && !isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to track this order",
-      });
-    }
-
-    // order.vehicle is a static snapshot copied in at assign-truck time
-    // (registrationNumber/type/capacity) — it has no live position. Look
-    // the real Vehicle doc up by registration number to get its current
-    // currentLocation/locationUpdatedAt/isSharingLocation for the map.
-    let vehicle = null;
-    if (order.vehicle?.registrationNumber) {
-      const Vehicle = require("../models/Vehicle");
-      const liveVehicle = await Vehicle.findOne({
-        registrationNumber: order.vehicle.registrationNumber,
-      }).select("registrationNumber type currentLocation locationUpdatedAt isSharingLocation");
-
-      vehicle = {
-        registrationNumber: order.vehicle.registrationNumber,
-        type: order.vehicle.type,
-        currentLocation: liveVehicle?.currentLocation || null,
-        locationUpdatedAt: liveVehicle?.locationUpdatedAt || null,
-        isSharingLocation: liveVehicle?.isSharingLocation || false,
-      };
-    }
-
-    const currentStatus = order.orderType === "product" ? order.status : order.tracking?.currentStatus;
-
-    res.json({
-      success: true,
-      order,
-      tracking: {
-        status: currentStatus,
-        driver: order.driver ? { name: order.driver.name, phone: order.driver.phone } : null,
-        vehicle,
-        timeline: order.tracking?.timeline || [],
-      },
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-};
-
-/**
  * Cancel Order — works for both shipment and product orders.
  */
 exports.cancelOrder = async (req, res) => {
@@ -799,6 +729,12 @@ exports.assignDriver = async (req, res) => {
     });
   }
 };
+
+/**
+ * Order Tracking — status timeline plus, if a truck has been assigned,
+ * that vehicle's live position (mirrors shipmentController.getShipmentTracking's
+ * shape/auth pattern so the two map components can share logic later).
+ */
 exports.getOrderTracking = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)

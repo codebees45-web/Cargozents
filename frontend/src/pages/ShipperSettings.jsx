@@ -1,10 +1,21 @@
 import React, { useState } from "react";
 import DashboardLayout from "../components/common/DashboardLayout"; // Restored layout wrapper
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import { updateMe } from "../services/authService";
+
+const sellingModes = [
+  { value: "catalog", label: "Sell products from a catalog" },
+  { value: "raw_shipment", label: "Post one-off shipments" },
+  { value: "both", label: "Both" },
+];
 
 export default function ShipperSettings() {
   // 1. Hook into your shared application theme engine
   const { isDark, toggleTheme } = useTheme();
+
+  // 1b. Real logged-in shipper account, so we can read/write the actual shipperMode
+  const { user, updateUser } = useAuth();
 
   // 2. Interactive state management mirroring your dashboard modules
   const [settings, setSettings] = useState({
@@ -13,6 +24,10 @@ export default function ShipperSettings() {
     weightUnit: "Metric",
     currency: "INR",
   });
+
+  const [shipperMode, setShipperMode] = useState(user?.shipperMode || "both");
+  const [savingMode, setSavingMode] = useState(false);
+  const [modeError, setModeError] = useState("");
 
   const handleToggle = (key) => {
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -27,6 +42,24 @@ export default function ShipperSettings() {
     alert("Shipper settings saved successfully!");
   };
 
+  // Persists the selling mode to the real account via PATCH /auth/me, so
+  // "Your account is not set up for catalog selling" goes away for good.
+  const handleSaveSellingMode = async () => {
+    setModeError("");
+    setSavingMode(true);
+    try {
+      const { data } = await updateMe({ shipperMode });
+      updateUser(data.user);
+      alert("Selling mode updated successfully!");
+    } catch (err) {
+      setModeError(
+        err.response?.data?.message || "Could not update selling mode right now."
+      );
+    } finally {
+      setSavingMode(false);
+    }
+  };
+
   // Premium Reusable Animated Toggle Switch
   const ToggleSwitch = ({ checked, onChange, ariaLabel }) => {
     return (
@@ -35,14 +68,14 @@ export default function ShipperSettings() {
         onClick={onChange}
         aria-label={ariaLabel}
         className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${
-          checked 
-            ? "bg-[#00E676] shadow-[0_0_10px_rgba(0,230,118,0.25)]" 
+          checked
+            ? "bg-[#00E676] shadow-[0_0_10px_rgba(0,230,118,0.25)]"
             : "bg-primary/10 border border-primary/10"
         }`}
       >
         <span
           className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow-md transition duration-300 ease-in-out ${
-            checked 
+            checked
               ? "translate-x-6 bg-[#0A110E]" // Matte dark knob when active
               : "translate-x-0 bg-[#8AA399]"  // Grey knob when inactive
           }`}
@@ -57,7 +90,7 @@ export default function ShipperSettings() {
       subtitle="Control your system preferences, API integrations, and display adjustments."
     >
       <div className="max-w-4xl mx-auto space-y-8 px-4 pb-12">
-        
+
         {/* ==========================================
             SECTION 1: MILESTONE ALERTS
             ========================================== */}
@@ -82,6 +115,53 @@ export default function ShipperSettings() {
         </div>
 
         {/* ==========================================
+            SECTION 1B: SELLING MODE (controls catalog access)
+            ========================================== */}
+        <div className={`rounded-xl border p-6 shadow-sm transition-colors duration-200 ${
+          isDark ? "border-primary/10 bg-[#0A1811]" : "border-gray-200 bg-white"
+        }`}>
+          <h3 className={`text-md font-bold mb-1 tracking-tight ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}>
+            Selling Mode
+          </h3>
+          <p className="text-xs text-[#8AA399] mb-5">
+            Controls whether you can list catalog products, post one-off shipments, or both.
+            Adding products requires "Sell products from a catalog" or "Both".
+          </p>
+
+          <select
+            value={shipperMode}
+            onChange={(e) => setShipperMode(e.target.value)}
+            className={`w-full rounded-lg border px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none transition-colors duration-200 cursor-pointer ${
+              isDark
+                ? "border-primary/10 bg-[#0c1411] text-white"
+                : "border-gray-300 bg-white text-gray-900"
+            }`}
+          >
+            {sellingModes.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+
+          {modeError && (
+            <p className="text-xs text-red-500 mt-3">{modeError}</p>
+          )}
+
+          <div className="flex justify-end pt-4">
+            <button
+              onClick={handleSaveSellingMode}
+              disabled={savingMode}
+              className="rounded-lg bg-[#00E676] px-6 py-2.5 text-xs font-bold text-[#0A110E] shadow-lg shadow-[#00E676]/10 hover:bg-[#34D399] hover:shadow-[0_0_15px_rgba(0,230,118,0.4)] transition-all duration-200 disabled:opacity-60"
+            >
+              {savingMode ? "Saving…" : "Save Selling Mode"}
+            </button>
+          </div>
+        </div>
+
+        {/* ==========================================
             SECTION 2: INTEGRATION & SECURITY
             ========================================== */}
         <div className={`rounded-xl border p-6 shadow-sm transition-colors duration-200 ${
@@ -92,7 +172,7 @@ export default function ShipperSettings() {
           }`}>
             Integration & Security
           </h3>
-          
+
           <div className="flex items-center justify-between">
             <div>
               <p className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
@@ -121,7 +201,7 @@ export default function ShipperSettings() {
           }`}>
             Platform Display Preferences
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-xs font-bold text-[#8AA399] uppercase tracking-wider mb-2">
@@ -132,8 +212,8 @@ export default function ShipperSettings() {
                 value={settings.weightUnit}
                 onChange={handleChange}
                 className={`w-full rounded-lg border px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none transition-colors duration-200 cursor-pointer ${
-                  isDark 
-                    ? "border-primary/10 bg-[#0c1411] text-white" 
+                  isDark
+                    ? "border-primary/10 bg-[#0c1411] text-white"
                     : "border-gray-300 bg-white text-gray-900"
                 }`}
               >
@@ -151,8 +231,8 @@ export default function ShipperSettings() {
                 value={settings.currency}
                 onChange={handleChange}
                 className={`w-full rounded-lg border px-4 py-3 text-sm focus:border-[#00E676] focus:outline-none transition-colors duration-200 cursor-pointer ${
-                  isDark 
-                    ? "border-primary/10 bg-[#0c1411] text-white" 
+                  isDark
+                    ? "border-primary/10 bg-[#0c1411] text-white"
                     : "border-gray-300 bg-white text-gray-900"
                 }`}
               >
