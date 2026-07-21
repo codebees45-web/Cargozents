@@ -16,7 +16,7 @@ const ThemeToggle = () => {
           isDark ? 'translate-x-6' : 'translate-x-0'
         }`}
       >
-        {isDark ? '🌙' : '☀️'}
+        {isDark ? '' : ''}
       </span>
     </button>
   );

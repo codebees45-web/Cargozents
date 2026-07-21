@@ -173,6 +173,79 @@ const reviewDocument = async (req, res, next) => {
   }
 };
 
+/**
+ * POST /api/admin/documents/:id/verify-parivahan
+ * Lets an admin trigger/re-run the same Parivahan (Sarathi/VAHAN) lookup
+ * the driver can run themselves — useful when a document is sitting in
+ * the queue because the driver never ran it, or an admin wants to
+ * double-check a match before approving manually. Same auto-approve-only
+ * behaviour as the driver-facing endpoint: a match approves it, anything
+ * else just gets recorded for the admin to judge.
+ * Body (driving_license): { dob, dlNumber? }
+ * Body (rc): { rcNumber? }
+ */
+const reVerifyDocumentParivahan = async (req, res, next) => {
+  try {
+    const document = await Document.findById(req.params.id)
+      .populate('owner', 'name driverProfile.licenseNumber')
+      .populate('vehicle', 'registrationNumber');
+
+    if (!document) {
+      return res.status(404).json({ success: false, message: 'Document not found' });
+    }
+    if (!['driving_license', 'rc'].includes(document.type)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Parivahan verification only applies to 'driving_license' and 'rc' documents" });
+    }
+
+    let result;
+    let idNumberUsed;
+    const ownerName = document.owner?.name;
+
+    if (document.type === 'driving_license') {
+      const dlNumber = req.body.dlNumber || document.owner?.driverProfile?.licenseNumber;
+      const { dob } = req.body;
+      if (!dlNumber) {
+        return res.status(400).json({ success: false, message: "dlNumber is required (driver's profile has none on file)" });
+      }
+      if (!dob) {
+        return res.status(400).json({ success: false, message: "dob ('YYYY-MM-DD') is required for driving licence verification" });
+      }
+      idNumberUsed = dlNumber;
+      result = await parivahanService.verifyDrivingLicense({ dlNumber, dob, expectedName: ownerName });
+    } else {
+      const rcNumber = req.body.rcNumber || document.vehicle?.registrationNumber;
+      if (!rcNumber) {
+        return res.status(400).json({ success: false, message: 'This document is not linked to a vehicle with a registration number' });
+      }
+      idNumberUsed = rcNumber;
+      result = await parivahanService.verifyRC({ rcNumber, expectedOwnerName: ownerName });
+    }
+
+    document.parivahan = {
+      checked: true,
+      status: result.status || 'failed',
+      checkedAt: new Date(),
+      idNumberUsed,
+      fields: result.fields || null,
+      message: result.message || '',
+    };
+
+    if (result.matched && document.status === 'pending') {
+      document.status = 'approved';
+      document.reviewedAt = new Date();
+      document.reviewedBy = req.user?._id || null;
+    }
+
+    await document.save();
+
+    res.status(200).json({ success: true, document, verification: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
 /** GET /api/admin/shipments?status=requested */
 const getShipments = async (req, res, next) => {
   try {
@@ -459,6 +532,7 @@ module.exports = {
   verifyVehicle,
   getDocuments,
   reviewDocument,
+  reVerifyDocumentParivahan,
   getShipments,
   getAnalyticsOverview,
   getAnalyticsTrend,

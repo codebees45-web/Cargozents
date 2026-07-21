@@ -5,7 +5,7 @@ import EmptyState from '../components/common/EmptyState';
 import FormInput from '../components/common/FormInput';
 import FormSelect from '../components/common/FormSelect';
 import api from '../services/api';
-
+import { verifyDocumentWithParivahan } from '../services/driverService';
 const VEHICLE_OPTIONS = [
   { value: 'mini_truck', label: 'Mini Truck' },
   { value: 'tempo', label: 'Tempo' },
@@ -25,6 +25,14 @@ const DOC_TYPES = {
 
 const STATUS_STYLES = { pending: 'text-warning', approved: 'text-success', rejected: 'text-danger' };
 
+const PARIVAHAN_LABEL = {
+  verified: { text: 'Parivahan: verified', cls: 'text-success' },
+  name_mismatch: { text: 'Parivahan: name mismatch — admin will review', cls: 'text-danger' },
+  owner_mismatch: { text: 'Parivahan: owner mismatch — admin will review', cls: 'text-danger' },
+  invalid_or_expired: { text: 'Parivahan: expired/invalid', cls: 'text-danger' },
+  invalid_or_cancelled: { text: 'Parivahan: RC cancelled', cls: 'text-danger' },
+  failed: { text: 'Parivahan check failed — try again', cls: 'text-warning' },
+};
 const DriverDocuments = () => {
   const [vehicles, setVehicles] = useState(null);
   const [documents, setDocuments] = useState(null);
@@ -35,6 +43,10 @@ const DriverDocuments = () => {
 
   const [docForm, setDocForm] = useState({ type: '', fileUrl: '', vehicleId: '', expiryDate: '' });
   const [docSubmitting, setDocSubmitting] = useState(false);
+
+  const [verifyDobFor, setVerifyDobFor] = useState(null); // document id currently asking for DOB
+  const [dobInput, setDobInput] = useState('');
+  const [verifyingId, setVerifyingId] = useState(null);
 
   const loadAll = () => {
     Promise.all([api.get('/drivers/vehicles/mine'), api.get('/drivers/documents/mine')])
@@ -88,6 +100,21 @@ const DriverDocuments = () => {
   };
 
   const isVehicleScoped = DOC_TYPES[docForm.type]?.vehicleScoped;
+
+  const runParivahanCheck = async (doc, dob) => {
+    setError('');
+    setVerifyingId(doc._id);
+    try {
+      await verifyDocumentWithParivahan(doc._id, doc.type === 'driving_license' ? { dob } : {});
+      setVerifyDobFor(null);
+      setDobInput('');
+      loadAll();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Parivahan check failed.');
+    } finally {
+      setVerifyingId(null);
+    }
+  };
 
   return (
     <DashboardLayout title="Vehicles & documents" subtitle="Get verified to start receiving load matches.">
@@ -218,18 +245,62 @@ const DriverDocuments = () => {
               <EmptyState title="No documents submitted yet" body="Submitted documents will appear here with their review status." />
             ) : (
               <ul className="divide-y divide-white/5 rounded-xl border border-primary/10">
-                {documents.map((d) => (
-                  <li key={d._id} className="flex items-center justify-between px-4 py-3">
-                    <span className="font-mono-ls text-xs text-primary">
-                      {DOC_TYPES[d.type]?.label || d.type}
-                      {d.vehicle?.registrationNumber && ` · ${d.vehicle.registrationNumber}`}
-                    </span>
-                    <span className={`font-mono-ls text-[11px] ${STATUS_STYLES[d.status]}`}>
-                      {d.status.toUpperCase()}
-                      {d.status === 'rejected' && d.rejectionReason ? ` — ${d.rejectionReason}` : ''}
-                    </span>
-                  </li>
-                ))}
+                {documents.map((d) => {
+                  const canVerify = d.type === 'driving_license' || d.type === 'rc';
+                  const badge = d.parivahan?.checked ? PARIVAHAN_LABEL[d.parivahan.status] : null;
+                  const askingDob = verifyDobFor === d._id;
+                  return (
+                    <li key={d._id} className="px-4 py-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono-ls text-xs text-primary">
+                          {DOC_TYPES[d.type]?.label || d.type}
+                          {d.vehicle?.registrationNumber && ` · ${d.vehicle.registrationNumber}`}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          {canVerify && (
+                            <button
+                              type="button"
+                              disabled={verifyingId === d._id}
+                              onClick={() =>
+                                d.type === 'driving_license' ? setVerifyDobFor(d._id) : runParivahanCheck(d)
+                              }
+                              className="text-[11px] font-semibold text-primary underline decoration-dotted disabled:opacity-60"
+                            >
+                              {verifyingId === d._id
+                                ? 'Checking…'
+                                : d.parivahan?.checked
+                                ? 'Re-check via Parivahan'
+                                : 'Verify via Parivahan'}
+                            </button>
+                          )}
+                          <span className={`font-mono-ls text-[11px] ${STATUS_STYLES[d.status]}`}>
+                            {d.status.toUpperCase()}
+                            {d.status === 'rejected' && d.rejectionReason ? ` — ${d.rejectionReason}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                      {badge && <p className={`mt-1 text-[11px] ${badge.cls}`}>{badge.text}</p>}
+                      {askingDob && (
+                        <div className="mt-2 flex gap-2">
+                          <input
+                            type="date"
+                            value={dobInput}
+                            onChange={(e) => setDobInput(e.target.value)}
+                            className="rounded-lg border border-primary/15 bg-secondary/10 px-3 py-1.5 text-xs text-primary outline-none focus:border-primary/60"
+                          />
+                          <button
+                            type="button"
+                            disabled={!dobInput || verifyingId === d._id}
+                            onClick={() => runParivahanCheck(d, dobInput)}
+                            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-primary disabled:opacity-60"
+                          >
+                            Confirm DOB &amp; verify
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
